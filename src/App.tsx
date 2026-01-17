@@ -3,24 +3,43 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AuthProvider } from "@/hooks/useAuth";
+import Portal from "./pages/Portal";
+import CVPage from "./pages/CVPage";
+import Auth from "./pages/Auth";
+import MeusCVs from "./pages/MeusCVs";
+import StagePage from "./pages/StagePage";
+import Stage1Page from "./pages/Stage1Page";
+import Stage3Page from "./pages/Stage3Page";
+import Admin from "./pages/Admin";
+import ActivatePlatform from "./pages/ActivatePlatform";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Portal />} />
+            <Route path="/cv" element={<CVPage />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/ativar" element={<ActivatePlatform />} />
+            <Route path="/meus-cvs" element={<MeusCVs />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/etapa/1" element={<Stage1Page />} />
+            <Route path="/etapa/3" element={<Stage3Page />} />
+            <Route path="/etapa/:stageNumber" element={<StagePage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
