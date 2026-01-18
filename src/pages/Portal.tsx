@@ -17,9 +17,12 @@ import {
   Shield,
   Check
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+
+import logoAD from "@/assets/logo-ad.png";
+import mentorPhoto from "@/assets/mentor-photo.jpg";
 
 import { StageWarningModal } from "@/components/StageWarningModal";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
@@ -315,6 +318,25 @@ const Portal = () => {
         <div className="absolute bottom-0 left-1/2 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
       </div>
 
+      {/* Mentor Photo - Left Side (Desktop Only) */}
+      <motion.div
+        className="hidden lg:block fixed left-0 top-0 h-full w-[45%] z-0"
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <div className="relative h-full w-full">
+          <img
+            src={mentorPhoto}
+            alt="Adriano Duarte - Mentor"
+            className="h-full w-full object-cover object-center grayscale"
+          />
+          {/* Gradient overlay to blend with background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+        </div>
+      </motion.div>
+
       {/* Navigation */}
       <nav className="relative z-50 flex items-center justify-between py-4 px-4 md:px-6">
         <motion.div
@@ -322,9 +344,11 @@ const Portal = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="text-xl font-display font-bold text-gradient">
-            Perfil Glorioso
-          </div>
+          <img
+            src={logoAD}
+            alt="AD Logo"
+            className="w-12 h-12 rounded-lg"
+          />
         </motion.div>
 
         <motion.div
@@ -374,8 +398,8 @@ const Portal = () => {
         </motion.div>
       </nav>
 
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col min-h-[calc(100vh-80px)]">
+      {/* Main Content - Pushed to the right on desktop */}
+      <div className="relative z-10 flex flex-col min-h-[calc(100vh-80px)] lg:ml-[40%]">
         {/* Hero Section with Conversational Animation */}
         <header className="py-12 px-4 lg:px-8 xl:px-16">
           <AnimatePresence>
@@ -404,7 +428,7 @@ const Portal = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="mb-8"
               >
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-xl">
                   <span className="text-gradient">{currentPhrase}</span>
                 </h1>
               </motion.div>
