@@ -698,17 +698,73 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            {/* Como usar na Gupy - PRIMEIRO com visual moderno */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-2xl mx-auto"
+            >
+              <Card className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 backdrop-blur-sm overflow-hidden relative">
+                <motion.div 
+                  className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                />
+                <div className="flex items-start gap-4 relative">
+                  <motion.div 
+                    className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2, type: "spring", stiffness: 200 }}
+                  >
+                    <Info className="w-5 h-5 text-primary" />
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <p className="font-semibold text-foreground mb-3 text-sm">Como usar na Gupy:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { num: "1", text: "Acesse seu perfil na Gupy" },
+                        { num: "2", text: '"Experiências Profissionais"' },
+                        { num: "3", text: "Edite cada experiência" },
+                        { num: "4", text: "Cole a descrição formatada" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={item.num}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                        >
+                          <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium flex-shrink-0">
+                            {item.num}
+                          </span>
+                          <span>{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </Card>
+            </motion.div>
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.4, type: "spring", stiffness: 200 }}
               >
                 <Sparkles className="w-8 h-8 text-green-500" />
               </motion.div>
@@ -716,7 +772,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Experiências Formatadas
               </motion.h2>
@@ -724,7 +780,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
               >
                 Copie cada descrição e cole na Gupy
               </motion.p>
@@ -741,7 +797,7 @@ export const GupyGuide = () => {
                   <motion.div
                     key={`formatted-${i}`}
                     variants={staggerItem}
-                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                    transition={{ duration: 0.3, delay: 0.7 + i * 0.1 }}
                   >
                     <Card className="p-4 space-y-3 bg-card border-green-500/20">
                       <div className="flex items-center justify-between">
@@ -767,34 +823,13 @@ export const GupyGuide = () => {
                     </Card>
                   </motion.div>
                 ))}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <Card className="p-4 bg-primary/5 border-primary/20">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-muted-foreground">
-                        <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
-                        <ol className="list-decimal list-inside space-y-1">
-                          <li>Acesse seu perfil na Gupy</li>
-                          <li>Vá em "Experiências Profissionais"</li>
-                          <li>Edite cada experiência</li>
-                          <li>Cole a descrição formatada</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
               </motion.div>
             ) : (
               <motion.div 
                 className="text-center py-8 max-w-xl mx-auto"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.5 }}
               >
                 <p className="text-muted-foreground mb-4">
                   Você ainda não formatou suas experiências.
@@ -1165,17 +1200,73 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            {/* Como usar na Gupy - PRIMEIRO com visual moderno */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-2xl mx-auto"
+            >
+              <Card className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 backdrop-blur-sm overflow-hidden relative">
+                <motion.div 
+                  className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                />
+                <div className="flex items-start gap-4 relative">
+                  <motion.div 
+                    className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2, type: "spring", stiffness: 200 }}
+                  >
+                    <Info className="w-5 h-5 text-primary" />
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <p className="font-semibold text-foreground mb-3 text-sm">Como usar na Gupy:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { num: "1", text: "Acesse seu perfil na Gupy" },
+                        { num: "2", text: '"Conquistas e Certificados"' },
+                        { num: "3", text: "Edite cada item" },
+                        { num: "4", text: "Cole a descrição" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={item.num}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                        >
+                          <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium flex-shrink-0">
+                            {item.num}
+                          </span>
+                          <span>{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </Card>
+            </motion.div>
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.4, type: "spring", stiffness: 200 }}
               >
                 <Sparkles className="w-8 h-8 text-green-500" />
               </motion.div>
@@ -1183,7 +1274,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Descrições Geradas
               </motion.h2>
@@ -1191,7 +1282,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
               >
                 Copie cada descrição e cole na Gupy
               </motion.p>
@@ -1208,7 +1299,7 @@ export const GupyGuide = () => {
                   <motion.div
                     key={`desc-${i}`}
                     variants={staggerItem}
-                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                    transition={{ duration: 0.3, delay: 0.7 + i * 0.1 }}
                   >
                     <Card className="p-4 space-y-3 bg-card border-green-500/20">
                       <div className="flex items-center justify-between">
@@ -1235,30 +1326,9 @@ export const GupyGuide = () => {
                 ))}
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <Card className="p-4 bg-primary/5 border-primary/20">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-muted-foreground">
-                        <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
-                        <ol className="list-decimal list-inside space-y-1">
-                          <li>Acesse seu perfil na Gupy</li>
-                          <li>Vá em "Conquistas e Certificados"</li>
-                          <li>Edite cada item</li>
-                          <li>Cole a descrição correspondente</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-
-                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
+                  transition={{ delay: 0.9 }}
                 >
                   <Button 
                     variant="outline" 
@@ -1275,7 +1345,7 @@ export const GupyGuide = () => {
                 className="text-center py-8 max-w-xl mx-auto"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.5 }}
               >
                 <p className="text-muted-foreground mb-4">
                   Você ainda não gerou as descrições das suas conquistas.
