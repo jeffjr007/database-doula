@@ -6,20 +6,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const systemPrompt = `Você é um especialista em extração de dados de currículos.
+const systemPrompt = `Você é um especialista em extração de dados de currículos profissionais.
 
-Sua tarefa é analisar o conteúdo textual de um currículo e extrair APENAS:
-1) EXPERIÊNCIAS PROFISSIONAIS
-2) EDUCAÇÃO / CERTIFICAÇÕES
+TAREFA: Extrair experiências profissionais e formação acadêmica do texto de um currículo.
 
-NÃO EXTRAIA dados pessoais (nome, email, telefone, LinkedIn).
+REGRAS CRÍTICAS:
+1. SEMPRE retorne dados, mesmo que o texto pareça fragmentado ou desorganizado
+2. Reconstrua as informações a partir de fragmentos se necessário
+3. Se identificar nomes de empresas, cargos e datas próximos, agrupe-os como uma experiência
+4. Se identificar nomes de cursos/instituições, inclua na educação
 
-Retorne os campos como TEXTO pronto para colar em um formulário:
-- experiencias: texto com todas as experiências, em blocos com Empresa | Cargo | Período e bullets
-- educacao: texto com cursos/certificações em linhas, no formato "Curso - Instituição"
+FORMATO DE SAÍDA:
+- experiencias: Liste cada experiência no formato:
+  EMPRESA | CARGO | PERÍODO
+  • Atividade ou responsabilidade 1
+  • Atividade ou responsabilidade 2
+  
+- educacao: Liste cada formação no formato:
+  Curso/Formação - Instituição (Ano se disponível)
 
-IMPORTANTE:
-- Retorne apenas via tool call (sem markdown, sem explicações).`;
+NÃO inclua: email, telefone, endereço, links.
+SEMPRE retorne algo útil, mesmo que incompleto.`;
 
 function base64ToBytes(base64: string): Uint8Array {
   const clean = base64.replace(/\s/g, "");
@@ -73,39 +80,69 @@ function extractTextFromPdfBytes(pdfBytes: Uint8Array): string {
     }
   }
 
-  // Method 2: Extract readable ASCII strings as fallback
-  const asciiRegex = /[\x20-\x7E\xC0-\xFF]{5,}/g;
+  // Method 2: Look for streams and try to extract readable content
+  const streamRegex = /stream\s*([\s\S]*?)\s*endstream/g;
+  while ((match = streamRegex.exec(pdfString)) !== null) {
+    const streamContent = match[1];
+    // Extract any readable text patterns from streams
+    const readableRegex = /\(([^)]{2,100})\)/g;
+    let readMatch: RegExpExecArray | null;
+    while ((readMatch = readableRegex.exec(streamContent)) !== null) {
+      const text = readMatch[1].replace(/[^\x20-\x7E\xA0-\xFF]/g, "").trim();
+      if (text.length > 3 && !/^[0-9.]+$/.test(text)) {
+        textParts.push(text);
+      }
+    }
+  }
+
+  // Method 3: Extract readable ASCII strings as fallback
+  const asciiRegex = /[\x20-\x7E\xC0-\xFF]{4,}/g;
   const asciiMatches = pdfString.match(asciiRegex) || [];
 
   const filteredAscii = asciiMatches.filter((s) => {
     const lower = s.toLowerCase();
-    // Filter out PDF structure/metadata
-    return (
-      !lower.includes("/type") &&
-      !lower.includes("/font") &&
-      !lower.includes("/page") &&
-      !lower.includes("stream") &&
-      !lower.includes("endstream") &&
-      !lower.includes("endobj") &&
-      !lower.includes("/filter") &&
-      !lower.includes("/length") &&
-      !lower.includes("/resources") &&
-      !lower.includes("/encoding") &&
-      !lower.includes("/producer") &&
-      !lower.includes("/creator") &&
-      !lower.includes("flatedecode") &&
-      !lower.includes("/subtype") &&
-      !lower.includes("/basefont") &&
-      !lower.startsWith("obj") &&
-      !lower.startsWith("xref") &&
-      s.length > 8
-    );
+    // Filter out PDF structure/metadata more aggressively
+    if (
+      lower.includes("/type") ||
+      lower.includes("/font") ||
+      lower.includes("/page") ||
+      lower.includes("stream") ||
+      lower.includes("endstream") ||
+      lower.includes("endobj") ||
+      lower.includes("/filter") ||
+      lower.includes("/length") ||
+      lower.includes("/resources") ||
+      lower.includes("/encoding") ||
+      lower.includes("/producer") ||
+      lower.includes("/creator") ||
+      lower.includes("flatedecode") ||
+      lower.includes("/subtype") ||
+      lower.includes("/basefont") ||
+      lower.includes("/colorspace") ||
+      lower.includes("/bbox") ||
+      lower.includes("/matrix") ||
+      lower.includes("/formtype") ||
+      lower.includes("/moddate") ||
+      lower.includes("/creationdate") ||
+      lower.includes("/title") ||
+      lower.includes("<<") ||
+      lower.includes(">>") ||
+      lower.startsWith("obj") ||
+      lower.startsWith("xref") ||
+      /^\d+\s+\d+\s+\d+/.test(s) || // PDF object references
+      /^[0-9.\-\s]+$/.test(s) // Only numbers
+    ) {
+      return false;
+    }
+    // Keep strings that look like real content
+    return s.length > 3 && /[a-zA-ZÀ-ÿ]/.test(s);
   });
 
-  // Combine results, prioritizing BT/ET extraction
-  const allText = textParts.length > 50
-    ? textParts.join(" ")
-    : [...textParts, ...filteredAscii].join(" ");
+  // Combine and deduplicate
+  const allParts = [...textParts, ...filteredAscii];
+  const uniqueParts = [...new Set(allParts)];
+  
+  const allText = uniqueParts.join(" ");
 
   return allText
     .replace(/\s+/g, " ")
@@ -151,15 +188,19 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY não configurada" }, 500);
 
-    const userPrompt = `Extraia experiências e educação do currículo abaixo.
+    const userPrompt = `Analise o texto abaixo extraído de um currículo e identifique as experiências profissionais e formação acadêmica.
 
-CURRÍCULO (texto):
-${contentText.substring(0, 22000)}
+TEXTO DO CURRÍCULO:
+---
+${contentText.substring(0, 25000)}
+---
 
-Regras:
-- Não inclua dados pessoais
-- Experiências: blocos com empresa | cargo | período e bullets
-- Educação: 1 por linha: Curso - Instituição`;
+INSTRUÇÕES:
+1. Identifique TODAS as experiências profissionais (empresas, cargos, períodos, atividades)
+2. Identifique TODA a formação acadêmica (cursos, instituições, certificações)
+3. Reconstrua informações mesmo que o texto esteja fragmentado
+4. Se não encontrar informações claras, faça o melhor esforço para extrair algo útil
+5. NUNCA retorne strings vazias - sempre extraia algo do texto`;
 
     const bodyPayload = {
       model: "openai/gpt-5-mini",
@@ -172,12 +213,18 @@ Regras:
           type: "function",
           function: {
             name: "extract_cv_sections",
-            description: "Extrai experiências e educação de um currículo em texto.",
+            description: "Extrai experiências profissionais e educação de um currículo. SEMPRE retorne conteúdo útil.",
             parameters: {
               type: "object",
               properties: {
-                experiencias: { type: "string" },
-                educacao: { type: "string" },
+                experiencias: { 
+                  type: "string",
+                  description: "Experiências profissionais no formato: EMPRESA | CARGO | PERÍODO seguido de bullets com atividades"
+                },
+                educacao: { 
+                  type: "string",
+                  description: "Formação acadêmica no formato: Curso - Instituição (Ano)"
+                },
               },
               required: ["experiencias", "educacao"],
               additionalProperties: false,
