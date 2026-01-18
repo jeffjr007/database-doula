@@ -38,6 +38,7 @@ const CVPage = () => {
   const [showSaveCoverLetterModal, setShowSaveCoverLetterModal] = useState(false);
   const [stage2Completed, setStage2Completed] = useState(false);
   const [completingStage, setCompletingStage] = useState(false);
+  const [showCompletionSection, setShowCompletionSection] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const location = useLocation();
@@ -428,80 +429,92 @@ const CVPage = () => {
           <AnimatePresence mode="wait">
             {viewState === "selector" && (
               <motion.div key="selector" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <CVSelector onSelect={handleSelectCVType} />
-                
-                {/* Stage 2 Completion Section - appears last with smooth animation */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 1.2,
-                    duration: 0.6,
-                    ease: [0.25, 0.46, 0.45, 0.94]
+                <CVSelector 
+                  onSelect={handleSelectCVType} 
+                  onOptionsVisible={(visible) => {
+                    if (visible) {
+                      // Delay showing completion section until after options appear
+                      setTimeout(() => setShowCompletionSection(true), 600);
+                    }
                   }}
-                  className="mt-8"
-                >
-                  <Card className={`p-6 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg ${stage2Completed ? 'bg-green-500/20' : 'bg-primary/10'}`}>
-                          <CheckCircle2 className={`w-5 h-5 ${stage2Completed ? 'text-green-500' : 'text-primary'}`} />
-                        </div>
-                        <div>
-                          <h3 className={`font-semibold ${stage2Completed ? 'text-green-500' : 'text-foreground'}`}>
-                            {stage2Completed ? 'Etapa 2 Concluída!' : 'Concluir Etapa 2'}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {stage2Completed 
-                              ? 'Você já pode acessar a Etapa 3 - Funil de Oportunidades'
-                              : hasAllDocuments
-                                ? 'Você criou todos os documentos! Clique para concluir.'
-                                : `Crie: ${!hasPersonalizedCV ? 'CV Personalizado' : ''}${!hasPersonalizedCV && (!hasATSCV || !hasCoverLetter) ? ', ' : ''}${!hasATSCV ? 'CV ATS' : ''}${!hasATSCV && !hasCoverLetter ? ', ' : ''}${!hasCoverLetter ? 'Carta de Apresentação' : ''}`
-                            }
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {!stage2Completed && (
-                        <Button
-                          onClick={handleCompleteStage2}
-                          disabled={!canCompleteStage || completingStage}
-                          className="gap-2 whitespace-nowrap"
-                        >
-                          {completingStage ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                              Salvando...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" />
-                              Concluído
-                            </>
+                />
+                
+                {/* Stage 2 Completion Section - appears only after options are visible */}
+                <AnimatePresence>
+                  {showCompletionSection && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ 
+                        duration: 0.6,
+                        ease: [0.25, 0.46, 0.45, 0.94]
+                      }}
+                      className="mt-8"
+                    >
+                      <Card className={`p-6 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg ${stage2Completed ? 'bg-green-500/20' : 'bg-primary/10'}`}>
+                              <CheckCircle2 className={`w-5 h-5 ${stage2Completed ? 'text-green-500' : 'text-primary'}`} />
+                            </div>
+                            <div>
+                              <h3 className={`font-semibold ${stage2Completed ? 'text-green-500' : 'text-foreground'}`}>
+                                {stage2Completed ? 'Etapa 2 Concluída!' : 'Concluir Etapa 2'}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {stage2Completed 
+                                  ? 'Você já pode acessar a Etapa 3 - Funil de Oportunidades'
+                                  : hasAllDocuments
+                                    ? 'Você criou todos os documentos! Clique para concluir.'
+                                    : `Crie: ${!hasPersonalizedCV ? 'CV Personalizado' : ''}${!hasPersonalizedCV && (!hasATSCV || !hasCoverLetter) ? ', ' : ''}${!hasATSCV ? 'CV ATS' : ''}${!hasATSCV && !hasCoverLetter ? ', ' : ''}${!hasCoverLetter ? 'Carta de Apresentação' : ''}`
+                                }
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {!stage2Completed && (
+                            <Button
+                              onClick={handleCompleteStage2}
+                              disabled={!canCompleteStage || completingStage}
+                              className="gap-2 whitespace-nowrap"
+                            >
+                              {completingStage ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                                  Salvando...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  Concluído
+                                </>
+                              )}
+                            </Button>
                           )}
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Document checklist */}
-                    {!stage2Completed && (
-                      <div className="mt-4 pt-4 border-t border-border/30">
-                        <p className="text-xs text-muted-foreground mb-2">Documentos criados:</p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${hasPersonalizedCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
-                            {hasPersonalizedCV ? '✓' : '○'} CV Personalizado
-                          </span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${hasATSCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
-                            {hasATSCV ? '✓' : '○'} CV ATS
-                          </span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${hasCoverLetter ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
-                            {hasCoverLetter ? '✓' : '○'} Carta de Apresentação
-                          </span>
                         </div>
-                      </div>
-                    )}
-                  </Card>
-                </motion.div>
+
+                        {/* Document checklist */}
+                        {!stage2Completed && (
+                          <div className="mt-4 pt-4 border-t border-border/30">
+                            <p className="text-xs text-muted-foreground mb-2">Documentos criados:</p>
+                            <div className="flex flex-wrap gap-2">
+                              <span className={`text-xs px-2 py-1 rounded-full ${hasPersonalizedCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                                {hasPersonalizedCV ? '✓' : '○'} CV Personalizado
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded-full ${hasATSCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                                {hasATSCV ? '✓' : '○'} CV ATS
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded-full ${hasCoverLetter ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                                {hasCoverLetter ? '✓' : '○'} Carta de Apresentação
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
             {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}

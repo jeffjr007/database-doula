@@ -10,6 +10,7 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 
 interface CVSelectorProps {
   onSelect: (type: "personalized" | "ats" | "cover-letter") => void;
+  onOptionsVisible?: (visible: boolean) => void;
 }
 
 const mentorMessages = [
@@ -58,7 +59,7 @@ const cvOptions = [
 
 const CV_SELECTOR_ANIMATION_KEY = 'cv_selector_animation_seen';
 
-export function CVSelector({ onSelect }: CVSelectorProps) {
+export function CVSelector({ onSelect, onOptionsVisible }: CVSelectorProps) {
   // Check if animation was already shown this session
   const hasSeenAnimationThisSession = sessionStorage.getItem(CV_SELECTOR_ANIMATION_KEY) === 'true';
   
@@ -69,6 +70,13 @@ export function CVSelector({ onSelect }: CVSelectorProps) {
   const [showAtsWarning, setShowAtsWarning] = useState(false);
   const [isCheckingCvs, setIsCheckingCvs] = useState(true);
   const { user } = useAuth();
+
+  // Notify parent immediately if already seen animation
+  useEffect(() => {
+    if (hasSeenAnimationThisSession) {
+      onOptionsVisible?.(true);
+    }
+  }, [hasSeenAnimationThisSession, onOptionsVisible]);
 
   // Check if user has an ATS CV saved
   useEffect(() => {
@@ -110,9 +118,11 @@ export function CVSelector({ onSelect }: CVSelectorProps) {
       const timer = setTimeout(() => {
         if (currentMessageIndex === mentorMessages.length - 1) {
           setMessagesComplete(true);
-          // Mark animation as seen for this session
           sessionStorage.setItem(CV_SELECTOR_ANIMATION_KEY, 'true');
-          setTimeout(() => setShowOptions(true), 800);
+          setTimeout(() => {
+            setShowOptions(true);
+            onOptionsVisible?.(true);
+          }, 800);
         } else {
           setCurrentMessageIndex(prev => prev + 1);
         }
