@@ -41,6 +41,8 @@ interface GupyData {
   experienciasFormatadas?: { empresa: string; cargo: string; descricao_formatada: string }[];
   idiomas: { idioma: string; nivel: string }[];
   certificados: { tipo: string; titulo: string }[];
+  conquistasDescricoes?: { titulo_original: string; descricao: string }[];
+  titulosLinkedin?: string;
   habilidades: string[];
   sobre: string;
 }
@@ -58,6 +60,7 @@ const initialData: GupyData = {
   certificados: [{ tipo: "Curso", titulo: "" }],
   habilidades: [],
   sobre: "",
+  titulosLinkedin: "",
 };
 
 const STEPS = [
@@ -65,10 +68,11 @@ const STEPS = [
   { id: 2, title: "Experiências", icon: Briefcase, description: "Experiência Profissional" },
   { id: 3, title: "Formatadas", icon: Sparkles, description: "Experiências Formatadas" },
   { id: 4, title: "Idiomas", icon: Languages, description: "Idiomas" },
-  { id: 5, title: "Certificados", icon: Award, description: "Conquistas e Certificados" },
-  { id: 6, title: "Habilidades", icon: Lightbulb, description: "30 competências" },
-  { id: 7, title: "Sobre", icon: FileText, description: "Personalizar Candidatura" },
-  { id: 8, title: "Concluído", icon: Check, description: "Revisão final" },
+  { id: 5, title: "Conquistas", icon: Award, description: "Conquistas e Certificados" },
+  { id: 6, title: "Descrições", icon: Sparkles, description: "Descrições Geradas" },
+  { id: 7, title: "Habilidades", icon: Lightbulb, description: "30 competências" },
+  { id: 8, title: "Sobre", icon: FileText, description: "Personalizar Candidatura" },
+  { id: 9, title: "Concluído", icon: Check, description: "Revisão final" },
 ];
 
 export const GupyGuide = () => {
@@ -76,7 +80,9 @@ export const GupyGuide = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
+  const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [newHabilidade, setNewHabilidade] = useState("");
   const [data, setData] = useState<GupyData>(initialData);
 
@@ -185,11 +191,87 @@ export const GupyGuide = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < 8) setCurrentStep((prev) => prev + 1);
+    if (currentStep < 9) setCurrentStep((prev) => prev + 1);
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1);
+  };
+
+  // Generate achievement descriptions with AI
+  const generateAchievementDescriptions = async () => {
+    const validCertificados = data.certificados.filter(c => c.titulo);
+    const validExperiencias = data.experiencias.filter(e => e.empresa && e.descricao);
+
+    if (!data.titulosLinkedin?.trim()) {
+      toast({ 
+        title: "Preencha os títulos", 
+        description: "Informe seus objetivos de cargo do LinkedIn.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (validExperiencias.length === 0) {
+      toast({ 
+        title: "Adicione experiências", 
+        description: "Volte à etapa 2 e adicione suas experiências profissionais.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (validCertificados.length === 0) {
+      toast({ 
+        title: "Adicione conquistas", 
+        description: "Adicione pelo menos uma conquista ou certificado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowAchievementModal(true);
+  };
+
+  const confirmAndGenerateDescriptions = async () => {
+    setShowAchievementModal(false);
+    setIsGeneratingDescriptions(true);
+
+    try {
+      const validCertificados = data.certificados.filter(c => c.titulo);
+      const validExperiencias = data.experiencias.filter(e => e.empresa && e.descricao);
+
+      const response = await supabase.functions.invoke('generate-achievement-descriptions', {
+        body: { 
+          titulos_linkedin: data.titulosLinkedin,
+          experiencias: validExperiencias.slice(0, 3),
+          conquistas: validCertificados
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const { descricoes } = response.data;
+      
+      updateData({ ...data, conquistasDescricoes: descricoes });
+      setCurrentStep(6); // Go to descriptions step
+      
+      toast({ 
+        title: "Descrições geradas!", 
+        description: "Revise e copie para a Gupy."
+      });
+    } catch (error) {
+      console.error("Error generating descriptions:", error);
+      toast({ 
+        title: "Erro ao gerar descrições", 
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingDescriptions(false);
+    }
   };
 
   const formatExperiences = async () => {
@@ -570,43 +652,208 @@ export const GupyGuide = () => {
                 <Award className="w-8 h-8 text-primary" />
               </div>
               <h2 className="font-display text-2xl font-bold">Conquistas e Certificados</h2>
-              <p className="text-muted-foreground">Inclua cursos online, certificações AWS, Google, etc.</p>
+              <p className="text-muted-foreground">A IA vai criar descrições otimizadas para a Gupy</p>
             </div>
 
-            <div className="space-y-3 max-w-xl mx-auto">
-              {data.certificados.map((item, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <select
-                    value={item.tipo}
-                    onChange={(e) => updateItem("certificados", i, "tipo", e.target.value)}
-                    className="h-10 px-3 rounded-md border border-input bg-background text-sm w-32"
-                  >
-                    <option>Curso</option>
-                    <option>Certificação</option>
-                    <option>Voluntário</option>
-                    <option>Prêmio</option>
-                  </select>
-                  <Input
-                    placeholder="Título simplificado"
-                    value={item.titulo}
-                    onChange={(e) => updateItem("certificados", i, "titulo", e.target.value)}
-                    className="flex-1"
-                  />
-                  {data.certificados.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeItem("certificados", i)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+            <div className="space-y-6 max-w-2xl mx-auto">
+              {/* Títulos do LinkedIn */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">1</span>
+                  Títulos do LinkedIn (seus objetivos de cargo)
+                </label>
+                <Textarea
+                  placeholder="Ex: Gerente de Projetos | Product Manager | Scrum Master"
+                  value={data.titulosLinkedin || ""}
+                  onChange={(e) => updateData({ ...data, titulosLinkedin: e.target.value })}
+                  rows={2}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Copie e cole o título do seu LinkedIn (onde ficam seus objetivos de cargo)
+                </p>
+              </div>
+
+              {/* Últimas 3 experiências */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">2</span>
+                  Últimas 3 experiências profissionais
+                </label>
+                <Card className="p-3 bg-muted/30 border-border/50">
+                  {data.experiencias.filter(e => e.empresa).length > 0 ? (
+                    <div className="space-y-2">
+                      {data.experiencias.slice(0, 3).filter(e => e.empresa).map((exp, i) => (
+                        <div key={i} className="text-sm">
+                          <span className="font-medium">{exp.cargo}</span>
+                          <span className="text-muted-foreground"> na {exp.empresa}</span>
+                        </div>
+                      ))}
+                      <p className="text-xs text-green-500 flex items-center gap-1 mt-2">
+                        <Check className="w-3 h-3" /> Experiências carregadas da Etapa 2
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground mb-2">Nenhuma experiência encontrada</p>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentStep(2)}>
+                        Ir para Experiências
+                      </Button>
+                    </div>
                   )}
+                </Card>
+              </div>
+
+              {/* Conquistas e Certificados */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">3</span>
+                  Suas conquistas e certificados
+                </label>
+                
+                {data.certificados.map((item, i) => (
+                  <Card key={i} className="p-3 bg-card border-border/50">
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={item.tipo}
+                        onChange={(e) => updateItem("certificados", i, "tipo", e.target.value)}
+                        className="h-9 px-2 rounded-md border border-input bg-background text-sm"
+                      >
+                        <option>Curso</option>
+                        <option>Certificação</option>
+                        <option>Voluntário</option>
+                        <option>Prêmio</option>
+                        <option>Projeto</option>
+                      </select>
+                      <Input
+                        placeholder="Nome do curso, certificação ou conquista"
+                        value={item.titulo}
+                        onChange={(e) => updateItem("certificados", i, "titulo", e.target.value)}
+                        className="flex-1"
+                      />
+                      {data.certificados.length > 1 && (
+                        <Button variant="ghost" size="icon" onClick={() => removeItem("certificados", i)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+                
+                <Button variant="outline" size="sm" onClick={() => addItem("certificados")} className="gap-2">
+                  <Plus className="w-4 h-4" /> Adicionar conquista
+                </Button>
+              </div>
+
+              {/* Botão Gerar Descrições */}
+              {data.certificados.some(c => c.titulo) && data.titulosLinkedin?.trim() && (
+                <div className="pt-4 border-t border-border">
+                  <Button 
+                    onClick={generateAchievementDescriptions} 
+                    disabled={isGeneratingDescriptions}
+                    className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
+                    size="lg"
+                  >
+                    {isGeneratingDescriptions ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Gerando descrições...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar Descrições com IA
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    A IA vai criar descrições otimizadas com palavras-chave dos seus cargos-objetivo
+                  </p>
                 </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => addItem("certificados")} className="gap-2">
-                <Plus className="w-4 h-4" /> Adicionar certificado
-              </Button>
+              )}
             </div>
           </motion.div>
         );
 
       case 6:
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-green-500" />
+              </div>
+              <h2 className="font-display text-2xl font-bold">Descrições Geradas</h2>
+              <p className="text-muted-foreground">Copie cada descrição e cole na Gupy</p>
+            </div>
+
+            {data.conquistasDescricoes && data.conquistasDescricoes.length > 0 ? (
+              <div className="space-y-4 max-w-2xl mx-auto">
+                {data.conquistasDescricoes.map((item, i) => (
+                  <Card key={i} className="p-4 space-y-3 bg-card border-green-500/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-sm">{item.titulo_original}</h3>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(item.descricao, item.titulo_original)}
+                        className="gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copiar
+                      </Button>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                      {item.descricao}
+                    </div>
+                  </Card>
+                ))}
+
+                <Card className="p-4 bg-primary/5 border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>Acesse seu perfil na Gupy</li>
+                        <li>Vá em "Conquistas e Certificados"</li>
+                        <li>Edite cada item</li>
+                        <li>Cole a descrição correspondente</li>
+                      </ol>
+                    </div>
+                  </div>
+                </Card>
+
+                <Button 
+                  variant="outline" 
+                  onClick={() => setCurrentStep(5)} 
+                  className="gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Editar conquistas
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8 max-w-xl mx-auto">
+                <p className="text-muted-foreground mb-4">
+                  Você ainda não gerou as descrições das suas conquistas.
+                </p>
+                <Button variant="outline" onClick={() => setCurrentStep(5)} className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar para Conquistas
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        );
+
+      case 7:
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -671,7 +918,7 @@ export const GupyGuide = () => {
           </motion.div>
         );
 
-      case 7:
+      case 8:
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -706,7 +953,7 @@ export const GupyGuide = () => {
           </motion.div>
         );
 
-      case 8:
+      case 9:
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -740,8 +987,12 @@ export const GupyGuide = () => {
                   <span className="font-medium">{data.idiomas.filter(i => i.idioma).length} adicionado(s)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Certificados</span>
+                  <span className="text-muted-foreground">Conquistas</span>
                   <span className="font-medium">{data.certificados.filter(c => c.titulo).length} adicionado(s)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Descrições geradas</span>
+                  <span className="font-medium">{data.conquistasDescricoes?.length || 0} descrição(ões)</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Habilidades</span>
@@ -843,7 +1094,7 @@ export const GupyGuide = () => {
       </div>
 
       {/* Footer Navigation */}
-      {currentStep < 8 && (
+      {currentStep < 9 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
           <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -857,9 +1108,9 @@ export const GupyGuide = () => {
       )}
 
       {/* Bottom padding for fixed footer */}
-      {currentStep < 8 && <div className="h-20" />}
+      {currentStep < 9 && <div className="h-20" />}
 
-      {/* Explanation Modal */}
+      {/* Explanation Modal - Experience Formatting */}
       <Dialog open={showExplanationModal} onOpenChange={setShowExplanationModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -889,6 +1140,41 @@ export const GupyGuide = () => {
             <Button onClick={confirmAndFormat} className="gap-2">
               <Sparkles className="w-4 h-4" />
               Formatar agora
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Achievement Modal - Description Generation */}
+      <Dialog open={showAchievementModal} onOpenChange={setShowAchievementModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              Gerar descrições otimizadas
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-2">
+              <p>
+                A IA vai criar <strong>descrições personalizadas</strong> para cada uma das suas 
+                conquistas e certificados.
+              </p>
+              <p>
+                Ela vai analisar seus <strong>cargos-objetivo</strong> e suas <strong>experiências</strong> para 
+                inserir palavras-chave relevantes que aumentam suas chances de passar no ATS.
+              </p>
+              <p className="text-foreground font-medium">
+                Não se preocupe — a IA não vai inventar nada. Ela apenas vai otimizar a forma 
+                como suas conquistas são apresentadas.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowAchievementModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmAndGenerateDescriptions} className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Gerar descrições
             </Button>
           </div>
         </DialogContent>

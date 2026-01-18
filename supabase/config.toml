@@ -1,5 +1,8 @@
 project_id = "eqxiapntfxfpmolvdknp"
 
+[functions.generate-achievement-descriptions]
+verify_jwt = false
+
 [functions.chat]
 verify_jwt = false
 
