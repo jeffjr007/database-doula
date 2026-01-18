@@ -107,10 +107,10 @@ const stages = [
 ];
 
 const impactPhrases = [
-  "Sua história profissional merece ser contada da forma certa.",
-  "Transforme experiências em narrativas que convencem.",
-  "O método que coloca você na frente dos recrutadores.",
-  "Cada detalhe do seu perfil é uma oportunidade de impressionar.",
+  "Conquiste a vaga dos seus sonhos.",
+  "Destaque-se no mercado.",
+  "Sua carreira, outro nível.",
+  "O perfil que impressiona.",
 ];
 
 const Portal = () => {
