@@ -106,45 +106,52 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="space-y-3 min-h-[200px]">
-                {mentorMessages.slice(0, visibleMessages).map((message, index) => (
-                  <motion.div
+              {/* Messages - fixed height container */}
+              <div className="space-y-3 h-[240px]">
+                {mentorMessages.map((message, index) => (
+                  <div
                     key={index}
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      type: "spring",
-                      damping: 20,
-                      stiffness: 300
-                    }}
                     className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
+                    style={{ visibility: index < visibleMessages ? 'visible' : 'hidden' }}
                   >
-                    <p className="text-foreground text-sm leading-relaxed">
-                      {message}
-                    </p>
-                  </motion.div>
+                    {index < visibleMessages ? (
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-foreground text-sm leading-relaxed"
+                      >
+                        {message}
+                      </motion.p>
+                    ) : (
+                      <p className="text-foreground text-sm leading-relaxed opacity-0">
+                        {message}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
 
-              {/* Button */}
-              <AnimatePresence>
-                {showButton && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", damping: 20 }}
-                    className="mt-6"
-                  >
-                    <Button
-                      onClick={handleComplete}
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
+              {/* Button - fixed height */}
+              <div className="mt-6 h-[56px]">
+                <Button
+                  onClick={handleComplete}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
+                  style={{ visibility: showButton ? 'visible' : 'hidden' }}
+                >
+                  {showButton ? (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     >
                       Começar Jornada 🎯
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.span>
+                  ) : (
+                    <span className="opacity-0">Começar Jornada 🎯</span>
+                  )}
+                </Button>
+              </div>
             </motion.div>
           ) : (
             <motion.div
