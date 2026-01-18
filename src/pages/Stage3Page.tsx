@@ -102,8 +102,14 @@ const Stage3Page = () => {
       if (error) throw error;
       setFunnel(data);
 
-      // If already seen, skip to funnel view immediately
-      if (data && hasSeenAnimation()) {
+      // If no funnel, redirect back to portal
+      if (!data) {
+        navigate('/');
+        return;
+      }
+
+      // If already seen animation, skip to funnel view immediately
+      if (hasSeenAnimation()) {
         setShowFunnel(true);
         setVisibleMessages(mentorMessages.length);
       }
@@ -182,24 +188,16 @@ const Stage3Page = () => {
       {/* Main content */}
       <main className="relative z-10 container mx-auto px-4 py-8">
         {!funnel ? (
+          // No funnel - redirect back to portal (the warning is in the modal)
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center min-h-[50vh]"
           >
-            <Card className="p-10 text-center bg-secondary/30 border-border/50">
-              <Target className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                Funil em preparação
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Seu funil de oportunidades está sendo preparado pelo seu mentor.
-                Você será notificado assim que estiver pronto!
-              </p>
-              <Button variant="outline" onClick={() => navigate('/')}>
-                Voltar ao Portal
-              </Button>
-            </Card>
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Redirecionando...</p>
+            </div>
           </motion.div>
         ) : (
           <div className="max-w-2xl mx-auto">

@@ -15,18 +15,18 @@ interface Stage3WelcomeModalProps {
 const welcomeMessages = [
   {
     id: 1,
-    text: "Parabéns por concluir a Etapa 2! 🎉",
+    text: "Parabéns! Etapa 2 concluída 🎉",
     delay: 0
   },
   {
     id: 2,
-    text: "Agora vem a parte mais IMPORTANTE de toda a mentoria...",
-    delay: 1200
+    text: "Agora vem a parte mais IMPORTANTE...",
+    delay: 1800
   },
   {
     id: 3,
-    text: "Na Etapa 3 você vai colocar tudo em prática usando o seu Funil de Oportunidades personalizado!",
-    delay: 2400
+    text: "Na Etapa 3, você coloca tudo em prática com seu Funil de Oportunidades.",
+    delay: 3600
   }
 ];
 
@@ -56,10 +56,10 @@ export const Stage3WelcomeModal = ({
       timers.push(timer);
     });
 
-    // Show action after all messages
+    // Show action after all messages (slower)
     const actionTimer = setTimeout(() => {
       setShowAction(true);
-    }, 3600);
+    }, 5400);
     timers.push(actionTimer);
 
     return () => timers.forEach(t => clearTimeout(t));
@@ -94,7 +94,7 @@ export const Stage3WelcomeModal = ({
                 key={msg.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
                 className={`p-4 rounded-xl ${
                   msg.id === 2 
                     ? 'bg-gradient-to-r from-accent/20 to-primary/10 border border-accent/30' 
@@ -131,21 +131,23 @@ export const Stage3WelcomeModal = ({
               transition={{ duration: 0.5 }}
               className="p-6 pt-0 space-y-4"
             >
-              {!hasFunnel ? (
+              {!hasFunnel && (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-foreground mb-1">
-                        Seu Funil está sendo preparado! ⏳
+                        Funil em preparação ⏳
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        O seu Funil de Oportunidades personalizado será disponibilizado em até 48h. Fique de olho!
+                        Disponível em até 48h.
                       </p>
                     </div>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {hasFunnel && (
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
                   <div className="flex items-start gap-3">
                     <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -153,20 +155,17 @@ export const Stage3WelcomeModal = ({
                       <p className="font-medium text-foreground">
                         Seu Funil está pronto! 🚀
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        Clique em continuar para acessá-lo.
-                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              <Button 
+              <Button
                 onClick={handleContinue}
                 className="w-full gap-2"
               >
                 <Target className="w-4 h-4" />
-                {hasFunnel ? 'Ver meu Funil de Oportunidades' : 'Entendi, vou aguardar'}
+                {hasFunnel ? 'Ver meu Funil' : 'Entendi, vou aguardar'}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>
