@@ -401,7 +401,7 @@ const Stage1Page = () => {
                         asChild
                       >
                         <a 
-                          href="https://wa.me/5511951944092?text=Ol%C3%A1%21%20Finalizei%20o%20meu%20LinkedIn%20conforme%20o%20diagn%C3%B3stico.%20Pode%20validar%20para%20liberar%20a%20Etapa%202%3F"
+                          href="https://wa.me/551151944092?text=Ol%C3%A1%21%20Finalizei%20o%20meu%20LinkedIn%20conforme%20o%20diagn%C3%B3stico.%20Pode%20validar%20para%20liberar%20a%20Etapa%202%3F"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
