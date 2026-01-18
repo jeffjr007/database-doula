@@ -21,6 +21,7 @@ import {
   Copy,
   Info,
 } from "lucide-react";
+import { GupyInfoBox } from "./GupyInfoBox";
 import {
   Dialog,
   DialogContent,
@@ -483,17 +484,26 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            <GupyInfoBox 
+              steps={[
+                { num: "1", text: "Acesse seu perfil na Gupy" },
+                { num: "2", text: '"Experiência Acadêmica"' },
+                { num: "3", text: "Edite cada curso" },
+                { num: "4", text: "Simplifique o nome" },
+              ]} 
+            />
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
               >
                 <GraduationCap className="w-8 h-8 text-primary" />
               </motion.div>
@@ -501,7 +511,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
               >
                 Experiência Acadêmica
               </motion.h2>
@@ -509,7 +519,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Simplifique os nomes dos cursos para o ATS
               </motion.p>
@@ -599,17 +609,26 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            <GupyInfoBox 
+              steps={[
+                { num: "1", text: "Acesse seu perfil na Gupy" },
+                { num: "2", text: '"Experiências Profissionais"' },
+                { num: "3", text: "Edite cada experiência" },
+                { num: "4", text: "Cole a descrição formatada" },
+              ]} 
+            />
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
               >
                 <Briefcase className="w-8 h-8 text-primary" />
               </motion.div>
@@ -617,7 +636,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
               >
                 Experiência Profissional
               </motion.h2>
@@ -625,7 +644,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Cole suas experiências diretamente do LinkedIn
               </motion.p>
@@ -634,7 +653,7 @@ export const GupyGuide = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
             >
               <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
                 <p className="text-sm text-muted-foreground">
@@ -908,17 +927,26 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            <GupyInfoBox 
+              steps={[
+                { num: "1", text: "Acesse seu perfil na Gupy" },
+                { num: "2", text: '"Idiomas"' },
+                { num: "3", text: "Adicione cada idioma" },
+                { num: "4", text: "Selecione o nível" },
+              ]} 
+            />
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
               >
                 <Languages className="w-8 h-8 text-primary" />
               </motion.div>
@@ -926,7 +954,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
               >
                 Idiomas
               </motion.h2>
@@ -934,7 +962,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Adicione todos os idiomas que você domina
               </motion.p>
@@ -1022,17 +1050,26 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            <GupyInfoBox 
+              steps={[
+                { num: "1", text: "Acesse seu perfil na Gupy" },
+                { num: "2", text: '"Conquistas e Certificados"' },
+                { num: "3", text: "Edite cada item" },
+                { num: "4", text: "Cole a descrição gerada" },
+              ]} 
+            />
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
               >
                 <Award className="w-8 h-8 text-primary" />
               </motion.div>
@@ -1040,7 +1077,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
               >
                 Conquistas e Certificados
               </motion.h2>
@@ -1048,7 +1085,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 A IA vai criar descrições otimizadas para a Gupy
               </motion.p>
@@ -1424,17 +1461,26 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            <GupyInfoBox 
+              steps={[
+                { num: "1", text: "Acesse seu perfil na Gupy" },
+                { num: "2", text: '"Competências"' },
+                { num: "3", text: "Adicione cada habilidade" },
+                { num: "4", text: "Máximo 30 competências" },
+              ]} 
+            />
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
               >
                 <Lightbulb className="w-8 h-8 text-primary" />
               </motion.div>
@@ -1442,7 +1488,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
               >
                 Habilidades
               </motion.h2>
@@ -1450,7 +1496,7 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Adicione as 30 competências do seu LinkedIn
               </motion.p>
@@ -1459,7 +1505,7 @@ export const GupyGuide = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
             >
               <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
                 <p className="text-sm text-muted-foreground">
