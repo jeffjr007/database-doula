@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SupportLink } from "./SupportLink";
+import { MentorAvatar } from "./MentorAvatar";
 
 // Animation variants for reuse
 const fadeInUp = {
@@ -111,6 +112,291 @@ const STEPS = [
   { id: 9, title: "Formatado", icon: Sparkles, description: "Sobre Formatado" },
   { id: 10, title: "Concluído", icon: Check, description: "Revisão final" },
 ];
+
+// Typing indicator component
+const TypingIndicator = () => (
+  <div className="flex items-center gap-1.5 px-3 py-2">
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  </div>
+);
+
+// Mentor conversation messages for Skills step
+const skillsMentorMessages = [
+  "Essa etapa é bem simples, tá? 😉",
+  "Você vai precisar das suas competências do LinkedIn...",
+  "Escolha as 30 que mais se adequam com o que você quer pra sua carreira hoje.",
+  "Depois é só ir lá na Gupy e adicionar cada uma!",
+  "⚠️ Importante: só adicione as que aparecerem como OPÇÃO ao digitar.",
+  "O sistema da Gupy só reconhece as competências cadastradas nele.",
+];
+
+interface SkillsStepProps {
+  data: GupyData;
+  newHabilidade: string;
+  setNewHabilidade: (value: string) => void;
+  addHabilidade: () => void;
+  removeHabilidade: (index: number) => void;
+}
+
+const SkillsStepWithMentor = ({ data, newHabilidade, setNewHabilidade, addHabilidade, removeHabilidade }: SkillsStepProps) => {
+  const [visibleMessages, setVisibleMessages] = useState<number>(0);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  const [hasSeenConversation, setHasSeenConversation] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen this conversation before
+    const seen = sessionStorage.getItem('skills_conversation_seen');
+    if (seen) {
+      setHasSeenConversation(true);
+      setShowContent(true);
+      setVisibleMessages(skillsMentorMessages.length);
+      return;
+    }
+
+    const timers: NodeJS.Timeout[] = [];
+
+    // Start with typing indicator
+    setIsTyping(true);
+
+    skillsMentorMessages.forEach((_, index) => {
+      const timer = setTimeout(() => {
+        setVisibleMessages(index + 1);
+        if (index < skillsMentorMessages.length - 1) {
+          setIsTyping(true);
+        } else {
+          setIsTyping(false);
+        }
+      }, (index + 1) * 1800);
+      timers.push(timer);
+    });
+
+    // Show content after all messages
+    const contentTimer = setTimeout(() => {
+      setShowContent(true);
+      sessionStorage.setItem('skills_conversation_seen', 'true');
+    }, skillsMentorMessages.length * 1800 + 800);
+    timers.push(contentTimer);
+
+    return () => timers.forEach(t => clearTimeout(t));
+  }, []);
+
+  return (
+    <motion.div
+      key="step-7"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-6"
+    >
+      {/* Mentor Conversation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-card/50 border border-border rounded-2xl p-5 max-w-2xl mx-auto"
+      >
+        {/* Mentor Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <MentorAvatar size="lg" />
+          <div>
+            <h3 className="font-semibold text-foreground">Duarte</h3>
+            <p className="text-xs text-muted-foreground">Seu mentor</p>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="space-y-2.5 min-h-[180px]">
+          <AnimatePresence>
+            {skillsMentorMessages.slice(0, visibleMessages).map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[90%]"
+              >
+                <p className="text-foreground text-sm leading-relaxed">{message}</p>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Typing indicator */}
+          <AnimatePresence>
+            {isTyping && !showContent && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <TypingIndicator />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Step by step guide */}
+      <AnimatePresence>
+        {showContent && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-6"
+          >
+            {/* LinkedIn Step */}
+            <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 max-w-2xl mx-auto">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+                  1
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">No LinkedIn</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-blue-400" />
+                      <span>Acesse seu perfil</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-blue-400" />
+                      <span>Vá em <strong className="text-foreground">"Competências"</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-blue-400" />
+                      <span>Escolha as <strong className="text-foreground">30 que mais combinam</strong> com seus objetivos</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Gupy Step */}
+            <Card className="p-5 bg-gradient-to-br from-primary/10 to-amber-500/5 border-primary/20 max-w-2xl mx-auto">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                  2
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">Na Gupy</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-primary" />
+                      <span>Acesse seu perfil</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-primary" />
+                      <span>Vá em <strong className="text-foreground">"Habilidades"</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-primary" />
+                      <span>Digite cada competência e <strong className="text-foreground">selecione da lista</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Warning */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-4 bg-destructive/10 border-destructive/30 max-w-2xl mx-auto">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-destructive">Atenção!</p>
+                    <p className="text-muted-foreground mt-1">
+                      Só adicione competências que <strong className="text-foreground">apareçam como opção</strong> ao digitar. 
+                      O sistema da Gupy não reconhece competências digitadas manualmente.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Skills Input Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-4 max-w-2xl mx-auto"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-display text-lg font-semibold">Suas Habilidades</h3>
+                <p className="text-sm text-muted-foreground">
+                  (Opcional) Salve aqui para referência
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Digite uma habilidade e pressione Enter"
+                  value={newHabilidade}
+                  onChange={(e) => setNewHabilidade(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHabilidade())}
+                  className="flex-1"
+                />
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </motion.div>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{data.habilidades.length}/30 habilidades</span>
+                <AnimatePresence>
+                  {data.habilidades.length >= 20 && (
+                    <motion.span 
+                      className="text-green-500 flex items-center gap-1"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                    >
+                      <Check className="w-4 h-4" /> Bom progresso!
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <AnimatePresence mode="popLayout">
+                  {data.habilidades.map((hab, i) => (
+                    <motion.span
+                      key={`hab-${hab}-${i}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      layout
+                      transition={{ duration: 0.2 }}
+                    >
+                      {hab}
+                      <button
+                        onClick={() => removeHabilidade(i)}
+                        className="hover:text-destructive transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 export const GupyGuide = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -1436,135 +1722,13 @@ export const GupyGuide = () => {
 
       case 7:
         return (
-          <motion.div
-            key="step-7"
-            variants={fadeInUp}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="space-y-6"
-          >
-            <GupyInfoBox 
-              steps={[
-                { num: "1", text: "Acesse seu perfil na Gupy" },
-                { num: "2", text: '"Competências"' },
-                { num: "3", text: "Adicione cada habilidade" },
-                { num: "4", text: "Máximo 30 competências" },
-              ]} 
-            />
-
-            <motion.div 
-              className="text-center space-y-2"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <motion.div 
-                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
-              >
-                <Lightbulb className="w-8 h-8 text-primary" />
-              </motion.div>
-              <motion.h2 
-                className="font-display text-2xl font-bold"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-              >
-                Habilidades
-              </motion.h2>
-              <motion.p 
-                className="text-muted-foreground"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.5 }}
-              >
-                Adicione as 30 competências do seu LinkedIn
-              </motion.p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-            >
-              <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
-                <p className="text-sm text-muted-foreground">
-                  💡 <strong>Dica:</strong> Vá no LinkedIn → Competências → copie cada uma e cole aqui.
-                </p>
-              </Card>
-            </motion.div>
-
-            <motion.div 
-              className="space-y-4 max-w-xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-            >
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Digite uma habilidade e pressione Enter"
-                  value={newHabilidade}
-                  onChange={(e) => setNewHabilidade(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHabilidade())}
-                  className="flex-1"
-                />
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              </div>
-
-              <motion.div 
-                className="flex items-center justify-between text-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <span className="text-muted-foreground">{data.habilidades.length}/30 habilidades</span>
-                <AnimatePresence>
-                  {data.habilidades.length >= 20 && (
-                    <motion.span 
-                      className="text-green-500 flex items-center gap-1"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                    >
-                      <Check className="w-4 h-4" /> Bom progresso!
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <div className="flex flex-wrap gap-2">
-                <AnimatePresence mode="popLayout">
-                  {data.habilidades.map((hab, i) => (
-                    <motion.span
-                      key={`hab-${hab}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                      layout
-                      transition={{ duration: 0.2 }}
-                    >
-                      {hab}
-                      <button
-                        onClick={() => removeHabilidade(i)}
-                        className="hover:text-destructive transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          </motion.div>
+          <SkillsStepWithMentor 
+            data={data}
+            newHabilidade={newHabilidade}
+            setNewHabilidade={setNewHabilidade}
+            addHabilidade={addHabilidade}
+            removeHabilidade={removeHabilidade}
+          />
         );
 
       case 8:
