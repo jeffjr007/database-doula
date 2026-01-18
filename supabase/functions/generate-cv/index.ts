@@ -6,22 +6,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const systemPrompt = `Você é um especialista em criação de currículos estratégicos para o mercado brasileiro.
+const systemPrompt = `Você é um especialista em AJUSTE de currículos para o mercado brasileiro.
+
+FUNÇÃO: Você é um AJUSTADOR de CV, NÃO um criador. Sua tarefa é pegar o CV existente do candidato e ajustar os textos para incluir palavras-chave da vaga alvo.
 
 Você receberá:
-- experiences: texto com experiências profissionais (possivelmente desformatado)
-- educacao: texto com educação/certificações (possivelmente desformatado)
-- jobDescription: descrição da vaga alvo
+- experiences: experiências profissionais REAIS do candidato (extraídas do CV dele)
+- educacao: formação acadêmica REAL do candidato
+- jobDescription: descrição da vaga para a qual ele está se candidatando
 
-Objetivo: gerar um currículo final ESTRUTURADO (para o template do app), reescrevendo bullets para incluir palavras-chave da vaga sem inventar fatos.
+REGRAS ABSOLUTAS:
+1. NUNCA INVENTE - Use APENAS informações que estão no CV original
+2. NUNCA OMITA experiências - Mantenha TODAS as empresas, cargos e períodos exatamente como vieram
+3. REESCREVA os bullets - Reformule para incluir palavras-chave da vaga, mantendo o mesmo significado
+4. MANTENHA métricas e resultados originais - Se o candidato mencionou "aumento de 20%", mantenha
+5. NÃO adicione ferramentas/sistemas que o candidato não mencionou
+6. Educação: organize e limpe duplicatas, mas não invente cursos
 
-Regras:
-- Manter TODAS as experiências do candidato (não omitir).
-- Cada bullet deve conter ao menos 1 palavra-chave da vaga.
-- Não inventar ferramentas, empresas, resultados ou cargos.
-- Educação: limpar bagunça típica do LinkedIn e remover duplicatas.
+ESTRATÉGIA DE AJUSTE:
+- Identifique as palavras-chave técnicas e comportamentais da vaga
+- Reformule cada bullet para naturalmente incluir termos relevantes
+- Priorize verbos de ação: implementei, liderei, desenvolvi, otimizei, gerenciei
+- Mantenha a essência do que o candidato REALMENTE fez
 
-IMPORTANTE: Responda via tool call (sem markdown, sem texto extra).`;
+SEÇÕES A GERAR:
+- sumario: 2 parágrafos estratégicos + 4 bullets baseados nas experiências reais
+- sistemas: ferramentas que o candidato MENCIONOU (max 6)
+- skills: habilidades técnicas REAIS do candidato (max 6)
+- competencias: comportamentais inferidas das experiências (max 6)
+- realizacoes: 6 conquistas REAIS com métricas do CV original
+- educacao: formações REAIS organizadas
+- experiencias: TODAS as experiências com bullets AJUSTADOS
+
+IMPORTANTE: Responda APENAS via tool call.`;
 
 function json(res: unknown, status = 200) {
   return new Response(JSON.stringify(res), {
