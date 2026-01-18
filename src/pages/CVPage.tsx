@@ -346,10 +346,16 @@ const CVPage = () => {
           {viewState !== "selector" && (
             <motion.header key={`header-${viewState}-${cvType}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-center mb-10 print:hidden">
               <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-                {cvType === "ats" ? (<><span className="text-foreground">Currículo para </span><span className="text-gradient">ATS</span></>) : (<><span className="text-foreground">Currículo </span><span className="text-gradient">Personalizado</span></>)}
+                {cvType === "ats" ? (
+                  <><span className="text-foreground">Currículo para </span><span className="text-gradient">ATS</span></>
+                ) : cvType === "cover-letter" ? (
+                  <><span className="text-foreground">Carta de </span><span className="text-gradient">Apresentação</span></>
+                ) : (
+                  <><span className="text-foreground">Currículo </span><span className="text-gradient">Personalizado</span></>
+                )}
               </h1>
               <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed text-sm">
-                {cvType === "ats" ? "Formatação otimizada para sistemas de rastreamento" : "Transforme suas experiências em um currículo estratégico"} <Zap className="w-3 h-3 inline" />
+                {cvType === "ats" ? "Formatação otimizada para sistemas de rastreamento" : cvType === "cover-letter" ? "Crie cartas impactantes para suas candidaturas" : "Transforme suas experiências em um currículo estratégico"} <Zap className="w-3 h-3 inline" />
               </p>
             </motion.header>
           )}
