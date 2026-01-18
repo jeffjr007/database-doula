@@ -2,3 +2,6 @@ project_id = "eqxiapntfxfpmolvdknp"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.analyze-job-keywords]
+verify_jwt = false
