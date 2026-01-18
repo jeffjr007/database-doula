@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import mentorPhoto from "@/assets/mentor-photo.png";
 
 interface WelcomeMentorModalProps {
   open: boolean;
@@ -10,57 +11,179 @@ interface WelcomeMentorModalProps {
 
 const mentorMessages = [
   "E aí, tudo certo? 👋",
-  "Você acabou de dar o primeiro passo pra transformar sua carreira.",
-  "A partir de agora, eu vou te guiar por cada etapa...",
+  "Cara, você acabou de dar o primeiro passo pra transformar sua carreira.",
+  "A partir de agora, eu vou te guiar por cada etapa desse processo...",
+  "Só precisa confiar no método e fazer o que eu disser.",
   "Preparado pra mudar de patamar? Bora! 🚀"
 ];
 
 const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
   const [showButton, setShowButton] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setVisibleMessages(0);
       setShowButton(false);
+      setIsExiting(false);
       return;
     }
 
+    // Show messages sequentially
     const timers: NodeJS.Timeout[] = [];
+
     mentorMessages.forEach((_, index) => {
-      const timer = setTimeout(() => setVisibleMessages(index + 1), (index + 1) * 1000);
+      const timer = setTimeout(() => {
+        setVisibleMessages(index + 1);
+      }, (index + 1) * 1000); // 1 second delay between each message
       timers.push(timer);
     });
 
-    const buttonTimer = setTimeout(() => setShowButton(true), (mentorMessages.length + 1) * 1000);
+    // Show button after all messages
+    const buttonTimer = setTimeout(() => {
+      setShowButton(true);
+    }, (mentorMessages.length + 1) * 1000);
     timers.push(buttonTimer);
 
     return () => timers.forEach(t => clearTimeout(t));
   }, [open]);
 
+  const handleComplete = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onComplete();
+    }, 400);
+  };
+
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md">
-        <div className="py-4 space-y-4">
-          <AnimatePresence>
-            {mentorMessages.slice(0, visibleMessages).map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-3 rounded-lg bg-primary/10 text-sm"
-              >
-                {msg}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {showButton && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Button onClick={onComplete} className="w-full">Bora começar!</Button>
+      <DialogContent
+        className="sm:max-w-lg p-0 border-0 bg-transparent shadow-none [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <AnimatePresence mode="wait">
+          {!isExiting ? (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, y: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 300 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card border border-border rounded-2xl p-6 shadow-2xl"
+            >
+              {/* Mentor Header */}
+              <div className="flex items-center gap-4 mb-6">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                >
+                  <img
+                    src={mentorPhoto}
+                    alt="Duarte"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-lg"
+                  />
+                </motion.div>
+                <div>
+                  <motion.h3
+                    className="font-semibold text-foreground text-lg"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    Duarte
+                  </motion.h3>
+                  <motion.p
+                    className="text-sm text-muted-foreground"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    Seu mentor
+                  </motion.p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="space-y-3 min-h-[200px]">
+                {mentorMessages.slice(0, visibleMessages).map((message, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      damping: 20,
+                      stiffness: 300
+                    }}
+                    className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
+                  >
+                    <p className="text-foreground text-sm leading-relaxed">
+                      {message}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Button */}
+              <AnimatePresence>
+                {showButton && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", damping: 20 }}
+                    className="mt-6"
+                  >
+                    <Button
+                      onClick={handleComplete}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
+                    >
+                      Começar Jornada 🎯
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="exiting"
+              initial={{ opacity: 1, x: 0 }}
+              animate={{ opacity: 0, x: 300 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="bg-card border border-border rounded-2xl p-6 shadow-2xl"
+            >
+              {/* Same content for exit animation */}
+              <div className="flex items-center gap-4 mb-6">
+                <img
+                  src={mentorPhoto}
+                  alt="Duarte"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-lg"
+                />
+                <div>
+                  <h3 className="font-semibold text-foreground text-lg">Duarte</h3>
+                  <p className="text-sm text-muted-foreground">Seu mentor</p>
+                </div>
+              </div>
+              <div className="space-y-3 min-h-[200px]">
+                {mentorMessages.map((message, index) => (
+                  <div
+                    key={index}
+                    className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
+                  >
+                    <p className="text-foreground text-sm leading-relaxed">{message}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6">
+                <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 rounded-xl text-base">
+                  Começar Jornada 🎯
+                </Button>
+              </div>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
