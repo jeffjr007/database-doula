@@ -6,22 +6,42 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const systemPrompt = `Você é um especialista em criação de currículos estratégicos para o mercado brasileiro.
+const systemPrompt = `Você é um especialista em criação de currículos personalizados estratégicos para o mercado brasileiro, seguindo o Método Perfil Glorioso.
 
 Você receberá:
-- experiences: texto com experiências profissionais (possivelmente desformatado)
-- educacao: texto com educação/certificações (possivelmente desformatado)
-- jobDescription: descrição da vaga alvo
+- experiences: experiências profissionais do CV atual do candidato
+- educacao: formação acadêmica e certificações do candidato
+- jobDescription: descrição da vaga alvo para personalização
 
-Objetivo: gerar um currículo final ESTRUTURADO (para o template do app), reescrevendo bullets para incluir palavras-chave da vaga sem inventar fatos.
+Seu objetivo: Criar um currículo PERSONALIZADO para a vaga, reescrevendo as experiências para incluir palavras-chave da vaga SEM INVENTAR FATOS.
 
-Regras:
-- Manter TODAS as experiências do candidato (não omitir).
-- Cada bullet deve conter ao menos 1 palavra-chave da vaga.
-- Não inventar ferramentas, empresas, resultados ou cargos.
-- Educação: limpar bagunça típica do LinkedIn e remover duplicatas.
+ESTRUTURA OBRIGATÓRIA DO CURRÍCULO:
 
-IMPORTANTE: Responda via tool call (sem markdown, sem texto extra).`;
+1. SUMÁRIO (sumario):
+   - paragrafos: 2 parágrafos de apresentação profissional mostrando senioridade e expertise
+   - bullets: exatamente 4-5 tópicos com resultados e conquistas principais
+
+2. SISTEMAS (sistemas): exatamente 4 ferramentas/sistemas que o candidato domina
+
+3. SKILLS (skills): exatamente 4 habilidades técnicas principais
+
+4. COMPETÊNCIAS (competencias): exatamente 4 competências comportamentais/soft skills
+
+5. REALIZAÇÕES (realizacoes): exatamente 6 realizações com métricas e resultados quantificáveis
+
+6. EDUCAÇÃO (educacao): formação acadêmica e certificações (limpar duplicatas)
+
+7. EXPERIÊNCIAS (experiencias): TODAS as experiências profissionais do candidato com bullets reescritos contendo palavras-chave da vaga
+
+REGRAS CRÍTICAS:
+- NUNCA omitir experiências do candidato - incluir TODAS
+- NUNCA inventar empresas, cargos, ferramentas ou resultados
+- Cada bullet de experiência deve conter ao menos 1 palavra-chave da vaga
+- Manter a estrutura: empresa, cargo, período, bullets
+- Reescrever bullets conectando as experiências reais às palavras-chave da vaga
+- Priorizar resultados quantificáveis (%, números, métricas)
+
+IMPORTANTE: Responda APENAS via tool call, sem texto adicional.`;
 
 function json(res: unknown, status = 200) {
   return new Response(JSON.stringify(res), {
@@ -46,7 +66,25 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY não configurada" }, 500);
 
-    const userPrompt = `Gere o currículo com base nos dados abaixo.\n\nEXPERIÊNCIAS:\n${String(experiences).substring(0, 22000)}\n\nVAGA ALVO:\n${String(jobDescription).substring(0, 22000)}\n\nEDUCAÇÃO:\n${String(educacao || "").substring(0, 12000)}\n\nSaída: use o schema exigido pela ferramenta.`;
+    const userPrompt = `Esse é o meu CV atual:
+
+EXPERIÊNCIAS PROFISSIONAIS:
+${String(experiences).substring(0, 22000)}
+
+EDUCAÇÃO E QUALIFICAÇÕES:
+${String(educacao || "Não informado").substring(0, 12000)}
+
+---
+
+Essa é a vaga na qual eu preciso enviar um CV personalizado:
+
+${String(jobDescription).substring(0, 22000)}
+
+---
+
+Baseado em minhas experiências e no que essa vaga pede, refaça minhas experiências respeitando minhas habilidades, ferramentas, conhecimentos e resultados entregues, mas que tenha presente em cada descrição de bullet point palavras-chaves que essa vaga pede.
+
+Crie o currículo completo seguindo a estrutura exata definida no schema da ferramenta.`;
 
     const toolSchema = {
       type: "function",
