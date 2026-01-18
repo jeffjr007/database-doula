@@ -54,7 +54,7 @@ const stages = [
     description: "Seu diagnóstico completo do LinkedIn com todas as seções reformuladas",
     icon: Linkedin,
     path: "/etapa/1",
-    color: "from-[#0077B5]/20 to-primary/10",
+    color: "from-violet-500/30 to-cyan-500/20",
     isDeliverable: true,
   },
   {
@@ -63,7 +63,7 @@ const stages = [
     description: "Crie seu currículo estratégico com IA, otimizado para indicações diretas",
     icon: FileText,
     path: "/cv",
-    color: "from-primary/20 to-accent/10",
+    color: "from-primary/30 to-accent/20",
     isDeliverable: false,
   },
   {
@@ -72,7 +72,7 @@ const stages = [
     description: "Seu funil personalizado para conquistar as melhores vagas",
     icon: Target,
     path: "/etapa/3",
-    color: "from-accent/20 to-primary/10",
+    color: "from-cyan-500/30 to-violet-500/20",
     isDeliverable: true,
   },
   {
@@ -81,7 +81,7 @@ const stages = [
     description: "Monte seu roteiro de entrevista com palavras-chave da vaga",
     icon: UserCheck,
     path: "/etapa/4",
-    color: "from-blue-500/20 to-primary/10",
+    color: "from-blue-500/30 to-purple-500/20",
     isDeliverable: false,
   },
   {
@@ -90,7 +90,7 @@ const stages = [
     description: "Transforme seu roteiro em apresentação e mostre autoridade",
     icon: Briefcase,
     path: "/etapa/5",
-    color: "from-purple-500/20 to-primary/10",
+    color: "from-purple-500/30 to-pink-500/20",
     isDeliverable: false,
   },
   {
@@ -99,7 +99,7 @@ const stages = [
     description: "Otimize seu perfil na Gupy para passar no ATS",
     icon: Target,
     path: "/etapa/6",
-    color: "from-green-500/20 to-primary/10",
+    color: "from-indigo-500/30 to-cyan-500/20",
     isDeliverable: false,
   },
 ];
@@ -312,10 +312,19 @@ const Portal = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Effects */}
+      {/* Space Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
+        {/* Nebula glows */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-violet-600/10 rounded-full blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-purple-600/8 rounded-full blur-[80px]" />
+        {/* Star field overlay */}
+        <div className="absolute inset-0 starfield opacity-40" />
+        {/* Floating orbs */}
+        <div className="absolute top-20 right-20 w-3 h-3 bg-cyan-400 rounded-full animate-star-twinkle" style={{ animationDelay: '0s' }} />
+        <div className="absolute top-40 right-40 w-2 h-2 bg-violet-400 rounded-full animate-star-twinkle" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute bottom-40 right-60 w-2 h-2 bg-purple-400 rounded-full animate-star-twinkle" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-60 left-[60%] w-2 h-2 bg-cyan-300 rounded-full animate-star-twinkle" style={{ animationDelay: '1.5s' }} />
       </div>
 
       {/* Mentor Photo - Left Side (Desktop Only) */}
