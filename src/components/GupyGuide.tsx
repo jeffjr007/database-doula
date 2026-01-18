@@ -143,16 +143,14 @@ interface SkillsStepProps {
 const SkillsStepWithMentor = ({ data, newHabilidade, setNewHabilidade, addHabilidade, removeHabilidade }: SkillsStepProps) => {
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
   const [isTyping, setIsTyping] = useState(false);
-  const [showContent, setShowContent] = useState(false);
-  const [hasSeenConversation, setHasSeenConversation] = useState(false);
+  const [conversationComplete, setConversationComplete] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    // Check if user has seen this conversation before
-    const seen = sessionStorage.getItem('skills_conversation_seen');
-    if (seen) {
-      setHasSeenConversation(true);
-      setShowContent(true);
-      setVisibleMessages(skillsMentorMessages.length);
+    // Check if user has already advanced past conversation
+    const advanced = sessionStorage.getItem('skills_guide_shown');
+    if (advanced) {
+      setShowGuide(true);
       return;
     }
 
@@ -168,24 +166,172 @@ const SkillsStepWithMentor = ({ data, newHabilidade, setNewHabilidade, addHabili
           setIsTyping(true);
         } else {
           setIsTyping(false);
+          // Show "Avançar" button after all messages
+          setTimeout(() => setConversationComplete(true), 500);
         }
       }, (index + 1) * 1800);
       timers.push(timer);
     });
 
-    // Show content after all messages
-    const contentTimer = setTimeout(() => {
-      setShowContent(true);
-      sessionStorage.setItem('skills_conversation_seen', 'true');
-    }, skillsMentorMessages.length * 1800 + 800);
-    timers.push(contentTimer);
-
     return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
+  const handleAdvance = () => {
+    setShowGuide(true);
+    sessionStorage.setItem('skills_guide_shown', 'true');
+  };
+
+  // Show guide directly if already advanced
+  if (showGuide) {
+    return (
+      <motion.div
+        key="step-7-guide"
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="space-y-6"
+      >
+        {/* LinkedIn Step */}
+        <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 max-w-2xl mx-auto">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+              1
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-foreground">No LinkedIn</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-blue-400" />
+                  <span>Acesse seu perfil</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-blue-400" />
+                  <span>Vá em <strong className="text-foreground">"Competências"</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-blue-400" />
+                  <span>Escolha as <strong className="text-foreground">30 que mais combinam</strong> com seus objetivos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Gupy Step */}
+        <Card className="p-5 bg-gradient-to-br from-primary/10 to-amber-500/5 border-primary/20 max-w-2xl mx-auto">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+              2
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-foreground">Na Gupy</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                  <span>Acesse seu perfil</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                  <span>Vá em <strong className="text-foreground">"Habilidades"</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-primary" />
+                  <span>Digite cada competência e <strong className="text-foreground">selecione da lista</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Warning */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="p-4 bg-destructive/10 border-destructive/30 max-w-2xl mx-auto">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-destructive">Atenção!</p>
+                <p className="text-muted-foreground mt-1">
+                  Só adicione competências que <strong className="text-foreground">apareçam como opção</strong> ao digitar. 
+                  O sistema da Gupy não reconhece competências digitadas manualmente.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Skills Input Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-4 max-w-2xl mx-auto"
+        >
+          <div className="text-center space-y-1">
+            <h3 className="font-display text-lg font-semibold">Suas Habilidades</h3>
+            <p className="text-sm text-muted-foreground">
+              (Opcional) Salve aqui para referência
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Digite uma habilidade e pressione Enter"
+              value={newHabilidade}
+              onChange={(e) => setNewHabilidade(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHabilidade())}
+              className="flex-1"
+            />
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          </div>
+
+          {data.habilidades.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-wrap gap-2"
+            >
+              {data.habilidades.map((hab, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm"
+                >
+                  {hab}
+                  <button
+                    onClick={() => removeHabilidade(index)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.span>
+              ))}
+            </motion.div>
+          )}
+
+          <p className="text-xs text-muted-foreground text-center">
+            {data.habilidades.length}/30 habilidades
+          </p>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  // Show conversation with "Avançar" button
   return (
     <motion.div
-      key="step-7"
+      key="step-7-conversation"
       variants={fadeInUp}
       initial="initial"
       animate="animate"
@@ -227,7 +373,7 @@ const SkillsStepWithMentor = ({ data, newHabilidade, setNewHabilidade, addHabili
 
           {/* Typing indicator */}
           <AnimatePresence>
-            {isTyping && !showContent && (
+            {isTyping && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -239,165 +385,31 @@ const SkillsStepWithMentor = ({ data, newHabilidade, setNewHabilidade, addHabili
             )}
           </AnimatePresence>
         </div>
-      </motion.div>
 
-      {/* Step by step guide */}
-      <AnimatePresence>
-        {showContent && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6"
-          >
-            {/* LinkedIn Step */}
-            <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 max-w-2xl mx-auto">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
-                  1
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">No LinkedIn</h4>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-blue-400" />
-                      <span>Acesse seu perfil</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-blue-400" />
-                      <span>Vá em <strong className="text-foreground">"Competências"</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-blue-400" />
-                      <span>Escolha as <strong className="text-foreground">30 que mais combinam</strong> com seus objetivos</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Gupy Step */}
-            <Card className="p-5 bg-gradient-to-br from-primary/10 to-amber-500/5 border-primary/20 max-w-2xl mx-auto">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                  2
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Na Gupy</h4>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-primary" />
-                      <span>Acesse seu perfil</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-primary" />
-                      <span>Vá em <strong className="text-foreground">"Habilidades"</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-primary" />
-                      <span>Digite cada competência e <strong className="text-foreground">selecione da lista</strong></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Warning */}
+        {/* Avançar Button */}
+        <AnimatePresence>
+          {conversationComplete && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="p-4 bg-destructive/10 border-destructive/30 max-w-2xl mx-auto">
-                <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-destructive">Atenção!</p>
-                    <p className="text-muted-foreground mt-1">
-                      Só adicione competências que <strong className="text-foreground">apareçam como opção</strong> ao digitar. 
-                      O sistema da Gupy não reconhece competências digitadas manualmente.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Skills Input Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="space-y-4 max-w-2xl mx-auto"
+              transition={{ duration: 0.4 }}
+              className="mt-6 flex justify-center"
             >
-              <div className="text-center space-y-1">
-                <h3 className="font-display text-lg font-semibold">Suas Habilidades</h3>
-                <p className="text-sm text-muted-foreground">
-                  (Opcional) Salve aqui para referência
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Digite uma habilidade e pressione Enter"
-                  value={newHabilidade}
-                  onChange={(e) => setNewHabilidade(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHabilidade())}
-                  className="flex-1"
-                />
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{data.habilidades.length}/30 habilidades</span>
-                <AnimatePresence>
-                  {data.habilidades.length >= 20 && (
-                    <motion.span 
-                      className="text-green-500 flex items-center gap-1"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                    >
-                      <Check className="w-4 h-4" /> Bom progresso!
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <AnimatePresence mode="popLayout">
-                  {data.habilidades.map((hab, i) => (
-                    <motion.span
-                      key={`hab-${hab}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                      layout
-                      transition={{ duration: 0.2 }}
-                    >
-                      {hab}
-                      <button
-                        onClick={() => removeHabilidade(i)}
-                        className="hover:text-destructive transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </div>
+              <Button
+                onClick={handleAdvance}
+                className="gap-2 px-6"
+                size="lg"
+              >
+                Avançar
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 };
-
 export const GupyGuide = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
