@@ -102,7 +102,8 @@ const Stage3Page = () => {
       if (error) throw error;
       setFunnel(data);
 
-      // If no funnel, redirect back to portal
+      // If no funnel, this page shouldn't be accessible - redirect to portal
+      // (Portal should prevent navigation here if no funnel)
       if (!data) {
         navigate('/');
         return;

@@ -307,16 +307,15 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
       return;
     }
 
-    // Show welcome modal for Stage 3 if Stage 2 was just completed
-    if (stage.number === 3 && stage2Completed) {
-      const seenKey = `stage3_welcome_shown_${user.id}`;
-      const hasSeenWelcome = localStorage.getItem(seenKey) === 'true';
-      
-      if (!hasSeenWelcome) {
+    // Stage 3: Only navigate if funnel is published, otherwise show modal
+    if (stage.number === 3) {
+      if (opportunityFunnel?.status === 'published') {
+        navigate(stage.path);
+      } else {
+        // No funnel - show modal (or show again)
         setShowStage3Modal(true);
-        localStorage.setItem(seenKey, 'true');
-        return;
       }
+      return;
     }
 
     navigate(stage.path);
