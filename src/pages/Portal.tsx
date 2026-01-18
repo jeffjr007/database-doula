@@ -366,8 +366,8 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         </div>
       </motion.div>
 
-      {/* Navigation */}
-      <nav className="relative z-50 flex items-center justify-between py-4 px-4 md:px-6">
+      {/* Navigation - Mobile First */}
+      <nav className="mobile-header relative z-50 md:py-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -376,12 +376,12 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
           <img
             src={logoAD}
             alt="AD Logo"
-            className="w-12 h-12 rounded-lg"
+            className="w-11 h-11 md:w-12 md:h-12 rounded-2xl md:rounded-lg"
           />
         </motion.div>
 
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center gap-3 md:gap-2"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
@@ -393,9 +393,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                   variant="outline"
                   size="sm"
                   onClick={() => navigate('/admin')}
-                  className="gap-2 border-primary/30 hover:bg-primary/10"
+                  className="gap-2 border-primary/30 hover:bg-primary/10 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
                 >
-                  <Shield className="w-4 h-4" />
+                  <Shield className="w-5 h-5 md:w-4 md:h-4" />
                   <span className="hidden sm:inline">Admin</span>
                 </Button>
               )}
@@ -407,9 +407,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                 variant="ghost"
                 size="sm"
                 onClick={signOut}
-                className="gap-2 relative z-50"
+                className="gap-2 relative z-50 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">Sair</span>
               </Button>
             </>
@@ -418,9 +418,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
               variant="outline"
               size="sm"
               onClick={() => window.location.href = '/auth'}
-              className="gap-2 border-primary/30 hover:bg-primary/10"
+              className="gap-2 border-primary/30 hover:bg-primary/10 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="w-5 h-5 md:w-4 md:h-4" />
               Entrar
             </Button>
           )}
@@ -429,19 +429,19 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
 
       {/* Main Content - Pushed to the right on desktop */}
       <div className="relative z-10 flex flex-col min-h-[calc(100vh-80px)] lg:ml-[40%]">
-        {/* Hero Section with Conversational Animation */}
-        <header className="py-12 px-4 lg:px-8 xl:px-16">
+        {/* Hero Section - Mobile First */}
+        <header className="mobile-hero md:bg-transparent md:rounded-none py-8 md:py-12 px-5 md:px-4 lg:px-8 xl:px-16">
           <AnimatePresence>
             {showTitle && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="mb-6"
+                className="mb-5 md:mb-6"
               >
-                <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/20 to-accent/10 border border-primary/30 backdrop-blur-sm">
-                  <Crown className="w-6 h-6 text-primary" />
-                  <span className="text-lg md:text-xl font-display font-bold text-primary tracking-wide">
+                <div className="mobile-chip md:px-5 md:py-3 md:rounded-2xl md:bg-gradient-to-r md:from-primary/20 md:to-accent/10 md:border-primary/30 backdrop-blur-sm">
+                  <Crown className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  <span className="text-sm md:text-lg font-display font-bold text-primary tracking-wide">
                     Método Perfil Glorioso
                   </span>
                 </div>
@@ -455,9 +455,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="mb-8"
+                className="mb-6 md:mb-8"
               >
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-4xl">
+                <h1 className="text-2xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-4xl">
                   <span className="text-gradient">{currentPhrase}</span>
                 </h1>
               </motion.div>
@@ -472,13 +472,13 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                 transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
               >
                 {user && userName && (
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
+                  <div className="flex items-center gap-4 md:gap-3 text-muted-foreground">
+                    <div className="mobile-avatar md:w-10 md:h-10">
+                      <User className="w-6 h-6 md:w-5 md:h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Bem-vindo de volta,</p>
-                      <p className="text-lg font-semibold text-foreground">{userName}</p>
+                      <p className="mobile-caption">Bem-vindo de volta,</p>
+                      <p className="mobile-subtitle text-foreground">{userName}</p>
                     </div>
                   </div>
                 )}
@@ -487,30 +487,30 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
           </AnimatePresence>
         </header>
 
-        {/* Stages Section */}
+        {/* Stages Section - Mobile First */}
         <AnimatePresence>
           {showContent && (
             <motion.main
-              className="flex-1 px-4 lg:px-8 xl:px-16 pb-12"
+              className="flex-1 px-5 md:px-4 lg:px-8 xl:px-16 pb-24 md:pb-12"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <motion.div
-                className="mb-6"
+                className="mb-5 md:mb-6"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h2 className="text-xl font-display font-semibold text-foreground mb-2">
+                <h2 className="mobile-title text-foreground mb-1 md:mb-2">
                   Escolha sua próxima etapa
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="mobile-caption">
                   Continue sua jornada de transformação profissional
                 </p>
               </motion.div>
 
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 max-w-4xl">
+              <div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 max-w-4xl">
                 {stages.map((stage, index) => {
                   const status = getStageStatus(stage.number);
                   const blocked = isStageBlocked(stage.number);
@@ -523,33 +523,32 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                       onClick={() => handleStageClick(stage)}
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
                       whileHover={!blocked ? { scale: 1.02, y: -2 } : {}}
-                      whileTap={!blocked ? { scale: 0.98 } : {}}
+                      whileTap={!blocked ? { scale: 0.97 } : {}}
                       className={`
-                        group relative p-4 rounded-xl border
-                        bg-secondary/30 backdrop-blur-sm
-                        transition-all duration-300
+                        mobile-stage-card md:p-4 md:rounded-xl
                         text-left
                         ${blocked
-                          ? 'opacity-40 cursor-not-allowed border-border/30'
-                          : 'border-border/50 hover:border-primary/40 hover:bg-secondary/50 cursor-pointer'
+                          ? 'opacity-40 cursor-not-allowed'
+                          : 'cursor-pointer'
                         }
-                        ${isCompleted ? 'border-green-500/30' : ''}
+                        ${isCompleted ? 'border-green-500/30 bg-green-500/5' : ''}
                       `}
                       disabled={blocked}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4 md:gap-3">
                         <div className={`
-                          relative p-2.5 rounded-lg transition-colors
+                          mobile-icon-container-sm md:p-2.5 md:w-auto md:h-auto md:rounded-lg
+                          transition-colors
                           ${isCompleted
-                            ? 'bg-green-500/10'
+                            ? 'bg-green-500/15'
                             : blocked
                               ? 'bg-muted/30'
-                              : 'bg-primary/10 group-hover:bg-primary/20'
+                              : 'bg-primary/15 group-hover:bg-primary/20'
                           }
                         `}>
-                          <Icon className={`w-4 h-4 ${
+                          <Icon className={`w-5 h-5 md:w-4 md:h-4 ${
                             isCompleted
                               ? 'text-green-500'
                               : blocked
@@ -558,30 +557,30 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                           }`} />
 
                           {isCompleted && (
-                            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full flex items-center justify-center">
-                              <Check className="w-1.5 h-1.5 text-background" strokeWidth={4} />
+                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 md:w-2.5 md:h-2.5 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-2 h-2 md:w-1.5 md:h-1.5 text-background" strokeWidth={4} />
                             </div>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground/60 font-mono">{stage.number}</span>
-                            <h3 className={`font-medium text-sm truncate ${
-                              blocked ? 'text-muted-foreground/50' : 'text-foreground group-hover:text-primary'
+                          <div className="flex items-center gap-2 mb-0.5 md:mb-0">
+                            <span className="text-xs md:text-[10px] text-primary/60 font-mono font-bold bg-primary/10 px-2 py-0.5 rounded-full">{stage.number}</span>
+                            <h3 className={`mobile-subtitle md:text-sm md:font-medium truncate ${
+                              blocked ? 'text-muted-foreground/50' : 'text-foreground'
                             } transition-colors`}>
                               {stage.title}
                             </h3>
                           </div>
-                          <p className="text-[11px] text-muted-foreground/70 line-clamp-1 mt-0.5">
+                          <p className="mobile-caption text-muted-foreground/70 line-clamp-2 md:line-clamp-1 mt-1 md:mt-0.5">
                             {stage.description}
                           </p>
                         </div>
 
                         {blocked ? (
-                          <Lock className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                          <Lock className="w-5 h-5 md:w-3.5 md:h-3.5 text-muted-foreground/40 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                          <ChevronRight className="w-6 h-6 md:w-4 md:h-4 text-muted-foreground/40 flex-shrink-0" />
                         )}
                       </div>
                     </motion.button>
@@ -589,14 +588,14 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                 })}
               </div>
 
-              {/* Motivational footer */}
+              {/* Motivational footer - Mobile optimized */}
               <motion.div
-                className="mt-8 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-transparent border border-primary/10 max-w-4xl"
+                className="mt-6 md:mt-8 p-5 md:p-4 rounded-2xl md:rounded-xl bg-gradient-to-r from-primary/8 to-transparent border border-primary/15 max-w-4xl"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <p className="text-sm text-muted-foreground italic text-center">
+                <p className="mobile-body md:text-sm text-muted-foreground italic text-center">
                   "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                 </p>
               </motion.div>

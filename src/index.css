@@ -293,6 +293,246 @@
     border-radius: inherit;
     z-index: -1;
   }
+
+  /* ===================================== */
+  /* MOBILE-FIRST MODERN UI (Nubank/iFood) */
+  /* ===================================== */
+
+  /* Mobile card with generous radius */
+  .mobile-card {
+    @apply rounded-2xl md:rounded-xl;
+    @apply p-5 md:p-4;
+    @apply bg-card/80 backdrop-blur-sm;
+    @apply border border-border/40;
+    @apply transition-all duration-200;
+  }
+
+  .mobile-card-elevated {
+    @apply mobile-card;
+    box-shadow: 0 4px 20px hsl(0 0% 0% / 0.3);
+  }
+
+  /* Mobile button - larger touch targets */
+  .mobile-btn {
+    @apply min-h-[52px] md:min-h-[44px];
+    @apply rounded-2xl md:rounded-xl;
+    @apply text-base md:text-sm;
+    @apply px-6 md:px-4;
+    @apply font-medium;
+    @apply transition-all duration-200;
+    @apply active:scale-[0.98];
+  }
+
+  .mobile-btn-primary {
+    @apply mobile-btn;
+    @apply bg-primary text-primary-foreground;
+    @apply hover:bg-primary/90;
+  }
+
+  .mobile-btn-secondary {
+    @apply mobile-btn;
+    @apply bg-secondary text-secondary-foreground;
+    @apply hover:bg-secondary/80;
+  }
+
+  .mobile-btn-ghost {
+    @apply mobile-btn;
+    @apply bg-transparent text-foreground;
+    @apply hover:bg-secondary/50;
+  }
+
+  /* Mobile input - larger touch area */
+  .mobile-input {
+    @apply min-h-[52px] md:min-h-[44px];
+    @apply rounded-2xl md:rounded-xl;
+    @apply text-base md:text-sm;
+    @apply px-5 md:px-4;
+    @apply bg-secondary/40 border-border/30;
+    @apply focus:border-primary/50 focus:ring-2 focus:ring-primary/20;
+    @apply transition-all duration-200;
+  }
+
+  /* Mobile section spacing */
+  .mobile-section {
+    @apply py-6 md:py-4;
+    @apply px-5 md:px-4;
+  }
+
+  /* Mobile header */
+  .mobile-header {
+    @apply py-4 px-5 md:px-4;
+    @apply flex items-center justify-between;
+    @apply safe-area-inset-top;
+  }
+
+  /* Safe area padding for notched phones */
+  .safe-area-inset-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /* Mobile icon containers - larger and rounder */
+  .mobile-icon-container {
+    @apply w-14 h-14 md:w-10 md:h-10;
+    @apply rounded-2xl md:rounded-xl;
+    @apply flex items-center justify-center;
+    @apply bg-primary/10;
+    @apply transition-colors duration-200;
+  }
+
+  .mobile-icon-container-sm {
+    @apply w-12 h-12 md:w-9 md:h-9;
+    @apply rounded-xl md:rounded-lg;
+    @apply flex items-center justify-center;
+    @apply bg-primary/10;
+  }
+
+  /* Mobile list item - like iFood order cards */
+  .mobile-list-item {
+    @apply flex items-center gap-4 md:gap-3;
+    @apply p-4 md:p-3;
+    @apply rounded-2xl md:rounded-xl;
+    @apply bg-secondary/30;
+    @apply border border-border/20;
+    @apply transition-all duration-200;
+    @apply active:scale-[0.99] active:bg-secondary/50;
+  }
+
+  /* Mobile chips/badges */
+  .mobile-chip {
+    @apply inline-flex items-center gap-2;
+    @apply px-4 py-2 md:px-3 md:py-1.5;
+    @apply rounded-full;
+    @apply text-sm md:text-xs;
+    @apply font-medium;
+    @apply bg-primary/15 text-primary;
+    @apply border border-primary/20;
+  }
+
+  /* Mobile stage card - modern app-like feel */
+  .mobile-stage-card {
+    @apply relative overflow-hidden;
+    @apply p-5 md:p-4;
+    @apply rounded-3xl md:rounded-xl;
+    @apply bg-gradient-to-br from-secondary/50 to-secondary/20;
+    @apply border border-border/30;
+    @apply backdrop-blur-sm;
+    @apply transition-all duration-300;
+    @apply active:scale-[0.98];
+  }
+
+  .mobile-stage-card:not(:disabled):hover {
+    @apply border-primary/40 bg-secondary/60;
+  }
+
+  .mobile-stage-card:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  /* Mobile action bar (bottom) */
+  .mobile-action-bar {
+    @apply fixed bottom-0 left-0 right-0;
+    @apply bg-background/95 backdrop-blur-lg;
+    @apply border-t border-border/30;
+    @apply px-5 py-4;
+    @apply safe-area-inset-bottom;
+    @apply z-50;
+  }
+
+  /* Mobile typography scale */
+  .mobile-title {
+    @apply text-2xl md:text-xl;
+    @apply font-display font-bold;
+    @apply tracking-tight;
+  }
+
+  .mobile-subtitle {
+    @apply text-lg md:text-base;
+    @apply font-medium;
+  }
+
+  .mobile-body {
+    @apply text-base md:text-sm;
+    @apply leading-relaxed;
+  }
+
+  .mobile-caption {
+    @apply text-sm md:text-xs;
+    @apply text-muted-foreground;
+  }
+
+  /* Mobile avatar */
+  .mobile-avatar {
+    @apply w-12 h-12 md:w-10 md:h-10;
+    @apply rounded-full;
+    @apply bg-primary/20 border-2 border-primary/30;
+    @apply flex items-center justify-center;
+    @apply overflow-hidden;
+  }
+
+  .mobile-avatar-lg {
+    @apply w-16 h-16 md:w-12 md:h-12;
+    @apply rounded-full;
+    @apply bg-primary/20 border-2 border-primary/30;
+    @apply flex items-center justify-center;
+    @apply overflow-hidden;
+  }
+
+  /* Mobile horizontal scroll with snap */
+  .mobile-scroll-x {
+    @apply flex gap-4 overflow-x-auto;
+    @apply snap-x snap-mandatory;
+    @apply -mx-5 px-5;
+    @apply pb-2;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mobile-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-x > * {
+    @apply snap-start;
+    @apply flex-shrink-0;
+  }
+
+  /* Mobile welcome section (like Nubank header) */
+  .mobile-hero {
+    @apply px-5 py-8 md:py-6;
+    @apply bg-gradient-to-b from-primary/10 to-transparent;
+    @apply rounded-b-[2.5rem] md:rounded-b-3xl;
+  }
+
+  /* Mobile divider */
+  .mobile-divider {
+    @apply h-px w-full;
+    @apply bg-gradient-to-r from-transparent via-border/50 to-transparent;
+    @apply my-4;
+  }
+
+  /* Mobile floating action button */
+  .mobile-fab {
+    @apply fixed bottom-6 right-6;
+    @apply w-16 h-16 md:w-14 md:h-14;
+    @apply rounded-full;
+    @apply bg-primary text-primary-foreground;
+    @apply shadow-lg shadow-primary/25;
+    @apply flex items-center justify-center;
+    @apply z-50;
+    @apply transition-transform duration-200;
+    @apply active:scale-95;
+    @apply safe-area-inset-bottom;
+  }
+
+  /* Skeleton loading for mobile */
+  .mobile-skeleton {
+    @apply animate-pulse;
+    @apply bg-secondary/50 rounded-2xl;
+  }
 }
 
 /* Hide Lovable badge */
