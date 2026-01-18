@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +34,40 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SupportLink } from "./SupportLink";
+
+// Animation variants for reuse
+const fadeInUp = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 }
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.95 }
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 }
+};
 
 interface GupyData {
   cursos: { nome: string; status: string }[];
@@ -85,10 +119,21 @@ export const GupyGuide = () => {
   const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [newHabilidade, setNewHabilidade] = useState("");
   const [data, setData] = useState<GupyData>(initialData);
+  
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Scroll to top when step changes or after AI generation
+  const scrollToTop = () => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToTop();
+  }, [currentStep]);
 
   // Load saved progress
   useEffect(() => {
@@ -257,6 +302,7 @@ export const GupyGuide = () => {
       
       updateData({ ...data, conquistasDescricoes: descricoes });
       setCurrentStep(6); // Go to descriptions step
+      setTimeout(scrollToTop, 100); // Scroll to top after step change
       
       toast({ 
         title: "Descrições geradas!", 
@@ -307,6 +353,7 @@ export const GupyGuide = () => {
       
       updateData({ ...data, experienciasFormatadas: formatted_experiences });
       setCurrentStep(3); // Go to formatted experiences step
+      setTimeout(scrollToTop, 100); // Scroll to top after step change
       
       toast({ 
         title: "Experiências formatadas!", 
@@ -374,203 +421,381 @@ export const GupyGuide = () => {
       case 1:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-1"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <GraduationCap className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Experiência Acadêmica</h2>
-              <p className="text-muted-foreground">Simplifique os nomes dos cursos para o ATS</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Experiência Acadêmica
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Simplifique os nomes dos cursos para o ATS
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Dica:</strong> "MBA em Big Data para Negócios" → "Inteligência Artificial". 
-                Remova vírgulas, hífens e textos longos.
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> "MBA em Big Data para Negócios" → "Inteligência Artificial". 
+                  Remova vírgulas, hífens e textos longos.
+                </p>
+              </Card>
+            </motion.div>
 
-            <div className="space-y-3 max-w-xl mx-auto">
-              {data.cursos.map((item, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <Input
-                    placeholder="Nome do curso simplificado"
-                    value={item.nome}
-                    onChange={(e) => updateItem("cursos", i, "nome", e.target.value)}
-                    className="flex-1"
-                  />
-                  <select
-                    value={item.status}
-                    onChange={(e) => updateItem("cursos", i, "status", e.target.value)}
-                    className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+            <motion.div 
+              className="space-y-3 max-w-xl mx-auto"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <AnimatePresence mode="popLayout">
+                {data.cursos.map((item, i) => (
+                  <motion.div 
+                    key={`curso-${i}`} 
+                    className="flex gap-2 items-center"
+                    variants={staggerItem}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    layout
+                    transition={{ duration: 0.3 }}
                   >
-                    <option>Concluído</option>
-                    <option>Em andamento</option>
-                    <option>Trancado</option>
-                  </select>
-                  {data.cursos.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeItem("cursos", i)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => addItem("cursos")} className="gap-2">
-                <Plus className="w-4 h-4" /> Adicionar curso
-              </Button>
-            </div>
+                    <Input
+                      placeholder="Nome do curso simplificado"
+                      value={item.nome}
+                      onChange={(e) => updateItem("cursos", i, "nome", e.target.value)}
+                      className="flex-1"
+                    />
+                    <select
+                      value={item.status}
+                      onChange={(e) => updateItem("cursos", i, "status", e.target.value)}
+                      className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option>Concluído</option>
+                      <option>Em andamento</option>
+                      <option>Trancado</option>
+                    </select>
+                    {data.cursos.length > 1 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                      >
+                        <Button variant="ghost" size="icon" onClick={() => removeItem("cursos", i)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button variant="outline" size="sm" onClick={() => addItem("cursos")} className="gap-2">
+                  <Plus className="w-4 h-4" /> Adicionar curso
+                </Button>
+              </motion.div>
+            </motion.div>
           </motion.div>
         );
 
       case 2:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-2"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Briefcase className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Experiência Profissional</h2>
-              <p className="text-muted-foreground">Cole suas experiências diretamente do LinkedIn</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Experiência Profissional
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Cole suas experiências diretamente do LinkedIn
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Cole tudo aqui!</strong> Empresa, cargo e descrição exatamente como está no LinkedIn. 
-                A IA vai formatar automaticamente para a Gupy.
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Cole tudo aqui!</strong> Empresa, cargo e descrição exatamente como está no LinkedIn. 
+                  A IA vai formatar automaticamente para a Gupy.
+                </p>
+              </Card>
+            </motion.div>
 
-            <div className="space-y-4 max-w-2xl mx-auto">
-              {data.experiencias.map((item, i) => (
-                <Card key={i} className="p-4 space-y-3 bg-card border-border/50">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Empresa"
-                      value={item.empresa}
-                      onChange={(e) => updateItem("experiencias", i, "empresa", e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      placeholder="Cargo"
-                      value={item.cargo}
-                      onChange={(e) => updateItem("experiencias", i, "cargo", e.target.value)}
-                      className="flex-1"
-                    />
-                    {data.experiencias.length > 1 && (
-                      <Button variant="ghost" size="icon" onClick={() => removeItem("experiencias", i)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                  <Textarea
-                    placeholder="Cole aqui a descrição das atividades do LinkedIn (pode ter bullets, emojis, % — a IA vai formatar)"
-                    value={item.descricao}
-                    onChange={(e) => updateItem("experiencias", i, "descricao", e.target.value)}
-                    rows={4}
-                    className="text-sm"
-                  />
-                </Card>
-              ))}
+            <motion.div 
+              className="space-y-4 max-w-2xl mx-auto"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <AnimatePresence mode="popLayout">
+                {data.experiencias.map((item, i) => (
+                  <motion.div
+                    key={`exp-${i}`}
+                    variants={staggerItem}
+                    layout
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card className="p-4 space-y-3 bg-card border-border/50">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Empresa"
+                          value={item.empresa}
+                          onChange={(e) => updateItem("experiencias", i, "empresa", e.target.value)}
+                          className="flex-1"
+                        />
+                        <Input
+                          placeholder="Cargo"
+                          value={item.cargo}
+                          onChange={(e) => updateItem("experiencias", i, "cargo", e.target.value)}
+                          className="flex-1"
+                        />
+                        {data.experiencias.length > 1 && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0 }}
+                          >
+                            <Button variant="ghost" size="icon" onClick={() => removeItem("experiencias", i)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </div>
+                      <Textarea
+                        placeholder="Cole aqui a descrição das atividades do LinkedIn (pode ter bullets, emojis, % — a IA vai formatar)"
+                        value={item.descricao}
+                        onChange={(e) => updateItem("experiencias", i, "descricao", e.target.value)}
+                        rows={4}
+                        className="text-sm"
+                      />
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
               
-              <div className="flex gap-2">
+              <motion.div 
+                className="flex gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
                 <Button variant="outline" size="sm" onClick={() => addItem("experiencias")} className="gap-2">
                   <Plus className="w-4 h-4" /> Adicionar experiência
                 </Button>
-              </div>
+              </motion.div>
 
-              {data.experiencias.some(e => e.empresa && e.descricao) && (
-                <div className="pt-4 border-t border-border">
-                  <Button 
-                    onClick={formatExperiences} 
-                    disabled={isFormatting}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
-                    size="lg"
+              <AnimatePresence>
+                {data.experiencias.some(e => e.empresa && e.descricao) && (
+                  <motion.div 
+                    className="pt-4 border-t border-border"
+                    initial={{ opacity: 0, y: 20, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    {isFormatting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Formatando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        Formatar para a Gupy
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
+                    <Button 
+                      onClick={formatExperiences} 
+                      disabled={isFormatting}
+                      className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
+                      size="lg"
+                    >
+                      {isFormatting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Formatando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          Formatar para a Gupy
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
         );
 
       case 3:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-3"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Sparkles className="w-8 h-8 text-green-500" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Experiências Formatadas</h2>
-              <p className="text-muted-foreground">Copie cada descrição e cole na Gupy</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Experiências Formatadas
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Copie cada descrição e cole na Gupy
+              </motion.p>
+            </motion.div>
 
             {data.experienciasFormatadas && data.experienciasFormatadas.length > 0 ? (
-              <div className="space-y-4 max-w-2xl mx-auto">
+              <motion.div 
+                className="space-y-4 max-w-2xl mx-auto"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+              >
                 {data.experienciasFormatadas.map((exp, i) => (
-                  <Card key={i} className="p-4 space-y-3 bg-card border-green-500/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{exp.empresa}</h3>
-                        <p className="text-sm text-muted-foreground">{exp.cargo}</p>
+                  <motion.div
+                    key={`formatted-${i}`}
+                    variants={staggerItem}
+                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                  >
+                    <Card className="p-4 space-y-3 bg-card border-green-500/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{exp.empresa}</h3>
+                          <p className="text-sm text-muted-foreground">{exp.cargo}</p>
+                        </div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => copyToClipboard(exp.descricao_formatada, exp.empresa)}
+                            className="gap-2"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Copiar
+                          </Button>
+                        </motion.div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => copyToClipboard(exp.descricao_formatada, exp.empresa)}
-                        className="gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copiar
-                      </Button>
-                    </div>
-                    <div className="p-3 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap">
-                      {exp.descricao_formatada}
-                    </div>
-                  </Card>
+                      <div className="p-3 bg-muted/30 rounded-lg text-sm whitespace-pre-wrap">
+                        {exp.descricao_formatada}
+                      </div>
+                    </Card>
+                  </motion.div>
                 ))}
 
-                <Card className="p-4 bg-primary/5 border-primary/20">
-                  <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-muted-foreground">
-                      <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
-                      <ol className="list-decimal list-inside space-y-1">
-                        <li>Acesse seu perfil na Gupy</li>
-                        <li>Vá em "Experiências Profissionais"</li>
-                        <li>Edite cada experiência</li>
-                        <li>Cole a descrição formatada</li>
-                      </ol>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Card className="p-4 bg-primary/5 border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-muted-foreground">
+                        <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
+                        <ol className="list-decimal list-inside space-y-1">
+                          <li>Acesse seu perfil na Gupy</li>
+                          <li>Vá em "Experiências Profissionais"</li>
+                          <li>Edite cada experiência</li>
+                          <li>Cole a descrição formatada</li>
+                        </ol>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              </div>
+                  </Card>
+                </motion.div>
+              </motion.div>
             ) : (
-              <div className="text-center py-8 max-w-xl mx-auto">
+              <motion.div 
+                className="text-center py-8 max-w-xl mx-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 <p className="text-muted-foreground mb-4">
                   Você ainda não formatou suas experiências.
                 </p>
@@ -578,7 +803,7 @@ export const GupyGuide = () => {
                   <ArrowLeft className="w-4 h-4" />
                   Voltar para Experiências
                 </Button>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         );
@@ -586,80 +811,177 @@ export const GupyGuide = () => {
       case 4:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-4"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Languages className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Idiomas</h2>
-              <p className="text-muted-foreground">Adicione todos os idiomas que você domina</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Idiomas
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Adicione todos os idiomas que você domina
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Dica:</strong> Seja honesto com o nível — você pode ser testado na entrevista.
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Seja honesto com o nível — você pode ser testado na entrevista.
+                </p>
+              </Card>
+            </motion.div>
 
-            <div className="space-y-3 max-w-xl mx-auto">
-              {data.idiomas.map((item, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <Input
-                    placeholder="Idioma"
-                    value={item.idioma}
-                    onChange={(e) => updateItem("idiomas", i, "idioma", e.target.value)}
-                    className="flex-1"
-                  />
-                  <select
-                    value={item.nivel}
-                    onChange={(e) => updateItem("idiomas", i, "nivel", e.target.value)}
-                    className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+            <motion.div 
+              className="space-y-3 max-w-xl mx-auto"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <AnimatePresence mode="popLayout">
+                {data.idiomas.map((item, i) => (
+                  <motion.div 
+                    key={`idioma-${i}`} 
+                    className="flex gap-2 items-center"
+                    variants={staggerItem}
+                    layout
+                    transition={{ duration: 0.3 }}
                   >
-                    <option>Básico</option>
-                    <option>Intermediário</option>
-                    <option>Avançado</option>
-                    <option>Fluente</option>
-                    <option>Nativo</option>
-                  </select>
-                  {data.idiomas.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeItem("idiomas", i)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => addItem("idiomas")} className="gap-2">
-                <Plus className="w-4 h-4" /> Adicionar idioma
-              </Button>
-            </div>
+                    <Input
+                      placeholder="Idioma"
+                      value={item.idioma}
+                      onChange={(e) => updateItem("idiomas", i, "idioma", e.target.value)}
+                      className="flex-1"
+                    />
+                    <select
+                      value={item.nivel}
+                      onChange={(e) => updateItem("idiomas", i, "nivel", e.target.value)}
+                      className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option>Básico</option>
+                      <option>Intermediário</option>
+                      <option>Avançado</option>
+                      <option>Fluente</option>
+                      <option>Nativo</option>
+                    </select>
+                    {data.idiomas.length > 1 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                      >
+                        <Button variant="ghost" size="icon" onClick={() => removeItem("idiomas", i)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button variant="outline" size="sm" onClick={() => addItem("idiomas")} className="gap-2">
+                  <Plus className="w-4 h-4" /> Adicionar idioma
+                </Button>
+              </motion.div>
+            </motion.div>
           </motion.div>
         );
 
       case 5:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-5"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Award className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Conquistas e Certificados</h2>
-              <p className="text-muted-foreground">A IA vai criar descrições otimizadas para a Gupy</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Conquistas e Certificados
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                A IA vai criar descrições otimizadas para a Gupy
+              </motion.p>
+            </motion.div>
 
-            <div className="space-y-6 max-w-2xl mx-auto">
+            <motion.div 
+              className="space-y-6 max-w-2xl mx-auto"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
               {/* Títulos do LinkedIn */}
-              <div className="space-y-2">
+              <motion.div className="space-y-2" variants={staggerItem}>
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">1</span>
+                  <motion.span 
+                    className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring" }}
+                  >
+                    1
+                  </motion.span>
                   Títulos do LinkedIn (seus objetivos de cargo)
                 </label>
                 <Textarea
@@ -672,26 +994,44 @@ export const GupyGuide = () => {
                 <p className="text-xs text-muted-foreground">
                   Copie e cole o título do seu LinkedIn (onde ficam seus objetivos de cargo)
                 </p>
-              </div>
+              </motion.div>
 
               {/* Últimas 3 experiências */}
-              <div className="space-y-2">
+              <motion.div className="space-y-2" variants={staggerItem}>
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">2</span>
+                  <motion.span 
+                    className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, type: "spring" }}
+                  >
+                    2
+                  </motion.span>
                   Últimas 3 experiências profissionais
                 </label>
                 <Card className="p-3 bg-muted/30 border-border/50">
                   {data.experiencias.filter(e => e.empresa).length > 0 ? (
                     <div className="space-y-2">
                       {data.experiencias.slice(0, 3).filter(e => e.empresa).map((exp, i) => (
-                        <div key={i} className="text-sm">
+                        <motion.div 
+                          key={i} 
+                          className="text-sm"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.5 + i * 0.1 }}
+                        >
                           <span className="font-medium">{exp.cargo}</span>
                           <span className="text-muted-foreground"> na {exp.empresa}</span>
-                        </div>
+                        </motion.div>
                       ))}
-                      <p className="text-xs text-green-500 flex items-center gap-1 mt-2">
+                      <motion.p 
+                        className="text-xs text-green-500 flex items-center gap-1 mt-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                      >
                         <Check className="w-3 h-3" /> Experiências carregadas da Etapa 2
-                      </p>
+                      </motion.p>
                     </div>
                   ) : (
                     <div className="text-center py-4">
@@ -702,145 +1042,241 @@ export const GupyGuide = () => {
                     </div>
                   )}
                 </Card>
-              </div>
+              </motion.div>
 
               {/* Conquistas e Certificados */}
-              <div className="space-y-3">
+              <motion.div className="space-y-3" variants={staggerItem}>
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">3</span>
+                  <motion.span 
+                    className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring" }}
+                  >
+                    3
+                  </motion.span>
                   Suas conquistas e certificados
                 </label>
                 
-                {data.certificados.map((item, i) => (
-                  <Card key={i} className="p-3 bg-card border-border/50">
-                    <div className="flex gap-2 items-center">
-                      <select
-                        value={item.tipo}
-                        onChange={(e) => updateItem("certificados", i, "tipo", e.target.value)}
-                        className="h-9 px-2 rounded-md border border-input bg-background text-sm"
-                      >
-                        <option>Curso</option>
-                        <option>Certificação</option>
-                        <option>Voluntário</option>
-                        <option>Prêmio</option>
-                        <option>Projeto</option>
-                      </select>
-                      <Input
-                        placeholder="Nome do curso, certificação ou conquista"
-                        value={item.titulo}
-                        onChange={(e) => updateItem("certificados", i, "titulo", e.target.value)}
-                        className="flex-1"
-                      />
-                      {data.certificados.length > 1 && (
-                        <Button variant="ghost" size="icon" onClick={() => removeItem("certificados", i)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                ))}
+                <AnimatePresence mode="popLayout">
+                  {data.certificados.map((item, i) => (
+                    <motion.div
+                      key={`cert-${i}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3 }}
+                      layout
+                    >
+                      <Card className="p-3 bg-card border-border/50">
+                        <div className="flex gap-2 items-center">
+                          <select
+                            value={item.tipo}
+                            onChange={(e) => updateItem("certificados", i, "tipo", e.target.value)}
+                            className="h-9 px-2 rounded-md border border-input bg-background text-sm"
+                          >
+                            <option>Curso</option>
+                            <option>Certificação</option>
+                            <option>Voluntário</option>
+                            <option>Prêmio</option>
+                            <option>Projeto</option>
+                          </select>
+                          <Input
+                            placeholder="Nome do curso, certificação ou conquista"
+                            value={item.titulo}
+                            onChange={(e) => updateItem("certificados", i, "titulo", e.target.value)}
+                            className="flex-1"
+                          />
+                          {data.certificados.length > 1 && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                            >
+                              <Button variant="ghost" size="icon" onClick={() => removeItem("certificados", i)}>
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </motion.div>
+                          )}
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 
-                <Button variant="outline" size="sm" onClick={() => addItem("certificados")} className="gap-2">
-                  <Plus className="w-4 h-4" /> Adicionar conquista
-                </Button>
-              </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <Button variant="outline" size="sm" onClick={() => addItem("certificados")} className="gap-2">
+                    <Plus className="w-4 h-4" /> Adicionar conquista
+                  </Button>
+                </motion.div>
+              </motion.div>
 
               {/* Botão Gerar Descrições */}
-              {data.certificados.some(c => c.titulo) && data.titulosLinkedin?.trim() && (
-                <div className="pt-4 border-t border-border">
-                  <Button 
-                    onClick={generateAchievementDescriptions} 
-                    disabled={isGeneratingDescriptions}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
-                    size="lg"
+              <AnimatePresence>
+                {data.certificados.some(c => c.titulo) && data.titulosLinkedin?.trim() && (
+                  <motion.div 
+                    className="pt-4 border-t border-border"
+                    initial={{ opacity: 0, y: 20, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    {isGeneratingDescriptions ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Gerando descrições...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        Gerar Descrições com IA
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    A IA vai criar descrições otimizadas com palavras-chave dos seus cargos-objetivo
-                  </p>
-                </div>
-              )}
-            </div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button 
+                        onClick={generateAchievementDescriptions} 
+                        disabled={isGeneratingDescriptions}
+                        className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
+                        size="lg"
+                      >
+                        {isGeneratingDescriptions ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Gerando descrições...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            Gerar Descrições com IA
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      A IA vai criar descrições otimizadas com palavras-chave dos seus cargos-objetivo
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
         );
 
       case 6:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-6"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Sparkles className="w-8 h-8 text-green-500" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Descrições Geradas</h2>
-              <p className="text-muted-foreground">Copie cada descrição e cole na Gupy</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Descrições Geradas
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Copie cada descrição e cole na Gupy
+              </motion.p>
+            </motion.div>
 
             {data.conquistasDescricoes && data.conquistasDescricoes.length > 0 ? (
-              <div className="space-y-4 max-w-2xl mx-auto">
+              <motion.div 
+                className="space-y-4 max-w-2xl mx-auto"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+              >
                 {data.conquistasDescricoes.map((item, i) => (
-                  <Card key={i} className="p-4 space-y-3 bg-card border-green-500/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-sm">{item.titulo_original}</h3>
+                  <motion.div
+                    key={`desc-${i}`}
+                    variants={staggerItem}
+                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                  >
+                    <Card className="p-4 space-y-3 bg-card border-green-500/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-sm">{item.titulo_original}</h3>
+                        </div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => copyToClipboard(item.descricao, item.titulo_original)}
+                            className="gap-2"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Copiar
+                          </Button>
+                        </motion.div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => copyToClipboard(item.descricao, item.titulo_original)}
-                        className="gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copiar
-                      </Button>
-                    </div>
-                    <div className="p-3 bg-muted/30 rounded-lg text-sm">
-                      {item.descricao}
-                    </div>
-                  </Card>
+                      <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                        {item.descricao}
+                      </div>
+                    </Card>
+                  </motion.div>
                 ))}
 
-                <Card className="p-4 bg-primary/5 border-primary/20">
-                  <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-muted-foreground">
-                      <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
-                      <ol className="list-decimal list-inside space-y-1">
-                        <li>Acesse seu perfil na Gupy</li>
-                        <li>Vá em "Conquistas e Certificados"</li>
-                        <li>Edite cada item</li>
-                        <li>Cole a descrição correspondente</li>
-                      </ol>
-                    </div>
-                  </div>
-                </Card>
-
-                <Button 
-                  variant="outline" 
-                  onClick={() => setCurrentStep(5)} 
-                  className="gap-2"
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  Editar conquistas
-                </Button>
-              </div>
+                  <Card className="p-4 bg-primary/5 border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-muted-foreground">
+                        <p className="font-medium text-foreground mb-1">Como usar na Gupy:</p>
+                        <ol className="list-decimal list-inside space-y-1">
+                          <li>Acesse seu perfil na Gupy</li>
+                          <li>Vá em "Conquistas e Certificados"</li>
+                          <li>Edite cada item</li>
+                          <li>Cole a descrição correspondente</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentStep(5)} 
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Editar conquistas
+                  </Button>
+                </motion.div>
+              </motion.div>
             ) : (
-              <div className="text-center py-8 max-w-xl mx-auto">
+              <motion.div 
+                className="text-center py-8 max-w-xl mx-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 <p className="text-muted-foreground mb-4">
                   Você ainda não gerou as descrições das suas conquistas.
                 </p>
@@ -848,7 +1284,7 @@ export const GupyGuide = () => {
                   <ArrowLeft className="w-4 h-4" />
                   Voltar para Conquistas
                 </Button>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         );
@@ -856,26 +1292,64 @@ export const GupyGuide = () => {
       case 7:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-7"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <Lightbulb className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Habilidades</h2>
-              <p className="text-muted-foreground">Adicione as 30 competências do seu LinkedIn</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Habilidades
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Adicione as 30 competências do seu LinkedIn
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Dica:</strong> Vá no LinkedIn → Competências → copie cada uma e cole aqui.
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <Card className="p-4 bg-primary/5 border-primary/20 max-w-xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Vá no LinkedIn → Competências → copie cada uma e cole aqui.
+                </p>
+              </Card>
+            </motion.div>
 
-            <div className="space-y-4 max-w-xl mx-auto">
+            <motion.div 
+              className="space-y-4 max-w-xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
               <div className="flex gap-2">
                 <Input
                   placeholder="Digite uma habilidade e pressione Enter"
@@ -884,64 +1358,123 @@ export const GupyGuide = () => {
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHabilidade())}
                   className="flex-1"
                 />
-                <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
-                  <Plus className="w-4 h-4" />
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={addHabilidade} disabled={data.habilidades.length >= 30 || !newHabilidade.trim()}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </motion.div>
               </div>
 
-              <div className="flex items-center justify-between text-sm">
+              <motion.div 
+                className="flex items-center justify-between text-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
                 <span className="text-muted-foreground">{data.habilidades.length}/30 habilidades</span>
-                {data.habilidades.length >= 20 && (
-                  <span className="text-green-500 flex items-center gap-1">
-                    <Check className="w-4 h-4" /> Bom progresso!
-                  </span>
-                )}
-              </div>
+                <AnimatePresence>
+                  {data.habilidades.length >= 20 && (
+                    <motion.span 
+                      className="text-green-500 flex items-center gap-1"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                    >
+                      <Check className="w-4 h-4" /> Bom progresso!
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
               <div className="flex flex-wrap gap-2">
-                {data.habilidades.map((hab, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
-                  >
-                    {hab}
-                    <button
-                      onClick={() => removeHabilidade(i)}
-                      className="hover:text-destructive transition-colors"
+                <AnimatePresence mode="popLayout">
+                  {data.habilidades.map((hab, i) => (
+                    <motion.span
+                      key={`hab-${hab}-${i}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      layout
+                      transition={{ duration: 0.2 }}
                     >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
+                      {hab}
+                      <button
+                        onClick={() => removeHabilidade(i)}
+                        className="hover:text-destructive transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
       case 8:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-8"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+              >
                 <FileText className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Personalizar Candidatura</h2>
-              <p className="text-muted-foreground">Cole seu texto "Sobre" do LinkedIn</p>
-            </div>
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                Personalizar Candidatura
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Cole seu texto "Sobre" do LinkedIn
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Dica:</strong> Após se candidatar na Gupy, aparece "Personalizar candidatura". 
-                Cole este texto lá para se destacar!
-              </p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Após se candidatar na Gupy, aparece "Personalizar candidatura". 
+                  Cole este texto lá para se destacar!
+                </p>
+              </Card>
+            </motion.div>
 
-            <div className="max-w-2xl mx-auto">
+            <motion.div 
+              className="max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
               <Textarea
                 placeholder="Cole aqui o texto 'Sobre' do seu LinkedIn que você vai usar para personalizar suas candidaturas na Gupy..."
                 value={data.sobre}
@@ -949,71 +1482,105 @@ export const GupyGuide = () => {
                 rows={8}
                 className="text-base"
               />
-            </div>
+            </motion.div>
           </motion.div>
         );
 
       case 9:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            key="step-9"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-8"
           >
-            <div className="text-center space-y-2">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4">
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <motion.div 
+                className="w-20 h-20 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -360 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.6, delay: 0.2, type: "spring", stiffness: 150 }}
+              >
                 <Check className="w-10 h-10 text-green-500" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Parabéns! 🎉</h2>
-              <p className="text-muted-foreground">
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Parabéns! 🎉
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+              >
                 Seu currículo da Gupy está pronto para passar no ATS!
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
-            <Card className="p-6 max-w-xl mx-auto space-y-4 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-              <h3 className="font-semibold">Resumo do que você preencheu:</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cursos</span>
-                  <span className="font-medium">{data.cursos.filter(c => c.nome).length} adicionado(s)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Experiências</span>
-                  <span className="font-medium">{data.experiencias.filter(e => e.empresa).length} adicionada(s)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Idiomas</span>
-                  <span className="font-medium">{data.idiomas.filter(i => i.idioma).length} adicionado(s)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Conquistas</span>
-                  <span className="font-medium">{data.certificados.filter(c => c.titulo).length} adicionado(s)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Descrições geradas</span>
-                  <span className="font-medium">{data.conquistasDescricoes?.length || 0} descrição(ões)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Habilidades</span>
-                  <span className="font-medium">{data.habilidades.length}/30</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Texto "Sobre"</span>
-                  <span className="font-medium">{data.sobre ? "✓ Pronto" : "Não preenchido"}</span>
-                </div>
-              </div>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <Card className="p-6 max-w-xl mx-auto space-y-4 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+                <h3 className="font-semibold">Resumo do que você preencheu:</h3>
+                <motion.div 
+                  className="space-y-2 text-sm"
+                  variants={staggerContainer}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {[
+                    { label: "Cursos", value: `${data.cursos.filter(c => c.nome).length} adicionado(s)` },
+                    { label: "Experiências", value: `${data.experiencias.filter(e => e.empresa).length} adicionada(s)` },
+                    { label: "Idiomas", value: `${data.idiomas.filter(i => i.idioma).length} adicionado(s)` },
+                    { label: "Conquistas", value: `${data.certificados.filter(c => c.titulo).length} adicionado(s)` },
+                    { label: "Descrições geradas", value: `${data.conquistasDescricoes?.length || 0} descrição(ões)` },
+                    { label: "Habilidades", value: `${data.habilidades.length}/30` },
+                    { label: 'Texto "Sobre"', value: data.sobre ? "✓ Pronto" : "Não preenchido" },
+                  ].map((item, i) => (
+                    <motion.div 
+                      key={item.label}
+                      className="flex justify-between"
+                      variants={staggerItem}
+                      transition={{ delay: 0.5 + i * 0.05 }}
+                    >
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-medium">{item.value}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </Card>
+            </motion.div>
 
-            <div className="flex flex-col gap-3 max-w-xl mx-auto">
-              <Button onClick={completeStage} size="lg" className="gap-2">
-                <Check className="w-5 h-5" />
-                Finalizar Etapa 6
-              </Button>
+            <motion.div 
+              className="flex flex-col gap-3 max-w-xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.7 }}
+            >
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button onClick={completeStage} size="lg" className="gap-2 w-full">
+                  <Check className="w-5 h-5" />
+                  Finalizar Etapa 6
+                </Button>
+              </motion.div>
               <Button variant="outline" onClick={() => setCurrentStep(1)}>
                 Revisar e Editar
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
@@ -1089,7 +1656,7 @@ export const GupyGuide = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div ref={contentRef} className="flex-1 overflow-y-auto p-6">
         <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
       </div>
 
