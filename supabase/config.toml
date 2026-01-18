@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-job-keywords]
 verify_jwt = false
+
+[functions.generate-cover-letter]
+verify_jwt = false

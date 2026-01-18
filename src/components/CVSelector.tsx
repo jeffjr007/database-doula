@@ -45,10 +45,10 @@ const cvOptions = [
   {
     id: "cover-letter" as const,
     title: "Carta de Apresentação",
-    subtitle: "Em desenvolvimento",
-    description: "Cartas personalizadas para cada vaga. Em breve disponível.",
+    subtitle: "Personalize sua história",
+    description: "3 modelos personalizados para você usar em suas candidaturas.",
     icon: Mail,
-    available: false,
+    available: true,
     order: 3,
     indicatorIcon: Sparkles,
     indicatorLabel: "Seu diferencial",

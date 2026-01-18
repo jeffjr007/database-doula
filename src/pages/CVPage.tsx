@@ -4,9 +4,12 @@ import { CVForm, CVFormData } from "@/components/CVForm";
 import { CVPreview } from "@/components/CVPreview";
 import { CVData } from "@/types/cv";
 import { ATSCVData } from "@/types/ats-cv";
+import { CoverLetterData, CoverLetterFormData } from "@/types/cover-letter";
 import { CVSelector } from "@/components/CVSelector";
 import { ATSCVForm } from "@/components/ATSCVForm";
 import { ATSCVPreview } from "@/components/ATSCVPreview";
+import { CoverLetterForm } from "@/components/CoverLetterForm";
+import { CoverLetterPreview } from "@/components/CoverLetterPreview";
 import { SaveCVModal } from "@/components/SaveCVModal";
 import { Zap, FolderOpen, LogIn, LogOut, User, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,8 +29,10 @@ const CVPage = () => {
   const [viewState, setViewState] = useState<ViewState>("selector");
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [atsCvData, setAtsCvData] = useState<ATSCVData | null>(null);
+  const [coverLetterData, setCoverLetterData] = useState<CoverLetterData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showCoverLetterForm, setShowCoverLetterForm] = useState(false);
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
   const [stage2Completed, setStage2Completed] = useState(false);
   const [completingStage, setCompletingStage] = useState(false);
@@ -167,7 +172,35 @@ const CVPage = () => {
 
   const handleSelectCVType = (type: CVType) => {
     setCvType(type);
-    setViewState("form");
+    if (type === "cover-letter") {
+      setShowCoverLetterForm(true);
+    } else {
+      setViewState("form");
+    }
+  };
+
+  const handleGenerateCoverLetter = async (formData: CoverLetterFormData) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-cover-letter', {
+        body: { formData },
+      });
+
+      if (error) throw new Error(error.message || 'Erro ao gerar carta');
+      if (data?.error) throw new Error(data.error);
+
+      setCoverLetterData({
+        formData,
+        modelos: data.modelos,
+      });
+      setShowCoverLetterForm(false);
+      setViewState("preview");
+      toast({ title: "Cartas geradas! 🎉", description: "3 modelos de carta de apresentação prontos." });
+    } catch (error: any) {
+      toast({ title: "Erro ao gerar carta", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGeneratePersonalized = async (formData: CVFormData) => {
@@ -218,6 +251,7 @@ const CVPage = () => {
 
   const handleReset = () => {
     if (cvType === "ats") setAtsCvData(null);
+    else if (cvType === "cover-letter") setCoverLetterData(null);
     else setCvData(null);
     setViewState("form");
   };
@@ -226,6 +260,13 @@ const CVPage = () => {
     setCvType(null);
     setCvData(null);
     setAtsCvData(null);
+    setCoverLetterData(null);
+    setViewState("selector");
+  };
+
+  const handleBackFromCoverLetter = () => {
+    setCoverLetterData(null);
+    setCvType(null);
     setViewState("selector");
   };
 
@@ -391,11 +432,21 @@ const CVPage = () => {
             {viewState === "form" && cvType === "ats" && (<motion.div key="ats-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><ATSCVForm onGenerate={handleGenerateATS} onBack={handleBackToSelector} /></motion.div>)}
             {viewState === "preview" && cvType === "personalized" && cvData && (<motion.div key="personalized-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CVPreview data={cvData} onReset={handleReset} onUpdate={handleUpdateCV} onSave={handleOpenSaveModal} /></motion.div>)}
             {viewState === "preview" && cvType === "ats" && atsCvData && (<motion.div key="ats-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ATSCVPreview data={atsCvData} onReset={handleReset} onSave={handleOpenSaveModalATS} /></motion.div>)}
+            {viewState === "preview" && cvType === "cover-letter" && coverLetterData && (<motion.div key="cover-letter-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CoverLetterPreview data={coverLetterData} onBack={handleBackFromCoverLetter} /></motion.div>)}
           </AnimatePresence>
         </main>
       </div>
 
       <SaveCVModal open={showSaveModal} onOpenChange={setShowSaveModal} onSave={handleSaveCV} />
+      <CoverLetterForm 
+        open={showCoverLetterForm} 
+        onOpenChange={(open) => {
+          setShowCoverLetterForm(open);
+          if (!open) setCvType(null);
+        }} 
+        onGenerate={handleGenerateCoverLetter} 
+        isLoading={isLoading} 
+      />
     </div>
   );
 };
