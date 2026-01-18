@@ -8,11 +8,12 @@ import { CVSelector } from "@/components/CVSelector";
 import { ATSCVForm } from "@/components/ATSCVForm";
 import { ATSCVPreview } from "@/components/ATSCVPreview";
 import { SaveCVModal } from "@/components/SaveCVModal";
-import { Zap, FolderOpen, LogIn, LogOut, User, ArrowLeft } from "lucide-react";
+import { Zap, FolderOpen, LogIn, LogOut, User, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import logoAd from "@/assets/logo-ad.png";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,7 +27,9 @@ const CVPage = () => {
   const [atsCvData, setAtsCvData] = useState<ATSCVData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-
+  const [savedCVs, setSavedCVs] = useState<any[]>([]);
+  const [stage2Completed, setStage2Completed] = useState(false);
+  const [completingStage, setCompletingStage] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const location = useLocation();
@@ -45,6 +48,83 @@ const CVPage = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  // Fetch saved CVs and stage2 completion status
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      // Fetch saved CVs
+      const { data: cvsData } = await supabase
+        .from('saved_cvs')
+        .select('id, name, cv_data')
+        .eq('user_id', user.id);
+
+      if (cvsData) {
+        setSavedCVs(cvsData);
+      }
+
+      // Fetch stage2 completion status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stage2_completed')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        setStage2Completed(profile.stage2_completed ?? false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  // Check if user has all 3 document types
+  const hasPersonalizedCV = savedCVs.some(cv => {
+    const data = cv.cv_data as any;
+    return data?.sumario && !data?.isATS;
+  });
+
+  const hasATSCV = savedCVs.some(cv => {
+    const data = cv.cv_data as any;
+    return data?.isATS === true;
+  });
+
+  const hasCoverLetter = savedCVs.some(cv => {
+    const data = cv.cv_data as any;
+    return data?.isCoverLetter === true;
+  });
+
+  const hasAllDocuments = hasPersonalizedCV && hasATSCV;
+  const canCompleteStage = hasAllDocuments && !stage2Completed;
+
+  const handleCompleteStage2 = async () => {
+    if (!user || !canCompleteStage) return;
+
+    setCompletingStage(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ stage2_completed: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setStage2Completed(true);
+      toast({
+        title: "Etapa 2 concluída! 🎉",
+        description: "Parabéns! Você já pode acessar a Etapa 3.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao concluir etapa",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCompletingStage(false);
+    }
+  };
 
   useEffect(() => {
     if (user && location.state?.openSaveModal) {
@@ -215,7 +295,77 @@ const CVPage = () => {
 
         <main className="relative">
           <AnimatePresence mode="wait">
-            {viewState === "selector" && (<motion.div key="selector" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><CVSelector onSelect={handleSelectCVType} /></motion.div>)}
+            {viewState === "selector" && (
+              <motion.div key="selector" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <CVSelector onSelect={handleSelectCVType} />
+                
+                {/* Stage 2 Completion Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-8"
+                >
+                  <Card className={`p-6 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-lg ${stage2Completed ? 'bg-green-500/20' : 'bg-primary/10'}`}>
+                          <CheckCircle2 className={`w-5 h-5 ${stage2Completed ? 'text-green-500' : 'text-primary'}`} />
+                        </div>
+                        <div>
+                          <h3 className={`font-semibold ${stage2Completed ? 'text-green-500' : 'text-foreground'}`}>
+                            {stage2Completed ? 'Etapa 2 Concluída!' : 'Concluir Etapa 2'}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {stage2Completed 
+                              ? 'Você já pode acessar a Etapa 3 - Funil de Oportunidades'
+                              : hasAllDocuments
+                                ? 'Você criou todos os documentos! Clique para concluir.'
+                                : `Crie seu ${!hasPersonalizedCV ? 'CV Personalizado' : ''} ${!hasPersonalizedCV && !hasATSCV ? 'e ' : ''} ${!hasATSCV ? 'CV ATS' : ''} para concluir.`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {!stage2Completed && (
+                        <Button
+                          onClick={handleCompleteStage2}
+                          disabled={!canCompleteStage || completingStage}
+                          className="gap-2 whitespace-nowrap"
+                        >
+                          {completingStage ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4" />
+                              Concluído
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Document checklist */}
+                    {!stage2Completed && (
+                      <div className="mt-4 pt-4 border-t border-border/30">
+                        <p className="text-xs text-muted-foreground mb-2">Documentos criados:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full ${hasPersonalizedCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                            {hasPersonalizedCV ? '✓' : '○'} CV Personalizado
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${hasATSCV ? 'bg-green-500/20 text-green-500' : 'bg-muted/50 text-muted-foreground'}`}>
+                            {hasATSCV ? '✓' : '○'} CV ATS
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
+              </motion.div>
+            )}
             {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}
             {viewState === "form" && cvType === "ats" && (<motion.div key="ats-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><ATSCVForm onGenerate={handleGenerateATS} onBack={handleBackToSelector} /></motion.div>)}
             {viewState === "preview" && cvType === "personalized" && cvData && (<motion.div key="personalized-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CVPreview data={cvData} onReset={handleReset} onUpdate={handleUpdateCV} onSave={handleOpenSaveModal} /></motion.div>)}

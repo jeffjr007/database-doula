@@ -26,6 +26,7 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 
 import { StageWarningModal } from "@/components/StageWarningModal";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
+import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
 
 interface StageProgress {
   stage_number: number;
@@ -124,13 +125,15 @@ const Portal = () => {
   const [opportunityFunnel, setOpportunityFunnel] = useState<OpportunityFunnel | null>(null);
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
   const [platformActivated, setPlatformActivated] = useState<boolean | null>(null);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
     open: false,
     type: 'linkedin-cv',
     targetPath: '',
   });
   const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false);
+  const [stage2Completed, setStage2Completed] = useState<boolean>(false);
+  const [showStage3Modal, setShowStage3Modal] = useState(false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
@@ -157,12 +160,13 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, platform_activated, stage2_unlocked')
+        .select('full_name, platform_activated, stage2_unlocked, stage2_completed')
         .eq('user_id', user.id)
         .single();
 
       if (profile) {
         setStage2Unlocked(profile.stage2_unlocked ?? false);
+        setStage2Completed(profile.stage2_completed ?? false);
       }
 
       if (profile?.full_name) {
@@ -303,7 +307,23 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
       return;
     }
 
+    // Show welcome modal for Stage 3 if Stage 2 was just completed
+    if (stage.number === 3 && stage2Completed) {
+      const seenKey = `stage3_welcome_shown_${user.id}`;
+      const hasSeenWelcome = localStorage.getItem(seenKey) === 'true';
+      
+      if (!hasSeenWelcome) {
+        setShowStage3Modal(true);
+        localStorage.setItem(seenKey, 'true');
+        return;
+      }
+    }
+
     navigate(stage.path);
+  };
+
+  const handleStage3Continue = () => {
+    navigate('/etapa/3');
   };
 
   const handleWarningConfirm = () => {
@@ -593,6 +613,14 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         onClose={() => setWarningModal({ ...warningModal, open: false })}
         onConfirm={handleWarningConfirm}
         type={warningModal.type}
+      />
+
+      {/* Stage 3 Welcome Modal */}
+      <Stage3WelcomeModal
+        open={showStage3Modal}
+        onOpenChange={setShowStage3Modal}
+        hasFunnel={opportunityFunnel?.status === 'published'}
+        onContinue={handleStage3Continue}
       />
     </div>
   );
