@@ -53,10 +53,11 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
     }
 
     setExtractingCV(true);
-    try {
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onload = async () => {
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
         const base64 = (reader.result as string).split(',')[1];
         
         const { data, error } = await supabase.functions.invoke('extract-cv-pdf', {
@@ -74,18 +75,26 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
           title: "CV extraído! ✓",
           description: "Os dados do currículo foram extraídos com sucesso.",
         });
-      };
-      reader.readAsDataURL(file);
-    } catch (error: any) {
-      console.error('Error extracting CV:', error);
+      } catch (error: any) {
+        console.error('Error extracting CV:', error);
+        toast({
+          title: "Erro ao extrair CV",
+          description: error.message || "Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setExtractingCV(false);
+      }
+    };
+    reader.onerror = () => {
+      setExtractingCV(false);
       toast({
-        title: "Erro ao extrair CV",
-        description: error.message || "Tente novamente ou preencha manualmente.",
+        title: "Erro ao ler arquivo",
+        description: "Não foi possível ler o arquivo PDF.",
         variant: "destructive",
       });
-    } finally {
-      setExtractingCV(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const formatExtractedCV = (data: any): string => {
@@ -282,7 +291,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
               <span className="text-xs text-muted-foreground">(Anexe seu CV ATS)</span>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -300,7 +309,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
                 {extractingCV ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Extraindo...
+                    Analisando CV...
                   </>
                 ) : (
                   <>
@@ -309,20 +318,13 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
                   </>
                 )}
               </Button>
-              {formData.cvAnalysis && (
-                <div className="flex items-center gap-2 text-sm text-green-500">
-                  <FileText className="w-4 h-4" />
-                  CV extraído
+              {formData.cvAnalysis && !extractingCV && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
+                  <FileText className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-500 font-medium">CV analisado com sucesso</span>
                 </div>
               )}
             </div>
-
-            <Textarea
-              value={formData.cvAnalysis}
-              onChange={(e) => handleChange('cvAnalysis', e.target.value)}
-              placeholder="O conteúdo do seu CV aparecerá aqui após o upload, ou você pode colar/digitar manualmente..."
-              className="min-h-[120px] text-sm"
-            />
           </div>
         </div>
 
