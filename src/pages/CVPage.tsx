@@ -39,6 +39,7 @@ const CVPage = () => {
   const [stage2Completed, setStage2Completed] = useState(false);
   const [completingStage, setCompletingStage] = useState(false);
   const [showCompletionSection, setShowCompletionSection] = useState(false);
+  const [isLoadingStageData, setIsLoadingStageData] = useState(true);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const location = useLocation();
@@ -66,37 +67,32 @@ const CVPage = () => {
   // Fetch saved CVs, cover letters and stage2 completion status
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
-
-      // Fetch saved CVs
-      const { data: cvsData } = await supabase
-        .from('saved_cvs')
-        .select('id, name, cv_data')
-        .eq('user_id', user.id);
-
-      if (cvsData) {
-        setSavedCVs(cvsData);
+      if (!user) {
+        setIsLoadingStageData(false);
+        return;
       }
 
-      // Fetch saved cover letters
-      const { data: coverLettersData } = await supabase
-        .from('saved_cover_letters')
-        .select('id, name, cover_letter_data')
-        .eq('user_id', user.id);
+      try {
+        // Fetch all data in parallel
+        const [cvsResult, coverLettersResult, profileResult] = await Promise.all([
+          supabase.from('saved_cvs').select('id, name, cv_data').eq('user_id', user.id),
+          supabase.from('saved_cover_letters').select('id, name, cover_letter_data').eq('user_id', user.id),
+          supabase.from('profiles').select('stage2_completed').eq('user_id', user.id).single()
+        ]);
 
-      if (coverLettersData) {
-        setSavedCoverLetters(coverLettersData);
-      }
+        if (cvsResult.data) {
+          setSavedCVs(cvsResult.data);
+        }
 
-      // Fetch stage2 completion status
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('stage2_completed')
-        .eq('user_id', user.id)
-        .single();
+        if (coverLettersResult.data) {
+          setSavedCoverLetters(coverLettersResult.data);
+        }
 
-      if (profile) {
-        setStage2Completed(profile.stage2_completed ?? false);
+        if (profileResult.data) {
+          setStage2Completed(profileResult.data.stage2_completed ?? false);
+        }
+      } finally {
+        setIsLoadingStageData(false);
       }
     };
 
@@ -439,20 +435,20 @@ const CVPage = () => {
                   }}
                 />
                 
-                {/* Stage 2 Completion Section - appears only after options are visible */}
+                {/* Stage 2 Completion Section - appears only after options are visible AND data is loaded */}
                 <AnimatePresence>
-                  {showCompletionSection && (
+                  {showCompletionSection && !isLoadingStageData && (
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 20 }}
                       transition={{ 
-                        duration: 0.6,
+                        duration: 0.8,
                         ease: [0.25, 0.46, 0.45, 0.94]
                       }}
                       className="mt-8"
                     >
-                      <Card className={`p-6 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
+                      <Card className={`p-6 transition-all duration-500 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div className="flex items-start gap-3">
                             <div className={`p-2 rounded-lg ${stage2Completed ? 'bg-green-500/20' : 'bg-primary/10'}`}>
