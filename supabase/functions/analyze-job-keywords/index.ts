@@ -25,27 +25,36 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Você é um especialista em recrutamento e seleção. Sua tarefa é analisar uma descrição de vaga e o perfil de um candidato para extrair as palavras-chave mais importantes que o candidato deve abordar em uma entrevista.
+    const systemPrompt = `Você é um especialista em recrutamento e preparação para entrevistas. Sua tarefa é extrair palavras-chave de uma descrição de vaga que o candidato deve usar para criar seu roteiro de entrevista.
 
-Regras:
-1. Extraia APENAS palavras-chave ou termos curtos (1-4 palavras)
-2. Foque em: habilidades técnicas, competências comportamentais, ferramentas, metodologias, e requisitos específicos da vaga
-3. Retorne entre 8 e 15 palavras-chave
-4. Priorize termos que aparecem tanto na vaga quanto no perfil do candidato
-5. Inclua também termos importantes da vaga que o candidato deveria destacar`;
+REGRAS IMPORTANTES:
+1. Extraia APENAS palavras-chave técnicas e comportamentais relevantes para a ENTREVISTA
+2. NUNCA inclua nomes de empresas (ex: Magazine Luiza, Nubank, Google, etc.)
+3. NUNCA inclua nomes de pessoas
+4. NUNCA inclua localizações geográficas
+5. Foque em: 
+   - Habilidades técnicas (ex: Python, Excel, SQL, análise de dados)
+   - Competências comportamentais (ex: liderança, trabalho em equipe, comunicação)
+   - Metodologias e frameworks (ex: Scrum, Agile, Lean)
+   - Ferramentas e tecnologias (ex: Power BI, SAP, Salesforce)
+   - Áreas de conhecimento (ex: gestão de projetos, marketing digital)
+6. Retorne entre 10 e 15 palavras-chave
+7. Priorize termos que o candidato possa conectar com suas experiências
+8. Cada palavra-chave deve ser um termo que faça sentido o candidato abordar na entrevista`;
 
-    const userPrompt = `Analise a vaga e o perfil abaixo e extraia as palavras-chave mais relevantes para preparação de entrevista.
+    const userPrompt = `Faça uma análise dessa vaga:
 
-## DESCRIÇÃO DA VAGA:
 ${jobDescription}
 
-## PERFIL DO CANDIDATO (Sobre do LinkedIn):
+Esse é o meu perfil e minhas experiências:
+
 ${linkedinAbout}
 
-## EXPERIÊNCIAS DO CANDIDATO:
 ${experiences}
 
-Retorne as palavras-chave mais importantes que o candidato deve abordar na entrevista.`;
+Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de entrevista. Liste as palavras-chave que eu deva conectar com minhas experiências profissionais e perfil.
+
+IMPORTANTE: NÃO inclua nomes de empresas, pessoas ou localizações. Apenas termos técnicos, habilidades e competências.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
