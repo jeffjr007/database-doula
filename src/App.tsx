@@ -11,6 +11,8 @@ import MeusCVs from "./pages/MeusCVs";
 import StagePage from "./pages/StagePage";
 import Stage1Page from "./pages/Stage1Page";
 import Stage3Page from "./pages/Stage3Page";
+import Stage4Page from "./pages/Stage4Page";
+import Stage5Page from "./pages/Stage5Page";
 import Admin from "./pages/Admin";
 import ActivatePlatform from "./pages/ActivatePlatform";
 import NotFound from "./pages/NotFound";
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/etapa/1" element={<Stage1Page />} />
             <Route path="/etapa/3" element={<Stage3Page />} />
+            <Route path="/etapa/4" element={<Stage4Page />} />
+            <Route path="/etapa/5" element={<Stage5Page />} />
             <Route path="/etapa/:stageNumber" element={<StagePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
