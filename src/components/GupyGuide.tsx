@@ -115,8 +115,10 @@ export const GupyGuide = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
   const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
+  const [isFormattingSobre, setIsFormattingSobre] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
+  const [showSobreModal, setShowSobreModal] = useState(false);
   const [newHabilidade, setNewHabilidade] = useState("");
   const [data, setData] = useState<GupyData>(initialData);
   
@@ -374,6 +376,54 @@ export const GupyGuide = () => {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copiado!", description: `${label} copiado para a área de transferência.` });
+  };
+
+  // Format "Sobre" text for Gupy
+  const formatSobreText = async () => {
+    if (!data.sobre?.trim()) {
+      toast({ 
+        title: "Texto vazio", 
+        description: "Cole seu texto 'Sobre' do LinkedIn primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowSobreModal(true);
+  };
+
+  const confirmAndFormatSobre = async () => {
+    setShowSobreModal(false);
+    setIsFormattingSobre(true);
+
+    try {
+      const response = await supabase.functions.invoke('format-gupy-about', {
+        body: { sobre: data.sobre }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const { formatted_sobre } = response.data;
+      
+      updateData({ ...data, sobre: formatted_sobre });
+      setTimeout(scrollToTop, 100);
+      
+      toast({ 
+        title: "Texto formatado!", 
+        description: `Reduzido de ${response.data.original_length} para ${response.data.formatted_length} caracteres.`
+      });
+    } catch (error) {
+      console.error("Error formatting sobre:", error);
+      toast({ 
+        title: "Erro ao formatar", 
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsFormattingSobre(false);
+    }
   };
 
   const completeStage = async () => {
@@ -1494,17 +1544,73 @@ export const GupyGuide = () => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
+            {/* Como usar na Gupy - PRIMEIRO */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-2xl mx-auto"
+            >
+              <Card className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 backdrop-blur-sm overflow-hidden relative">
+                <motion.div 
+                  className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                />
+                <div className="flex items-start gap-4 relative">
+                  <motion.div 
+                    className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2, type: "spring", stiffness: 200 }}
+                  >
+                    <Info className="w-5 h-5 text-primary" />
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <p className="font-semibold text-foreground mb-3 text-sm">Como usar na Gupy:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { num: "1", text: "Candidate-se a uma vaga" },
+                        { num: "2", text: '"Personalizar candidatura"' },
+                        { num: "3", text: "Cole este texto" },
+                        { num: "4", text: "Destaque-se!" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={item.num}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                        >
+                          <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium flex-shrink-0">
+                            {item.num}
+                          </span>
+                          <span>{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </Card>
+            </motion.div>
+
             <motion.div 
               className="text-center space-y-2"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <motion.div 
                 className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.5, delay: 0.4, type: "spring", stiffness: 200 }}
               >
                 <FileText className="w-8 h-8 text-primary" />
               </motion.div>
@@ -1512,7 +1618,7 @@ export const GupyGuide = () => {
                 className="font-display text-2xl font-bold"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
               >
                 Personalizar Candidatura
               </motion.h2>
@@ -1520,38 +1626,92 @@ export const GupyGuide = () => {
                 className="text-muted-foreground"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
               >
                 Cole seu texto "Sobre" do LinkedIn
               </motion.p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-            >
-              <Card className="p-4 bg-primary/5 border-primary/20 max-w-2xl mx-auto">
-                <p className="text-sm text-muted-foreground">
-                  💡 <strong>Dica:</strong> Após se candidatar na Gupy, aparece "Personalizar candidatura". 
-                  Cole este texto lá para se destacar!
-                </p>
-              </Card>
-            </motion.div>
-
             <motion.div 
-              className="max-w-2xl mx-auto"
+              className="max-w-2xl mx-auto space-y-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
             >
-              <Textarea
-                placeholder="Cole aqui o texto 'Sobre' do seu LinkedIn que você vai usar para personalizar suas candidaturas na Gupy..."
-                value={data.sobre}
-                onChange={(e) => updateData({ ...data, sobre: e.target.value })}
-                rows={8}
-                className="text-base"
-              />
+              <div className="relative">
+                <Textarea
+                  placeholder="Cole aqui o texto 'Sobre' do seu LinkedIn que você vai usar para personalizar suas candidaturas na Gupy..."
+                  value={data.sobre}
+                  onChange={(e) => updateData({ ...data, sobre: e.target.value })}
+                  rows={8}
+                  className="text-base"
+                />
+                <motion.div 
+                  className="absolute bottom-3 right-3 flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <span className={`text-xs ${(data.sobre?.length || 0) > 1500 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                    {data.sobre?.length || 0}/1500
+                  </span>
+                </motion.div>
+              </div>
+
+              <AnimatePresence>
+                {data.sobre?.trim() && (
+                  <motion.div 
+                    className="flex flex-col gap-3"
+                    initial={{ opacity: 0, y: 20, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button 
+                        onClick={formatSobreText} 
+                        disabled={isFormattingSobre}
+                        className="w-full gap-2 bg-gradient-to-r from-primary to-amber-600 hover:from-primary/90 hover:to-amber-600/90"
+                        size="lg"
+                      >
+                        {isFormattingSobre ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Formatando...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            Formatar para a Gupy
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Remove emojis e reduz para 1500 caracteres (limite da Gupy)
+                    </p>
+
+                    {data.sobre && (
+                      <motion.div 
+                        className="flex justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(data.sobre, "Texto Sobre")}
+                          className="gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copiar texto
+                        </Button>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         );
@@ -1812,6 +1972,43 @@ export const GupyGuide = () => {
             <Button onClick={confirmAndGenerateDescriptions} className="gap-2">
               <Sparkles className="w-4 h-4" />
               Gerar descrições
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sobre Modal - Text Formatting */}
+      <Dialog open={showSobreModal} onOpenChange={setShowSobreModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Formatar texto "Sobre"
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-2">
+              <p>
+                A Gupy tem um <strong>limite de 1500 caracteres</strong> para o campo de personalização 
+                da candidatura.
+              </p>
+              <p>
+                A IA vai <strong>remover todos os emojis</strong> do seu texto e, se necessário, 
+                resumir de forma inteligente para caber no limite.
+              </p>
+              <p className="text-foreground font-medium">
+                Seu texto atual tem {data.sobre?.length || 0} caracteres. 
+                {(data.sobre?.length || 0) > 1500 
+                  ? " Precisa ser reduzido!" 
+                  : " Mas vamos otimizar mesmo assim."}
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowSobreModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmAndFormatSobre} className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Formatar agora
             </Button>
           </div>
         </DialogContent>
