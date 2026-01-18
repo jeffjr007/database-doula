@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, Save, FileText, Target, CheckCircle, Eye } from 'lucide-react';
+import { ArrowLeft, Upload, Save, FileText, Target, CheckCircle, Eye, Unlock, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MenteeDetailProps {
@@ -43,6 +43,8 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
   const [uploadingFunnel, setUploadingFunnel] = useState(false);
   const [savingDiagnostic, setSavingDiagnostic] = useState(false);
   const [savingFunnel, setSavingFunnel] = useState(false);
+  const [stage2Unlocked, setStage2Unlocked] = useState(false);
+  const [togglingStage2, setTogglingStage2] = useState(false);
 
   // Form states
   const [diagnosticTitle, setDiagnosticTitle] = useState('Diagnóstico LinkedIn');
@@ -57,7 +59,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
 
   const fetchData = async () => {
     try {
-      const [diagnosticResult, funnelResult] = await Promise.all([
+      const [diagnosticResult, funnelResult, profileResult] = await Promise.all([
         supabase
           .from('linkedin_diagnostics')
           .select('*')
@@ -66,6 +68,11 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         supabase
           .from('opportunity_funnels')
           .select('*')
+          .eq('user_id', menteeId)
+          .maybeSingle(),
+        supabase
+          .from('profiles')
+          .select('stage2_unlocked')
           .eq('user_id', menteeId)
           .maybeSingle(),
       ]);
@@ -85,6 +92,10 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
             ? funnelResult.data.content
             : JSON.stringify(funnelResult.data.content, null, 2)
         );
+      }
+
+      if (profileResult.data) {
+        setStage2Unlocked(profileResult.data.stage2_unlocked ?? false);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -332,6 +343,83 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
           </p>
         </div>
       </div>
+
+      {/* Stage 2 Access Control */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="glass-card rounded-xl p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stage2Unlocked ? 'bg-green-500/20' : 'bg-destructive/20'}`}>
+              {stage2Unlocked ? (
+                <Unlock className="w-5 h-5 text-green-500" />
+              ) : (
+                <Lock className="w-5 h-5 text-destructive" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-foreground">
+                Etapa 2 - Gerador de CV
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {stage2Unlocked
+                  ? '✓ Liberada - Mentorado pode acessar'
+                  : '○ Bloqueada - Aguardando validação do LinkedIn'}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant={stage2Unlocked ? 'outline' : 'default'}
+            onClick={async () => {
+              setTogglingStage2(true);
+              try {
+                const { error } = await supabase
+                  .from('profiles')
+                  .update({ stage2_unlocked: !stage2Unlocked })
+                  .eq('user_id', menteeId);
+
+                if (error) throw error;
+
+                setStage2Unlocked(!stage2Unlocked);
+                toast({
+                  title: stage2Unlocked ? "Etapa 2 bloqueada" : "Etapa 2 liberada!",
+                  description: stage2Unlocked
+                    ? "O mentorado não pode mais acessar a Etapa 2."
+                    : "O mentorado agora pode acessar a Etapa 2.",
+                });
+              } catch (error: any) {
+                toast({
+                  title: "Erro",
+                  description: error.message,
+                  variant: "destructive",
+                });
+              } finally {
+                setTogglingStage2(false);
+              }
+            }}
+            disabled={togglingStage2}
+            className={stage2Unlocked ? '' : 'bg-green-600 hover:bg-green-700'}
+          >
+            {togglingStage2 ? (
+              'Salvando...'
+            ) : stage2Unlocked ? (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                Bloquear Etapa 2
+              </>
+            ) : (
+              <>
+                <Unlock className="w-4 h-4 mr-2" />
+                Liberar Etapa 2
+              </>
+            )}
+          </Button>
+        </div>
+      </motion.div>
 
       {/* LinkedIn Diagnostic - Stage 1 */}
       <motion.div

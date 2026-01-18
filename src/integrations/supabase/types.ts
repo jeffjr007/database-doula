@@ -231,6 +231,7 @@ export type Database = {
           full_name: string | null
           id: string
           platform_activated: boolean
+          stage2_unlocked: boolean | null
           updated_at: string
           user_id: string
         }
@@ -240,6 +241,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           platform_activated?: boolean
+          stage2_unlocked?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -249,6 +251,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           platform_activated?: boolean
+          stage2_unlocked?: boolean | null
           updated_at?: string
           user_id?: string
         }

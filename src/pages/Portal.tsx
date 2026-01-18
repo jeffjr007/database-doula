@@ -125,11 +125,12 @@ const Portal = () => {
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
   const [platformActivated, setPlatformActivated] = useState<boolean | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
+const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
     open: false,
     type: 'linkedin-cv',
     targetPath: '',
   });
+  const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
@@ -156,9 +157,13 @@ const Portal = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, platform_activated')
+        .select('full_name, platform_activated, stage2_unlocked')
         .eq('user_id', user.id)
         .single();
+
+      if (profile) {
+        setStage2Unlocked(profile.stage2_unlocked ?? false);
+      }
 
       if (profile?.full_name) {
         setUserName(profile.full_name.split(' ')[0]);
@@ -253,7 +258,7 @@ const Portal = () => {
     }
 
     if (stageNumber === 2) {
-      return false;
+      return !stage2Unlocked;
     }
 
     if (stageNumber === 3) {
