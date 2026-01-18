@@ -32,21 +32,26 @@ ESTRUTURA OBRIGATÓRIA DO CURRÍCULO (MÉTODO PERFIL GLORIOSO):
 
 6. EDUCAÇÃO (educacao): Formação acadêmica e certificações do candidato (usar os dados recebidos, limpar duplicatas)
 
-7. EXPERIÊNCIAS (experiencias): TODAS as experiências profissionais do candidato com bullets REESCRITOS contendo palavras-chave da vaga
+7. EXPERIÊNCIAS (experiencias): TODAS as experiências profissionais do candidato reescritas
 
-REGRAS CRÍTICAS ABSOLUTAS:
-- NUNCA omitir experiências do candidato - incluir TODAS as que foram enviadas
-- NUNCA inventar empresas, cargos, ferramentas ou resultados que não existam no CV original
-- CADA bullet de experiência DEVE conter ao menos 1 palavra-chave relevante da vaga
-- MANTER a estrutura exata: empresa, cargo, período, bullets
-- REESCREVER os bullets conectando as experiências REAIS às palavras-chave da vaga
-- PRIORIZAR resultados quantificáveis (%, números, métricas)
-- Se o CV original tiver poucos dados, MANTER o que tem e melhorar a redação
+REGRAS CRÍTICAS PARA EXPERIÊNCIAS:
+- Incluir TODAS as experiências do candidato (NUNCA omitir nenhuma)
+- NUNCA inventar empresas, cargos, ferramentas ou resultados
+- Cada experiência deve ter entre 3 e 6 bullets NO MÁXIMO
+- SELECIONAR os bullets mais relevantes para a vaga (não incluir todos, apenas os melhores)
+- REESCREVER os bullets selecionados inserindo palavras-chave da vaga
+- PRIORIZAR bullets com resultados quantificáveis (%, números, métricas)
+- Bullets devem ser concisos e impactantes (máximo 2 linhas cada)
 
-EXEMPLO DE REESCRITA:
-Original: "Gerenciei equipe de vendas"
-Vaga pede: "liderança", "gestão de pessoas", "resultados"
-Reescrito: "Liderei equipe de vendas de 8 pessoas, implementando gestão de pessoas focada em resultados e atingindo 120% das metas trimestrais"
+REGRA DE SELEÇÃO DE BULLETS:
+Para cada experiência do candidato:
+1. Analise todos os bullets originais
+2. Identifique os 3 a 6 mais relevantes para a vaga
+3. Reescreva apenas esses bullets com palavras-chave da vaga
+4. Descarte os bullets menos relevantes
+
+EXEMPLO:
+Se o candidato tem 15 bullets em uma experiência, selecione apenas os 4-6 mais relevantes para a vaga e reescreva-os.
 
 IMPORTANTE: Responda APENAS via tool call, sem texto adicional.`;
 
