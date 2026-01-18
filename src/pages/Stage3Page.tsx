@@ -18,6 +18,7 @@ interface Funnel {
   status: string;
   attachments: string[];
   pdf_url: string | null;
+  word_url: string | null;
 }
 
 // Stage 3 conversational messages - different style
@@ -353,32 +354,53 @@ const Stage3Page = () => {
                   )}
 
                   {/* Download buttons */}
-                  {funnel.pdf_url && (
+                  {(funnel.pdf_url || funnel.word_url) && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 }}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                      className="space-y-4"
                     >
-                      <Button
-                        className="gap-2"
-                        asChild
-                      >
-                        <a href={funnel.pdf_url} download target="_blank" rel="noopener noreferrer">
-                          <FileDown className="w-4 h-4" />
-                          Baixar PDF
-                        </a>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="gap-2"
-                        asChild
-                      >
-                        <a href={funnel.pdf_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4" />
-                          Abrir em nova aba
-                        </a>
-                      </Button>
+                      {/* Main downloads grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {funnel.pdf_url && (
+                          <Button
+                            className="gap-2"
+                            asChild
+                          >
+                            <a href={funnel.pdf_url} download target="_blank" rel="noopener noreferrer">
+                              <FileDown className="w-4 h-4" />
+                              Baixar PDF
+                            </a>
+                          </Button>
+                        )}
+                        {funnel.word_url && (
+                          <Button
+                            variant="outline"
+                            className="gap-2 border-accent/50 hover:bg-accent/10"
+                            asChild
+                          >
+                            <a href={funnel.word_url} download target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-4 h-4" />
+                              Baixar Word (Editável)
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Secondary actions */}
+                      {funnel.pdf_url && (
+                        <Button
+                          variant="ghost"
+                          className="gap-2 w-full text-muted-foreground"
+                          asChild
+                        >
+                          <a href={funnel.pdf_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4" />
+                            Abrir PDF em nova aba
+                          </a>
+                        </Button>
+                      )}
                     </motion.div>
                   )}
 

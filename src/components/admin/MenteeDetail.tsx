@@ -18,6 +18,7 @@ interface MenteeDetailProps {
 interface LinkedInDiagnostic {
   id: string;
   pdf_url: string | null;
+  word_url: string | null;
   title: string;
   notes: string | null;
   status: string;
@@ -30,6 +31,7 @@ interface OpportunityFunnel {
   notes: string | null;
   status: string;
   pdf_url: string | null;
+  word_url: string | null;
 }
 
 export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps) => {
@@ -39,8 +41,10 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
   const [diagnostic, setDiagnostic] = useState<LinkedInDiagnostic | null>(null);
   const [funnel, setFunnel] = useState<OpportunityFunnel | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploadingDiagnostic, setUploadingDiagnostic] = useState(false);
-  const [uploadingFunnel, setUploadingFunnel] = useState(false);
+  const [uploadingDiagnosticPdf, setUploadingDiagnosticPdf] = useState(false);
+  const [uploadingDiagnosticWord, setUploadingDiagnosticWord] = useState(false);
+  const [uploadingFunnelPdf, setUploadingFunnelPdf] = useState(false);
+  const [uploadingFunnelWord, setUploadingFunnelWord] = useState(false);
   const [savingDiagnostic, setSavingDiagnostic] = useState(false);
   const [savingFunnel, setSavingFunnel] = useState(false);
   const [stage2Unlocked, setStage2Unlocked] = useState(false);
@@ -104,14 +108,16 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
     }
   };
 
-  const handleDiagnosticFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDiagnosticFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'pdf' | 'word') => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    setUploadingDiagnostic(true);
+    const setUploading = type === 'pdf' ? setUploadingDiagnosticPdf : setUploadingDiagnosticWord;
+    setUploading(true);
+    
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${menteeId}/linkedin-diagnostic-${Date.now()}.${fileExt}`;
+      const fileName = `${menteeId}/linkedin-diagnostic-${type}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('mentee-files')
@@ -123,31 +129,29 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         .from('mentee-files')
         .getPublicUrl(fileName);
 
+      const updateData = type === 'pdf' 
+        ? { pdf_url: publicUrl, title: diagnosticTitle, notes: diagnosticNotes }
+        : { word_url: publicUrl, title: diagnosticTitle, notes: diagnosticNotes };
+
       // Create or update diagnostic
       if (diagnostic) {
         await supabase
           .from('linkedin_diagnostics')
-          .update({
-            pdf_url: publicUrl,
-            title: diagnosticTitle,
-            notes: diagnosticNotes,
-          })
+          .update(updateData)
           .eq('id', diagnostic.id);
       } else {
         await supabase
           .from('linkedin_diagnostics')
           .insert({
             user_id: menteeId,
-            pdf_url: publicUrl,
-            title: diagnosticTitle,
-            notes: diagnosticNotes,
+            ...updateData,
             created_by: user.id,
           });
       }
 
       toast({
-        title: "PDF enviado!",
-        description: "O diagnóstico foi salvo com sucesso.",
+        title: `${type === 'pdf' ? 'PDF' : 'Word'} enviado!`,
+        description: "O arquivo foi salvo com sucesso.",
       });
 
       fetchData();
@@ -158,18 +162,20 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         variant: "destructive",
       });
     } finally {
-      setUploadingDiagnostic(false);
+      setUploading(false);
     }
   };
 
-  const handleFunnelFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFunnelFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'pdf' | 'word') => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    setUploadingFunnel(true);
+    const setUploading = type === 'pdf' ? setUploadingFunnelPdf : setUploadingFunnelWord;
+    setUploading(true);
+    
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${menteeId}/opportunity-funnel-${Date.now()}.${fileExt}`;
+      const fileName = `${menteeId}/opportunity-funnel-${type}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('mentee-files')
@@ -181,32 +187,30 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         .from('mentee-files')
         .getPublicUrl(fileName);
 
+      const updateData = type === 'pdf'
+        ? { pdf_url: publicUrl, title: funnelTitle, notes: funnelNotes }
+        : { word_url: publicUrl, title: funnelTitle, notes: funnelNotes };
+
       // Create or update funnel
       if (funnel) {
         await supabase
           .from('opportunity_funnels')
-          .update({
-            pdf_url: publicUrl,
-            title: funnelTitle,
-            notes: funnelNotes,
-          })
+          .update(updateData)
           .eq('id', funnel.id);
       } else {
         await supabase
           .from('opportunity_funnels')
           .insert({
             user_id: menteeId,
-            pdf_url: publicUrl,
-            title: funnelTitle,
-            notes: funnelNotes,
+            ...updateData,
             content: { text: '' },
             created_by: user.id,
           });
       }
 
       toast({
-        title: "PDF enviado!",
-        description: "O funil foi salvo com sucesso.",
+        title: `${type === 'pdf' ? 'PDF' : 'Word'} enviado!`,
+        description: "O arquivo foi salvo com sucesso.",
       });
 
       fetchData();
@@ -217,7 +221,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         variant: "destructive",
       });
     } finally {
-      setUploadingFunnel(false);
+      setUploading(false);
     }
   };
 
@@ -471,7 +475,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
             />
           </div>
 
-          {/* File upload */}
+          {/* PDF upload */}
           <div className="space-y-2">
             <Label>PDF do Diagnóstico</Label>
             <div className="flex items-center gap-4">
@@ -479,15 +483,15 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
                 <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors">
                   <Upload className="w-5 h-5 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploadingDiagnostic ? 'Enviando...' : 'Clique para enviar PDF'}
+                    {uploadingDiagnosticPdf ? 'Enviando...' : 'Clique para enviar PDF'}
                   </span>
                 </div>
                 <input
                   type="file"
                   accept=".pdf"
                   className="hidden"
-                  onChange={handleDiagnosticFileUpload}
-                  disabled={uploadingDiagnostic}
+                  onChange={(e) => handleDiagnosticFileUpload(e, 'pdf')}
+                  disabled={uploadingDiagnosticPdf}
                 />
               </label>
 
@@ -496,6 +500,37 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
                   <a href={diagnostic.pdf_url} target="_blank" rel="noopener noreferrer">
                     <Eye className="w-4 h-4 mr-2" />
                     Ver PDF
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Word upload */}
+          <div className="space-y-2">
+            <Label>Word do Diagnóstico (editável)</Label>
+            <div className="flex items-center gap-4">
+              <label className="flex-1">
+                <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent/50 transition-colors">
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {uploadingDiagnosticWord ? 'Enviando...' : 'Clique para enviar Word (.docx)'}
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  accept=".doc,.docx"
+                  className="hidden"
+                  onChange={(e) => handleDiagnosticFileUpload(e, 'word')}
+                  disabled={uploadingDiagnosticWord}
+                />
+              </label>
+
+              {diagnostic?.word_url && (
+                <Button variant="outline" asChild>
+                  <a href={diagnostic.word_url} target="_blank" rel="noopener noreferrer">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver Word
                   </a>
                 </Button>
               )}
@@ -573,15 +608,15 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
                 <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors">
                   <Upload className="w-5 h-5 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploadingFunnel ? 'Enviando...' : 'Clique para enviar PDF'}
+                    {uploadingFunnelPdf ? 'Enviando...' : 'Clique para enviar PDF'}
                   </span>
                 </div>
                 <input
                   type="file"
                   accept=".pdf"
                   className="hidden"
-                  onChange={handleFunnelFileUpload}
-                  disabled={uploadingFunnel}
+                  onChange={(e) => handleFunnelFileUpload(e, 'pdf')}
+                  disabled={uploadingFunnelPdf}
                 />
               </label>
 
@@ -590,6 +625,37 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
                   <a href={funnel.pdf_url} target="_blank" rel="noopener noreferrer">
                     <Eye className="w-4 h-4 mr-2" />
                     Ver PDF
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Word upload for funnel */}
+          <div className="space-y-2">
+            <Label>Word do Funil (editável)</Label>
+            <div className="flex items-center gap-4">
+              <label className="flex-1">
+                <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-accent/50 transition-colors">
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {uploadingFunnelWord ? 'Enviando...' : 'Clique para enviar Word (.docx)'}
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  accept=".doc,.docx"
+                  className="hidden"
+                  onChange={(e) => handleFunnelFileUpload(e, 'word')}
+                  disabled={uploadingFunnelWord}
+                />
+              </label>
+
+              {funnel?.word_url && (
+                <Button variant="outline" asChild>
+                  <a href={funnel.word_url} target="_blank" rel="noopener noreferrer">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver Word
                   </a>
                 </Button>
               )}

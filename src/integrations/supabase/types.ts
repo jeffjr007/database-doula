@@ -124,6 +124,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          word_url: string | null
         }
         Insert: {
           created_at?: string
@@ -135,6 +136,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          word_url?: string | null
         }
         Update: {
           created_at?: string
@@ -146,6 +148,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          word_url?: string | null
         }
         Relationships: []
       }
@@ -195,6 +198,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          word_url: string | null
         }
         Insert: {
           attachments?: string[] | null
@@ -208,6 +212,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          word_url?: string | null
         }
         Update: {
           attachments?: string[] | null
@@ -221,6 +226,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          word_url?: string | null
         }
         Relationships: []
       }
