@@ -428,7 +428,7 @@ const Portal = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="mb-8"
               >
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-xl">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-2xl">
                   <span className="text-gradient">{currentPhrase}</span>
                 </h1>
               </motion.div>
