@@ -132,14 +132,14 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
   const isValid = formData.experiencias.trim().length > 50 && formData.educacao.trim().length > 10;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8 md:space-y-6">
       {/* Back Button */}
       <Button
         type="button"
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="gap-2 -ml-2"
+        className="gap-2 -ml-2 text-sm"
       >
         <ArrowLeft className="w-4 h-4" />
         Voltar
@@ -149,87 +149,94 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-4"
+        className="space-y-5 md:space-y-4"
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <User className="w-4 h-4 text-primary" />
+        <div className="flex items-center gap-2 text-base md:text-sm font-medium text-foreground">
+          <User className="w-5 h-5 md:w-4 md:h-4 text-primary" />
           Dados Pessoais
         </div>
 
         {/* Nome */}
-        <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">Nome Completo (em maiúsculas)</label>
+        <div className="space-y-2">
+          <label className="text-sm md:text-xs text-muted-foreground">Nome Completo</label>
           <Input
             value={formData.nome}
             onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
             placeholder="LUCIANO DUARTE"
+            className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
           />
         </div>
 
         {/* Contact Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Phone className="w-3 h-3" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-3">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm md:text-xs text-muted-foreground">
+              <Phone className="w-4 h-4 md:w-3 md:h-3" />
               Telefone
             </label>
             <Input
               value={formData.telefone}
               onChange={(e) => handleChange("telefone", e.target.value)}
               placeholder="+55 11 98601-0599"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3" />
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm md:text-xs text-muted-foreground">
+              <MapPin className="w-4 h-4 md:w-3 md:h-3" />
               Localização
             </label>
             <Input
               value={formData.localizacao}
               onChange={(e) => handleChange("localizacao", e.target.value)}
               placeholder="São Paulo, Brasil"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">E-mail</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-3">
+          <div className="space-y-2">
+            <label className="text-sm md:text-xs text-muted-foreground">E-mail</label>
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => handleChange("email", e.target.value)}
               placeholder="seu@email.com"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">LinkedIn</label>
+          <div className="space-y-2">
+            <label className="text-sm md:text-xs text-muted-foreground">LinkedIn</label>
             <Input
               value={formData.linkedin}
               onChange={(e) => handleChange("linkedin", e.target.value)}
-              placeholder="https://www.linkedin.com/in/seuperfil/"
+              placeholder="linkedin.com/in/seuperfil"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Nacionalidade</label>
+        <div className="grid grid-cols-2 gap-4 md:gap-3">
+          <div className="space-y-2">
+            <label className="text-sm md:text-xs text-muted-foreground">Nacionalidade</label>
             <Input
               value={formData.nacionalidade}
               onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
               placeholder="BRASILEIRO"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Idade</label>
+          <div className="space-y-2">
+            <label className="text-sm md:text-xs text-muted-foreground">Idade</label>
             <Input
               value={formData.idade}
               onChange={(e) => handleChange("idade", e.target.value)}
               placeholder="30 ANOS"
+              className="h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
             />
           </div>
         </div>
@@ -240,22 +247,21 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="space-y-3"
+        className="space-y-4 md:space-y-3"
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Briefcase className="w-4 h-4 text-primary" />
+        <div className="flex items-center gap-2 text-base md:text-sm font-medium text-foreground">
+          <Briefcase className="w-5 h-5 md:w-4 md:h-4 text-primary" />
           Experiências Profissionais
         </div>
 
-        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <div className="flex items-start gap-2">
-            <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-            <div className="text-xs text-blue-600 dark:text-blue-400">
-              <p className="font-medium mb-1">Como copiar do LinkedIn:</p>
-              <ol className="list-decimal list-inside space-y-0.5 text-blue-500/80">
+        <div className="p-4 md:p-3 rounded-2xl md:rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <div className="flex items-start gap-3 md:gap-2">
+            <Linkedin className="w-5 h-5 md:w-4 md:h-4 text-blue-500 mt-0.5 shrink-0" />
+            <div className="text-sm md:text-xs text-blue-600 dark:text-blue-400">
+              <p className="font-medium mb-2 md:mb-1">Como copiar do LinkedIn:</p>
+              <ol className="list-decimal list-inside space-y-1 md:space-y-0.5 text-blue-500/80">
                 <li>Acesse seu perfil do LinkedIn</li>
-                <li>Vá na seção "Experiência"</li>
-                <li>Selecione e copie TODAS as experiências (Ctrl+C)</li>
+                <li>Selecione e copie as experiências</li>
                 <li>Cole abaixo (Ctrl+V)</li>
               </ol>
             </div>
@@ -265,21 +271,16 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
         <Textarea
           value={formData.experiencias}
           onChange={(e) => handleChange("experiencias", e.target.value)}
-          placeholder={`Cole aqui todas as suas experiências do LinkedIn...
+          placeholder={`Cole aqui suas experiências do LinkedIn...
 
 Exemplo:
 Gerente de Projetos
 Empresa ABC
-jan de 2020 - presente · 4 anos
-São Paulo, Brasil
-
-- Liderança de equipes multifuncionais
-- Gestão de projetos de até R$ 5 milhões
-- Implementação de metodologias ágeis`}
-          className="min-h-[200px] text-sm"
+jan de 2020 - presente`}
+          className="min-h-[180px] md:min-h-[200px] text-base md:text-sm rounded-2xl md:rounded-lg p-4 md:p-3"
         />
-        <p className="text-xs text-muted-foreground">
-          A IA vai organizar exatamente como você escreveu, sem alterar nada.
+        <p className="text-sm md:text-xs text-muted-foreground/70">
+          A IA organiza exatamente como você escreveu.
         </p>
       </motion.div>
 
@@ -288,44 +289,34 @@ São Paulo, Brasil
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="space-y-3"
+        className="space-y-4 md:space-y-3"
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <GraduationCap className="w-4 h-4 text-primary" />
-          Formação Acadêmica / Cursos / Licenças e Certificados
+        <div className="flex items-center gap-2 text-base md:text-sm font-medium text-foreground">
+          <GraduationCap className="w-5 h-5 md:w-4 md:h-4 text-primary" />
+          Formação e Certificados
         </div>
 
-        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <div className="flex items-start gap-2">
-            <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-            <div className="text-xs text-blue-600 dark:text-blue-400">
-              <p className="font-medium mb-1">Copie do LinkedIn:</p>
-              <p className="text-blue-500/80">Seções "Formação acadêmica", "Licenças e certificados" e "Cursos"</p>
-            </div>
+        <div className="p-4 md:p-3 rounded-2xl md:rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <div className="flex items-start gap-3 md:gap-2">
+            <Linkedin className="w-5 h-5 md:w-4 md:h-4 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-sm md:text-xs text-blue-500/80">
+              Copie de "Formação acadêmica" e "Certificados"
+            </p>
           </div>
         </div>
 
         <Textarea
           value={formData.educacao}
           onChange={(e) => handleChange("educacao", e.target.value)}
-          placeholder={`Cole aqui sua formação, cursos e certificados do LinkedIn...
+          placeholder={`Cole sua formação e certificados...
 
 Exemplo:
 MBA em Gestão de Projetos
-Fundação Getúlio Vargas (FGV)
-2018 - 2020
-
-Bacharelado em Administração
-Universidade de São Paulo (USP)
-2010 - 2014
-
-PMP - Project Management Professional
-Project Management Institute
-Emitido em jan de 2021`}
-          className="min-h-[150px] text-sm"
+FGV - 2018 a 2020`}
+          className="min-h-[140px] md:min-h-[150px] text-base md:text-sm rounded-2xl md:rounded-lg p-4 md:p-3"
         />
-        <p className="text-xs text-muted-foreground">
-          A IA vai organizar exatamente como você escreveu, sem alterar nada.
+        <p className="text-sm md:text-xs text-muted-foreground/70">
+          A IA organiza exatamente como você escreveu.
         </p>
       </motion.div>
 
@@ -334,11 +325,11 @@ Emitido em jan de 2021`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="space-y-3"
+        className="space-y-4 md:space-y-3"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Languages className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-2 text-base md:text-sm font-medium text-foreground">
+            <Languages className="w-5 h-5 md:w-4 md:h-4 text-primary" />
             Idiomas
           </div>
           <Button
@@ -346,40 +337,42 @@ Emitido em jan de 2021`}
             variant="ghost"
             size="sm"
             onClick={addIdioma}
-            className="gap-1 text-xs"
+            className="gap-1 text-sm md:text-xs"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-4 h-4 md:w-3 md:h-3" />
             Adicionar
           </Button>
         </div>
 
-        {formData.idiomas.map((idioma, index) => (
-          <div key={index} className="flex gap-2 items-center">
-            <Input
-              value={idioma.idioma}
-              onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
-              placeholder="Inglês"
-              className="flex-1"
-            />
-            <Input
-              value={idioma.nivel}
-              onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
-              placeholder="FLUENTE"
-              className="flex-1"
-            />
-            {formData.idiomas.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeIdioma(index)}
-                className="shrink-0"
-              >
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            )}
-          </div>
-        ))}
+        <div className="space-y-3 md:space-y-2">
+          {formData.idiomas.map((idioma, index) => (
+            <div key={index} className="flex gap-3 md:gap-2 items-center">
+              <Input
+                value={idioma.idioma}
+                onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
+                placeholder="Inglês"
+                className="flex-1 h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
+              />
+              <Input
+                value={idioma.nivel}
+                onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
+                placeholder="FLUENTE"
+                className="flex-1 h-12 md:h-10 text-base md:text-sm rounded-xl md:rounded-lg"
+              />
+              {formData.idiomas.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeIdioma(index)}
+                  className="shrink-0 w-12 h-12 md:w-10 md:h-10"
+                >
+                  <Trash2 className="w-5 h-5 md:w-4 md:h-4 text-destructive" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       </motion.div>
 
       {/* Submit Button */}
@@ -387,21 +380,21 @@ Emitido em jan de 2021`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
+        className="pt-4 md:pt-0"
       >
         <Button
           type="submit"
           disabled={!isValid || isLoading}
-          className="w-full gap-2"
-          size="lg"
+          className="w-full gap-2 h-14 md:h-12 text-base md:text-sm rounded-2xl md:rounded-xl"
         >
         {isLoading ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Gerando currículo...
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
               Gerar Currículo ATS
             </>
           )}
