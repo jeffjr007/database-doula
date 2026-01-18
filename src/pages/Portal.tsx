@@ -323,7 +323,11 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
   };
 
   const handleStage3Continue = () => {
-    navigate('/etapa/3');
+    // Only navigate to Stage 3 if there's a published funnel
+    if (opportunityFunnel?.status === 'published') {
+      navigate('/etapa/3');
+    }
+    // Otherwise just close the modal (user stays on Portal)
   };
 
   const handleWarningConfirm = () => {
