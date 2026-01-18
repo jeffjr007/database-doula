@@ -257,7 +257,7 @@ const Portal = () => {
     }
 
     if (stageNumber === 3) {
-      return !hasBothCVTypes;
+      return false;
     }
 
     if (stageNumber === 4) {
