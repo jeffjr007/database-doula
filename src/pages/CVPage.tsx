@@ -430,11 +430,15 @@ const CVPage = () => {
               <motion.div key="selector" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <CVSelector onSelect={handleSelectCVType} />
                 
-                {/* Stage 2 Completion Section */}
+                {/* Stage 2 Completion Section - appears last with smooth animation */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ 
+                    delay: 1.2,
+                    duration: 0.6,
+                    ease: [0.25, 0.46, 0.45, 0.94]
+                  }}
                   className="mt-8"
                 >
                   <Card className={`p-6 ${stage2Completed ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 border-border/50'}`}>
