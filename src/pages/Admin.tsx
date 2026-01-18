@@ -1,32 +1,79 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield } from "lucide-react";
-import logoAD from "@/assets/logo-ad.png";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InviteCodeManager } from '@/components/admin/InviteCodeManager';
+import { MenteeList } from '@/components/admin/MenteeList';
+import { MenteeDetail } from '@/components/admin/MenteeDetail';
+import { ArrowLeft, Users, Ticket, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
+import logoAd from '@/assets/logo-ad.png';
 
 const Admin = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
-  
+  const [selectedMentee, setSelectedMentee] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate('/auth');
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin && user) navigate('/');
+  }, [isAdmin, adminLoading, user, navigate]);
+
+  if (authLoading || adminLoading) {
+    return (<div className="min-h-screen bg-background flex items-center justify-center"><div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>);
+  }
+
+  if (!isAdmin) return null;
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      {/* Header with logo and back button */}
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
-          <ArrowLeft className="w-4 h-4" /> Voltar
-        </Button>
-        <img
-          src={logoAD}
-          alt="AD Logo"
-          className="w-10 h-10 rounded-lg"
-        />
+    <div className="min-h-screen bg-background">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[120px]" />
       </div>
-      
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Shield className="w-8 h-8 text-primary" />
+
+      <header className="relative z-10 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')}><ArrowLeft className="w-5 h-5" /></Button>
+            <img src={logoAd} alt="Logo" className="h-10" />
+            <div className="flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /><span className="font-display font-semibold text-foreground">Painel Admin</span></div>
+          </div>
         </div>
-        <h1 className="text-3xl font-display font-bold text-gradient mb-4">Painel Admin</h1>
-        <p className="text-muted-foreground">Área administrativa</p>
-      </div>
+      </header>
+
+      <main className="relative z-10 container mx-auto px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
+          {selectedMentee ? (
+            <MenteeDetail menteeId={selectedMentee.id} menteeName={selectedMentee.name} onBack={() => setSelectedMentee(null)} />
+          ) : (
+            <Tabs defaultValue="mentees" className="space-y-6">
+              <TabsList className="bg-secondary/30 p-1">
+                <TabsTrigger value="mentees" className="gap-2"><Users className="w-4 h-4" />Mentorados</TabsTrigger>
+                <TabsTrigger value="invites" className="gap-2"><Ticket className="w-4 h-4" />Códigos de Convite</TabsTrigger>
+              </TabsList>
+              <TabsContent value="mentees">
+                <div className="space-y-4">
+                  <div><h2 className="text-2xl font-display font-bold text-foreground">Mentorados</h2><p className="text-muted-foreground text-sm">Gerencie os entregáveis e progresso de cada mentorado.</p></div>
+                  <MenteeList onSelectMentee={(id, name) => setSelectedMentee({ id, name })} />
+                </div>
+              </TabsContent>
+              <TabsContent value="invites">
+                <div className="space-y-4">
+                  <div><h2 className="text-2xl font-display font-bold text-foreground">Códigos de Convite</h2><p className="text-muted-foreground text-sm">Gere códigos únicos para novos mentorados se cadastrarem.</p></div>
+                  <InviteCodeManager />
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </motion.div>
+      </main>
     </div>
   );
 };
