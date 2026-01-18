@@ -56,10 +56,15 @@ const cvOptions = [
   },
 ];
 
+const CV_SELECTOR_ANIMATION_KEY = 'cv_selector_animation_seen';
+
 export function CVSelector({ onSelect }: CVSelectorProps) {
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [showOptions, setShowOptions] = useState(false);
-  const [messagesComplete, setMessagesComplete] = useState(false);
+  // Check if animation was already shown this session
+  const hasSeenAnimationThisSession = sessionStorage.getItem(CV_SELECTOR_ANIMATION_KEY) === 'true';
+  
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(hasSeenAnimationThisSession ? mentorMessages.length - 1 : 0);
+  const [showOptions, setShowOptions] = useState(hasSeenAnimationThisSession);
+  const [messagesComplete, setMessagesComplete] = useState(hasSeenAnimationThisSession);
   const [hasAtsCv, setHasAtsCv] = useState(false);
   const [showAtsWarning, setShowAtsWarning] = useState(false);
   const [isCheckingCvs, setIsCheckingCvs] = useState(true);
@@ -96,11 +101,17 @@ export function CVSelector({ onSelect }: CVSelectorProps) {
     checkForAtsCv();
   }, [user?.id]);
 
+  // Animation effect - only runs if not seen this session
   useEffect(() => {
+    // Skip if already seen this session
+    if (hasSeenAnimationThisSession) return;
+    
     if (currentMessageIndex < mentorMessages.length) {
       const timer = setTimeout(() => {
         if (currentMessageIndex === mentorMessages.length - 1) {
           setMessagesComplete(true);
+          // Mark animation as seen for this session
+          sessionStorage.setItem(CV_SELECTOR_ANIMATION_KEY, 'true');
           setTimeout(() => setShowOptions(true), 800);
         } else {
           setCurrentMessageIndex(prev => prev + 1);
@@ -108,7 +119,7 @@ export function CVSelector({ onSelect }: CVSelectorProps) {
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [currentMessageIndex]);
+  }, [currentMessageIndex, hasSeenAnimationThisSession]);
 
   const handleSelectOption = (optionId: "personalized" | "ats" | "cover-letter") => {
     if (optionId === "personalized" && !hasAtsCv) {
