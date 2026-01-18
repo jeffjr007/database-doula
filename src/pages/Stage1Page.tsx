@@ -8,6 +8,7 @@ import { ArrowLeft, Download, FileText, Linkedin, ExternalLink, Sparkles, ArrowR
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
 import mentorPhoto from '@/assets/mentor-photo.png';
+import { SupportLink } from '@/components/SupportLink';
 
 interface Diagnostic {
   id: string;
@@ -185,7 +186,10 @@ const Stage1Page = () => {
               </div>
             </div>
           </div>
-          <img src={logoAd} alt="Logo" className="h-8" />
+          <div className="flex items-center gap-4">
+            <SupportLink />
+            <img src={logoAd} alt="Logo" className="h-8" />
+          </div>
         </div>
       </header>
 

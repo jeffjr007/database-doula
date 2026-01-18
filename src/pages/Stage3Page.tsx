@@ -8,6 +8,7 @@ import { ArrowLeft, Target, FileText, ChevronRight, ExternalLink, FileDown, Spar
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
 import mentorPhoto from '@/assets/mentor-photo.png';
+import { SupportLink } from '@/components/SupportLink';
 
 interface Funnel {
   id: string;
@@ -182,7 +183,10 @@ const Stage3Page = () => {
               </div>
             </div>
           </div>
-          <img src={logoAd} alt="Logo" className="h-8" />
+          <div className="flex items-center gap-4">
+            <SupportLink />
+            <img src={logoAd} alt="Logo" className="h-8" />
+          </div>
         </div>
       </header>
 

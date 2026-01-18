@@ -15,6 +15,7 @@ import Stage4Page from "./pages/Stage4Page";
 import Stage5Page from "./pages/Stage5Page";
 import Admin from "./pages/Admin";
 import ActivatePlatform from "./pages/ActivatePlatform";
+import SupportPage from "./pages/SupportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/ativar" element={<ActivatePlatform />} />
             <Route path="/meus-cvs" element={<MeusCVs />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/suporte" element={<SupportPage />} />
             <Route path="/etapa/1" element={<Stage1Page />} />
             <Route path="/etapa/3" element={<Stage3Page />} />
             <Route path="/etapa/4" element={<Stage4Page />} />

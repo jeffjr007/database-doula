@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import logoAd from "@/assets/logo-ad.png";
 import { motion, AnimatePresence } from "framer-motion";
+import { SupportLink } from "@/components/SupportLink";
 
 type CVType = "personalized" | "ats" | "cover-letter" | null;
 type ViewState = "selector" | "form" | "preview";
@@ -280,7 +281,8 @@ const CVPage = () => {
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <SupportLink />
           {user ? (
             <>
               <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">

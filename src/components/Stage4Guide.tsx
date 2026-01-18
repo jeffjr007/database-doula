@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { InterviewScriptBuilder, KeywordScript } from "./InterviewScriptBuilder";
+import { SupportLink } from "./SupportLink";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -741,36 +742,39 @@ análise de dados"
           </div>
         </div>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-              <RotateCcw className="w-4 h-4" />
-              <span className="hidden sm:inline">Reiniciar</span>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reiniciar Etapa 4?</AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
-                <span className="block">
-                  Isso irá apagar todos os dados desta etapa, incluindo roteiros e palavras-chave.
-                </span>
-                <span className="block text-destructive font-medium">
-                  ⚠️ Atenção: A Etapa 5 também será reiniciada, pois depende dos dados desta etapa.
-                </span>
-                <span className="block">
-                  Você poderá criar um novo roteiro para outra entrevista.
-                </span>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={resetStage} className="bg-destructive hover:bg-destructive/90">
-                Reiniciar Etapas 4 e 5
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex items-center gap-3">
+          <SupportLink />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline">Reiniciar</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reiniciar Etapa 4?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <span className="block">
+                    Isso irá apagar todos os dados desta etapa, incluindo roteiros e palavras-chave.
+                  </span>
+                  <span className="block text-destructive font-medium">
+                    ⚠️ Atenção: A Etapa 5 também será reiniciada, pois depende dos dados desta etapa.
+                  </span>
+                  <span className="block">
+                    Você poderá criar um novo roteiro para outra entrevista.
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={resetStage} className="bg-destructive hover:bg-destructive/90">
+                  Reiniciar Etapas 4 e 5
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Progress Steps */}

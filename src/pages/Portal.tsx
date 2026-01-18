@@ -27,6 +27,7 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 import { StageWarningModal } from "@/components/StageWarningModal";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
+import { SupportButton } from "@/components/SupportButton";
 
 interface StageProgress {
   stage_number: number;
@@ -625,6 +626,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         hasFunnel={opportunityFunnel?.status === 'published'}
         onContinue={handleStage3Continue}
       />
+
+      {/* Floating Support Button */}
+      {user && <SupportButton />}
     </div>
   );
 };
