@@ -1,6 +1,5 @@
 import { useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { GuidedChat } from "@/components/GuidedChat";
 import { Stage4Guide } from "@/components/Stage4Guide";
 import { Stage5Guide } from "@/components/Stage5Guide";
 import { Loader2 } from "lucide-react";
@@ -10,8 +9,9 @@ const StagePage = () => {
   const { user, loading } = useAuth();
   const stage = parseInt(stageNumber || '0', 10);
 
-  // Validate stage number
-  if (![4, 5, 6].includes(stage)) {
+  // Validate stage number - only 4 and 5 are handled here now
+  // Stage 6 has its own page (Stage6Page)
+  if (![4, 5].includes(stage)) {
     return <Navigate to="/" replace />;
   }
 
@@ -45,12 +45,8 @@ const StagePage = () => {
     );
   }
 
-  // Stage 6 uses the guided chat
-  return (
-    <div className="h-screen bg-background">
-      <GuidedChat stageNumber={stage} />
-    </div>
-  );
+  // Fallback - redirect to home
+  return <Navigate to="/" replace />;
 };
 
 export default StagePage;
