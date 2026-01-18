@@ -6,170 +6,45 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const systemPrompt = `Você é um ESPECIALISTA MÁXIMO em reconstrução e extração de dados de currículos profissionais, mesmo quando o texto está fragmentado, bagunçado ou corrompido.
+const systemPrompt = `Você é um ESPECIALISTA MÁXIMO em leitura e extração de dados de currículos profissionais.
 
-TAREFA CRÍTICA: Extrair TODAS as experiências profissionais e TODA a formação acadêmica do texto do currículo.
+TAREFA CRÍTICA: Analisar o documento PDF enviado e extrair TODAS as experiências profissionais e TODA a formação acadêmica.
 
-INSTRUÇÕES DETALHADAS:
+=== EXPERIÊNCIAS PROFISSIONAIS ===
+Procure e extraia TUDO relacionado a trabalho:
+- Nomes de empresas (qualquer empresa mencionada)
+- Cargos/funções (Analista, Gerente, CEO, Coordenador, Desenvolvedor, etc.)
+- Períodos de trabalho (datas, anos, duração)
+- Atividades realizadas (bullets com verbos de ação)
+- Resultados e métricas mencionados (%, números, conquistas)
 
-1. EXPERIÊNCIAS PROFISSIONAIS - Procure por:
-   - Nomes de empresas (ex: "Itaú", "Ambev", "Magazine Luiza", etc.)
-   - Cargos/funções (ex: "Analista", "Gerente", "Coordenador", "Desenvolvedor", etc.)
-   - Períodos/datas (ex: "2020-2023", "Jan 2020 - Atual", "3 anos", etc.)
-   - Atividades e responsabilidades (verbos como "desenvolvi", "gerenciei", "implementei", etc.)
-   - Resultados e métricas (ex: "aumentei 30%", "reduzi custos", etc.)
+FORMATO OBRIGATÓRIO para cada experiência:
+NOME_DA_EMPRESA, Local · Modalidade — CARGO_OCUPADO
+PERÍODO (ex: JAN 2020 - ATUAL)
+> Primeira atividade ou resultado
+> Segunda atividade ou resultado
+> Terceira atividade (continue listando TODAS)
 
-2. EDUCAÇÃO E QUALIFICAÇÕES - Procure por:
-   - Graduação, Pós-graduação, MBA, Mestrado, Doutorado
-   - Cursos técnicos e certificações
-   - Nomes de instituições (ex: "USP", "FGV", "SENAC", "Udemy", etc.)
-   - Áreas de estudo (ex: "Administração", "Engenharia", "Marketing", etc.)
+=== EDUCAÇÃO E QUALIFICAÇÕES ===
+Procure e extraia TUDO relacionado a formação:
+- Graduações e pós-graduações
+- Cursos livres e técnicos
+- Certificações profissionais
+- Workshops e treinamentos
+- Nomes de instituições de ensino
 
-3. TÉCNICAS DE RECONSTRUÇÃO:
-   - Se o texto estiver fragmentado, junte palavras próximas que formem sentido
-   - Se encontrar uma empresa sem cargo, busque um cargo próximo no texto
-   - Se encontrar período sem empresa, busque empresa anterior ou posterior
-   - Agrupe informações que pareçam pertencer à mesma experiência
+FORMATO OBRIGATÓRIO para cada item:
+Nome da Instituição, - Nome do Curso/Certificação
 
-FORMATO DE SAÍDA OBRIGATÓRIO:
-
-Para experiencias, use EXATAMENTE este formato para cada experiência:
-NOME_DA_EMPRESA | CARGO_OCUPADO | PERÍODO
-• Primeira atividade ou responsabilidade
-• Segunda atividade ou responsabilidade
-• Terceira atividade (se houver)
-
-Para educacao, use EXATAMENTE este formato:
-Nome do Curso - Nome da Instituição (Ano se disponível)
-
-REGRAS ABSOLUTAS:
-- NUNCA retorne strings vazias ou "não identificado"
-- Se o texto parecer muito fragmentado, RECONSTRUA fazendo seu melhor esforço
-- SEMPRE extraia ALGO útil, mesmo que parcial
-- IGNORE dados pessoais (email, telefone, endereço, CPF)
-- PRIORIZE qualidade: empresas reais, cargos reais, datas reais`;
-
-function base64ToBytes(base64: string): Uint8Array {
-  const clean = base64.replace(/\s/g, "");
-  const bin = atob(clean);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
-function extractTextFromPdfBytes(pdfBytes: Uint8Array): string {
-  const decoder = new TextDecoder("latin1");
-  const pdfString = decoder.decode(pdfBytes);
-
-  const textParts: string[] = [];
-
-  // Method 1: Extract text from BT/ET blocks (PDF text operators)
-  const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = btEtRegex.exec(pdfString)) !== null) {
-    const block = match[1];
-
-    // Tj operator - single string
-    const tjRegex = /\(([^)]*)\)\s*Tj/g;
-    let textMatch: RegExpExecArray | null;
-    while ((textMatch = tjRegex.exec(block)) !== null) {
-      const text = textMatch[1]
-        .replace(/\\n/g, "\n")
-        .replace(/\\r/g, "")
-        .replace(/\\\(/g, "(")
-        .replace(/\\\)/g, ")")
-        .replace(/\\\\/g, "\\");
-      if (text.trim()) textParts.push(text);
-    }
-
-    // TJ operator - array of strings
-    const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
-    while ((textMatch = tjArrayRegex.exec(block)) !== null) {
-      const arrayContent = textMatch[1];
-      const stringRegex = /\(([^)]*)\)/g;
-      let strMatch: RegExpExecArray | null;
-      while ((strMatch = stringRegex.exec(arrayContent)) !== null) {
-        const text = strMatch[1]
-          .replace(/\\n/g, "\n")
-          .replace(/\\r/g, "")
-          .replace(/\\\(/g, "(")
-          .replace(/\\\)/g, ")")
-          .replace(/\\\\/g, "\\");
-        if (text.trim()) textParts.push(text);
-      }
-    }
-  }
-
-  // Method 2: Look for streams and try to extract readable content
-  const streamRegex = /stream\s*([\s\S]*?)\s*endstream/g;
-  while ((match = streamRegex.exec(pdfString)) !== null) {
-    const streamContent = match[1];
-    // Extract any readable text patterns from streams
-    const readableRegex = /\(([^)]{2,100})\)/g;
-    let readMatch: RegExpExecArray | null;
-    while ((readMatch = readableRegex.exec(streamContent)) !== null) {
-      const text = readMatch[1].replace(/[^\x20-\x7E\xA0-\xFF]/g, "").trim();
-      if (text.length > 3 && !/^[0-9.]+$/.test(text)) {
-        textParts.push(text);
-      }
-    }
-  }
-
-  // Method 3: Extract readable ASCII strings as fallback
-  const asciiRegex = /[\x20-\x7E\xC0-\xFF]{4,}/g;
-  const asciiMatches = pdfString.match(asciiRegex) || [];
-
-  const filteredAscii = asciiMatches.filter((s) => {
-    const lower = s.toLowerCase();
-    // Filter out PDF structure/metadata more aggressively
-    if (
-      lower.includes("/type") ||
-      lower.includes("/font") ||
-      lower.includes("/page") ||
-      lower.includes("stream") ||
-      lower.includes("endstream") ||
-      lower.includes("endobj") ||
-      lower.includes("/filter") ||
-      lower.includes("/length") ||
-      lower.includes("/resources") ||
-      lower.includes("/encoding") ||
-      lower.includes("/producer") ||
-      lower.includes("/creator") ||
-      lower.includes("flatedecode") ||
-      lower.includes("/subtype") ||
-      lower.includes("/basefont") ||
-      lower.includes("/colorspace") ||
-      lower.includes("/bbox") ||
-      lower.includes("/matrix") ||
-      lower.includes("/formtype") ||
-      lower.includes("/moddate") ||
-      lower.includes("/creationdate") ||
-      lower.includes("/title") ||
-      lower.includes("<<") ||
-      lower.includes(">>") ||
-      lower.startsWith("obj") ||
-      lower.startsWith("xref") ||
-      /^\d+\s+\d+\s+\d+/.test(s) || // PDF object references
-      /^[0-9.\-\s]+$/.test(s) // Only numbers
-    ) {
-      return false;
-    }
-    // Keep strings that look like real content
-    return s.length > 3 && /[a-zA-ZÀ-ÿ]/.test(s);
-  });
-
-  // Combine and deduplicate
-  const allParts = [...textParts, ...filteredAscii];
-  const uniqueParts = [...new Set(allParts)];
-  
-  const allText = uniqueParts.join(" ");
-
-  return allText
-    .replace(/\s+/g, " ")
-    .replace(/[^\x20-\x7E\xA0-\xFF\u0100-\u017F]/g, " ")
-    .trim();
-}
+=== REGRAS ABSOLUTAS ===
+1. NUNCA retorne campos vazios - sempre extraia ALGO
+2. Copie EXATAMENTE o texto do currículo - não invente nada
+3. Mantenha TODOS os bullets e detalhes de cada experiência
+4. Se houver métricas (%, números), MANTENHA exatamente como estão
+5. IGNORE dados pessoais (email, telefone, endereço, CPF)
+6. Se algo não estiver 100% claro, extraia do jeito que está no documento
+7. Liste as experiências na ORDEM que aparecem no documento
+8. COPIE todos os resultados e conquistas mencionados`;
 
 function json(res: unknown, status = 200) {
   return new Response(JSON.stringify(res), {
@@ -184,75 +59,74 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const pdfBase64 = body?.pdfBase64 as string | undefined;
-    let contentText = (body?.pdfContent || "").trim() as string;
 
-    if (!contentText && pdfBase64) {
-      console.log("extract-cv-pdf: decoding base64...");
-      const bytes = base64ToBytes(pdfBase64);
-      console.log("extract-cv-pdf: bytes length:", bytes.length);
-
-      contentText = extractTextFromPdfBytes(bytes);
-      console.log("extract-cv-pdf: extracted text length:", contentText?.length || 0);
-      console.log("extract-cv-pdf: sample:", contentText?.substring(0, 200));
+    if (!pdfBase64) {
+      return json({ error: "Nenhum arquivo PDF foi enviado." }, 400);
     }
 
-    if (!contentText || contentText.replace(/\s/g, "").length < 100) {
-      return json(
-        {
-          error:
-            "Não foi possível extrair texto suficiente do PDF. O arquivo pode estar protegido, ser uma imagem escaneada, ou estar corrompido. Tente exportar novamente ou usar outro arquivo.",
-        },
-        400
-      );
+    // Limpar o base64 de possíveis prefixos
+    let cleanBase64 = pdfBase64;
+    if (cleanBase64.includes(",")) {
+      cleanBase64 = cleanBase64.split(",")[1];
     }
+    cleanBase64 = cleanBase64.replace(/\s/g, "");
+
+    console.log("extract-cv-pdf: PDF base64 length:", cleanBase64.length);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY não configurada" }, 500);
 
-    const userPrompt = `ANALISE CUIDADOSAMENTE o texto abaixo que foi extraído de um currículo PDF. O texto pode estar fragmentado ou bagunçado devido à extração.
+    // Usar GPT-5 Mini com capacidade multimodal para "ver" o PDF
+    // Enviamos o PDF como base64 para o modelo analisar diretamente
+    const userPrompt = `Analise este documento PDF de currículo e extraia TODAS as informações de experiência profissional e educação.
 
-=== TEXTO EXTRAÍDO DO CURRÍCULO ===
-${contentText.substring(0, 30000)}
-=== FIM DO TEXTO ===
+IMPORTANTE: 
+- Copie EXATAMENTE o texto como está no documento
+- Inclua TODOS os bullets e detalhes de cada experiência
+- NÃO omita nenhuma informação
+- Mantenha números, porcentagens e métricas exatamente como aparecem
 
-SUA MISSÃO:
-1. Identifique TODAS as EXPERIÊNCIAS PROFISSIONAIS:
-   - Procure por nomes de empresas, cargos, datas e atividades
-   - Mesmo que estejam separados ou fora de ordem, RECONSTRUA cada experiência
-   - Liste cada experiência no formato: EMPRESA | CARGO | PERÍODO seguido de bullets
-
-2. Identifique TODA a EDUCAÇÃO E QUALIFICAÇÕES:
-   - Graduações, pós-graduações, cursos, certificações
-   - Liste no formato: Curso - Instituição (Ano)
-
-IMPORTANTE:
-- Faça seu MELHOR ESFORÇO mesmo que o texto esteja difícil de ler
-- NUNCA retorne vazio - sempre extraia ALGO do texto
-- Se não tiver certeza de uma informação, faça uma inferência razoável
-- Priorize extrair o máximo de informações úteis possível`;
+Por favor, extraia:
+1. TODAS as experiências profissionais com empresa, cargo, período e TODOS os bullets de atividades/resultados
+2. TODA a formação acadêmica, cursos e certificações`;
 
     const bodyPayload = {
       model: "openai/gpt-5-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { 
+          role: "user", 
+          content: [
+            {
+              type: "text",
+              text: userPrompt
+            },
+            {
+              type: "file",
+              file: {
+                filename: "curriculo.pdf",
+                file_data: `data:application/pdf;base64,${cleanBase64}`
+              }
+            }
+          ]
+        },
       ],
       tools: [
         {
           type: "function",
           function: {
             name: "extract_cv_sections",
-            description: "Extrai experiências profissionais e educação de um currículo. OBRIGATÓRIO retornar conteúdo útil mesmo em textos fragmentados.",
+            description: "Extrai experiências profissionais e educação de um currículo. Copie EXATAMENTE o texto do documento.",
             parameters: {
               type: "object",
               properties: {
                 experiencias: { 
                   type: "string",
-                  description: "TODAS as experiências profissionais formatadas como: EMPRESA | CARGO | PERÍODO seguido de bullets com atividades. NUNCA retorne vazio."
+                  description: "TODAS as experiências profissionais COMPLETAS, copiadas exatamente do documento. Inclua empresa, cargo, período e TODOS os bullets com atividades e resultados. Use o formato: EMPRESA, Local · Modalidade — CARGO\\nPERÍODO\\n> bullet1\\n> bullet2\\n\\n para cada experiência."
                 },
                 educacao: { 
                   type: "string",
-                  description: "TODA a formação acadêmica e certificações formatadas como: Curso - Instituição (Ano). NUNCA retorne vazio."
+                  description: "TODA a formação acadêmica, cursos e certificações. Use o formato: Instituição, - Nome do Curso para cada item, um por linha."
                 },
               },
               required: ["experiencias", "educacao"],
@@ -264,7 +138,7 @@ IMPORTANTE:
       tool_choice: { type: "function", function: { name: "extract_cv_sections" } },
     };
 
-    console.log("extract-cv-pdf: calling AI gateway...");
+    console.log("extract-cv-pdf: calling AI gateway with multimodal PDF...");
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -284,11 +158,13 @@ IMPORTANTE:
     }
 
     const data = await resp.json();
+    console.log("extract-cv-pdf: AI response received");
+    
     const toolCalls = data?.choices?.[0]?.message?.tool_calls;
     const argsStr = toolCalls?.[0]?.function?.arguments;
 
     if (!argsStr) {
-      console.error("extract-cv-pdf: missing tool_calls", JSON.stringify(data)?.slice(0, 500));
+      console.error("extract-cv-pdf: missing tool_calls", JSON.stringify(data)?.slice(0, 1000));
       return json({ error: "A IA não retornou dados estruturados. Tente novamente." }, 500);
     }
 
@@ -300,11 +176,24 @@ IMPORTANTE:
       return json({ error: "Erro ao interpretar resposta da IA. Tente novamente." }, 500);
     }
 
-    console.log("extract-cv-pdf: success, experiencias length:", parsed.experiencias?.length, "educacao length:", parsed.educacao?.length);
+    const experiencias = (parsed.experiencias || "").toString().trim();
+    const educacao = (parsed.educacao || "").toString().trim();
+
+    console.log("extract-cv-pdf: SUCCESS");
+    console.log("extract-cv-pdf: experiencias preview:", experiencias.substring(0, 500));
+    console.log("extract-cv-pdf: educacao preview:", educacao.substring(0, 300));
+
+    // Validar que extraímos algo útil
+    if (experiencias.length < 50 && educacao.length < 20) {
+      console.error("extract-cv-pdf: insufficient data extracted");
+      return json({ 
+        error: "Não foi possível extrair dados suficientes do PDF. Verifique se o arquivo é um currículo válido e não está protegido por senha." 
+      }, 400);
+    }
 
     return json({
-      experiencias: (parsed.experiencias || "").toString(),
-      educacao: (parsed.educacao || "").toString(),
+      experiencias: experiencias,
+      educacao: educacao,
     });
   } catch (e) {
     console.error("extract-cv-pdf: unhandled error", e);
