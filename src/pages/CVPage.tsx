@@ -100,12 +100,34 @@ const CVPage = () => {
 
     setCompletingStage(true);
     try {
+      // Fetch user profile to get name and phone
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .eq('user_id', user.id)
+        .single();
+
+      // Update stage2_completed
       const { error } = await supabase
         .from('profiles')
         .update({ stage2_completed: true })
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // Send notification email to mentor
+      try {
+        await supabase.functions.invoke('notify-stage2-completed', {
+          body: {
+            menteeName: profile?.full_name || user.email,
+            menteePhone: profile?.phone || 'Não informado',
+          },
+        });
+        console.log('Stage 2 completion email sent');
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+        // Don't block the completion if email fails
+      }
 
       setStage2Completed(true);
       toast({

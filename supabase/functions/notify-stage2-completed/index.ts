@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,40 +24,48 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending stage 2 completion email for: ${menteeName}`);
 
-    const emailResponse = await resend.emails.send({
-      from: "Método Perfil Glorioso <onboarding@resend.dev>",
-      to: ["adrianoduartehpz@gmail.com"],
-      subject: "ETAPA 2 CONCLUÍDA",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">
-            🎉 Etapa 2 Concluída!
-          </h1>
-          
-          <div style="background-color: #1a1a1a; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <h2 style="color: #ffffff; margin-top: 0;">Dados do Mentorado:</h2>
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Método Perfil Glorioso <onboarding@resend.dev>",
+        to: ["adrianoduartehpz@gmail.com"],
+        subject: "ETAPA 2 CONCLUÍDA",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">
+              🎉 Etapa 2 Concluída!
+            </h1>
             
-            <p style="color: #e0e0e0; margin: 10px 0;">
-              <strong style="color: #D4AF37;">Nome:</strong> ${menteeName || 'Não informado'}
-            </p>
+            <div style="background-color: #1a1a1a; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h2 style="color: #ffffff; margin-top: 0;">Dados do Mentorado:</h2>
+              
+              <p style="color: #e0e0e0; margin: 10px 0;">
+                <strong style="color: #D4AF37;">Nome:</strong> ${menteeName || 'Não informado'}
+              </p>
+              
+              <p style="color: #e0e0e0; margin: 10px 0;">
+                <strong style="color: #D4AF37;">Telefone:</strong> ${menteePhone || 'Não informado'}
+              </p>
+            </div>
             
-            <p style="color: #e0e0e0; margin: 10px 0;">
-              <strong style="color: #D4AF37;">Telefone:</strong> ${menteePhone || 'Não informado'}
+            <p style="color: #888; font-size: 12px; margin-top: 30px;">
+              O mentorado finalizou a criação do CV Personalizado e CV ATS.
+              <br>
+              Agora você pode criar o Funil de Oportunidades para este mentorado.
             </p>
           </div>
-          
-          <p style="color: #888; font-size: 12px; margin-top: 30px;">
-            O mentorado finalizou a criação do CV Personalizado e CV ATS.
-            <br>
-            Agora você pode criar o Funil de Oportunidades para este mentorado.
-          </p>
-        </div>
-      `,
+        `,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    const emailData = await emailResponse.json();
+    console.log("Email sent successfully:", emailData);
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
+    return new Response(JSON.stringify({ success: true, emailData }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
