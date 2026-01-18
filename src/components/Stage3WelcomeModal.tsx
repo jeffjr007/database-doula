@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Target, Clock, ArrowRight } from 'lucide-react';
-import mentorPhoto from '@/assets/mentor-photo.png';
+import { MentorAvatar } from '@/components/MentorAvatar';
 
 interface Stage3WelcomeModalProps {
   open: boolean;
@@ -102,9 +102,7 @@ export const Stage3WelcomeModal = ({
         {/* Header with mentor */}
         <div className="p-6 pb-4 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-accent/50 shadow-lg">
-              <img src={mentorPhoto} alt="Mentor" className="w-full h-full object-cover" />
-            </div>
+            <MentorAvatar size="lg" className="border-accent/50" />
             <div>
               <p className="font-semibold text-foreground">Duarte</p>
               <p className="text-xs text-muted-foreground">Seu mentor</p>

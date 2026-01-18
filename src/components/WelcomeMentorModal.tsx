@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import mentorPhoto from "@/assets/mentor-photo.png";
+import { MentorAvatar } from "@/components/MentorAvatar";
 
 interface WelcomeMentorModalProps {
   open: boolean;
@@ -107,11 +107,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                 >
-                  <img
-                    src={mentorPhoto}
-                    alt="Duarte"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-lg"
-                  />
+                  <MentorAvatar size="xl" className="border-primary" />
                 </motion.div>
                 <div>
                   <motion.h3
@@ -194,11 +190,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
             >
               {/* Same content for exit animation */}
               <div className="flex items-center gap-4 mb-6">
-                <img
-                  src={mentorPhoto}
-                  alt="Duarte"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-lg"
-                />
+                <MentorAvatar size="xl" className="border-primary" />
                 <div>
                   <h3 className="font-semibold text-foreground text-lg">Duarte</h3>
                   <p className="text-sm text-muted-foreground">Seu mentor</p>

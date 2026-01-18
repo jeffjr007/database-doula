@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import mentorPhoto from "@/assets/mentor-photo.png";
+import { MentorAvatar } from "@/components/MentorAvatar";
 
 interface CVSelectorProps {
   onSelect: (type: "personalized" | "ats" | "cover-letter") => void;
@@ -158,13 +158,7 @@ export function CVSelector({ onSelect, onOptionsVisible }: CVSelectorProps) {
               transition={{ delay: 0.2 }}
               className="relative"
             >
-              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/30 shadow-lg">
-                <img
-                  src={mentorPhoto}
-                  alt="Duarte"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <MentorAvatar size="xxl" />
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                 <FileText className="w-3 h-3 text-primary-foreground" />
               </div>
