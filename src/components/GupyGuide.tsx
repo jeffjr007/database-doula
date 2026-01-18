@@ -79,6 +79,7 @@ interface GupyData {
   titulosLinkedin?: string;
   habilidades: string[];
   sobre: string;
+  sobreFormatado?: string;
 }
 
 interface FormattedExperience {
@@ -106,7 +107,8 @@ const STEPS = [
   { id: 6, title: "Descrições", icon: Sparkles, description: "Descrições Geradas" },
   { id: 7, title: "Habilidades", icon: Lightbulb, description: "30 competências" },
   { id: 8, title: "Sobre", icon: FileText, description: "Personalizar Candidatura" },
-  { id: 9, title: "Concluído", icon: Check, description: "Revisão final" },
+  { id: 9, title: "Formatado", icon: Sparkles, description: "Sobre Formatado" },
+  { id: 10, title: "Concluído", icon: Check, description: "Revisão final" },
 ];
 
 export const GupyGuide = () => {
@@ -238,7 +240,7 @@ export const GupyGuide = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < 9) setCurrentStep((prev) => prev + 1);
+    if (currentStep < 10) setCurrentStep((prev) => prev + 1);
   };
 
   const prevStep = () => {
@@ -407,7 +409,9 @@ export const GupyGuide = () => {
 
       const { formatted_sobre } = response.data;
       
-      updateData({ ...data, sobre: formatted_sobre });
+      // Save formatted version separately and go to new step
+      updateData({ ...data, sobreFormatado: formatted_sobre });
+      setCurrentStep(9); // Go to formatted Sobre step
       setTimeout(scrollToTop, 100);
       
       toast({ 
@@ -1717,9 +1721,171 @@ export const GupyGuide = () => {
         );
 
       case 9:
+        // Sobre Formatado - resultado da IA
         return (
           <motion.div
             key="step-9"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-6"
+          >
+            {/* Como usar na Gupy - PRIMEIRO */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-2xl mx-auto"
+            >
+              <Card className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 backdrop-blur-sm overflow-hidden relative">
+                <motion.div 
+                  className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                />
+                <div className="flex items-start gap-4 relative">
+                  <motion.div 
+                    className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2, type: "spring", stiffness: 200 }}
+                  >
+                    <Info className="w-5 h-5 text-primary" />
+                  </motion.div>
+                  <motion.div 
+                    className="flex-1"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    <p className="font-semibold text-foreground mb-3 text-sm">Como usar na Gupy:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { num: "1", text: "Candidate-se a uma vaga" },
+                        { num: "2", text: '"Personalizar candidatura"' },
+                        { num: "3", text: "Cole este texto" },
+                        { num: "4", text: "Destaque-se!" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={item.num}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                        >
+                          <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium flex-shrink-0">
+                            {item.num}
+                          </span>
+                          <span>{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <motion.div 
+                className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
+              >
+                <Sparkles className="w-8 h-8 text-green-500" />
+              </motion.div>
+              <motion.h2 
+                className="font-display text-2xl font-bold"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                Texto Formatado!
+              </motion.h2>
+              <motion.p 
+                className="text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+              >
+                Seu texto "Sobre" está pronto para a Gupy
+              </motion.p>
+            </motion.div>
+
+            <motion.div 
+              className="max-w-2xl mx-auto space-y-4"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <Card className="p-5 bg-gradient-to-br from-green-500/5 to-transparent border-green-500/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-sm font-medium text-green-500">Otimizado para ATS</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {data.sobreFormatado?.length || 0}/1500 caracteres
+                  </span>
+                </div>
+                <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                    {data.sobreFormatado || "Nenhum texto formatado ainda."}
+                  </p>
+                </div>
+              </Card>
+
+              <motion.div 
+                className="flex flex-col gap-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+              >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    onClick={() => copyToClipboard(data.sobreFormatado || "", "Texto Sobre formatado")}
+                    className="w-full gap-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-600/90 hover:to-green-500/90"
+                    size="lg"
+                  >
+                    <Copy className="w-5 h-5" />
+                    Copiar para a Gupy
+                  </Button>
+                </motion.div>
+                
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentStep(8)}
+                    className="flex-1 gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Editar original
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={nextStep}
+                    className="flex-1 gap-2"
+                  >
+                    Continuar
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        );
+
+      case 10:
+        return (
+          <motion.div
+            key="step-10"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
@@ -1779,7 +1945,7 @@ export const GupyGuide = () => {
                     { label: "Conquistas", value: `${data.certificados.filter(c => c.titulo).length} adicionado(s)` },
                     { label: "Descrições geradas", value: `${data.conquistasDescricoes?.length || 0} descrição(ões)` },
                     { label: "Habilidades", value: `${data.habilidades.length}/30` },
-                    { label: 'Texto "Sobre"', value: data.sobre ? "✓ Pronto" : "Não preenchido" },
+                    { label: 'Texto "Sobre"', value: data.sobreFormatado ? "✓ Pronto" : "Não preenchido" },
                   ].map((item, i) => (
                     <motion.div 
                       key={item.label}
