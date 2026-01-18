@@ -319,17 +319,9 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
       {extractionDone && (
         <div className="space-y-4 animate-fade-in">
           <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-            <div className="flex items-center gap-2 text-sm font-medium text-green-600 mb-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-green-600">
               <CheckCircle className="w-4 h-4" />
-              Dados extraídos do currículo
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-              <div>
-                <span className="font-medium">Experiências:</span> {formData.experiences.length} caracteres
-              </div>
-              <div>
-                <span className="font-medium">Educação:</span> {formData.educacao.length} caracteres
-              </div>
+              Dados extraídos do currículo com sucesso!
             </div>
           </div>
         </div>
