@@ -720,7 +720,7 @@ análise de dados"
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-4">
@@ -830,9 +830,9 @@ análise de dados"
         </AnimatePresence>
       </div>
 
-      {/* Footer Navigation */}
+      {/* Footer Navigation - Fixed at bottom */}
       {currentStep < 5 && (
-        <div className="p-4 border-t border-border flex justify-between">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
           <Button
             variant="outline"
             onClick={prevStep}
@@ -855,7 +855,7 @@ análise de dados"
       )}
 
       {currentStep === 5 && data.keywords.length === 0 && (
-        <div className="p-4 border-t border-border flex justify-start">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-start z-10">
           <Button
             variant="outline"
             onClick={prevStep}
@@ -865,6 +865,11 @@ análise de dados"
             Voltar
           </Button>
         </div>
+      )}
+
+      {/* Bottom padding to account for fixed footer */}
+      {(currentStep < 5 || (currentStep === 5 && data.keywords.length === 0)) && (
+        <div className="h-20" />
       )}
     </div>
   );
