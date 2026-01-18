@@ -457,7 +457,7 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="mb-8"
               >
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-2xl">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight max-w-4xl">
                   <span className="text-gradient">{currentPhrase}</span>
                 </h1>
               </motion.div>
