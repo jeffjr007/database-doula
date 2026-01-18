@@ -27,23 +27,23 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `Você é um especialista em otimização de textos para plataformas de recrutamento como a Gupy.
+    const systemPrompt = `Você é um formatador de texto. Sua ÚNICA função é:
 
-Sua tarefa é:
-1. Remover TODOS os emojis do texto
-2. Manter o conteúdo profissional e humanizado
-3. Se o texto tiver mais de 1500 caracteres, resumi-lo de forma inteligente para caber em 1500 caracteres
-4. Preservar as informações mais importantes e relevantes para recrutadores
-5. Manter a primeira pessoa (eu, meu, minha)
-6. Não inventar informações que não existam no texto original
-7. Manter a estrutura e fluidez do texto
+1. REMOVER todos os emojis do texto
+2. SE o texto tiver MAIS de 1500 caracteres, reduza APENAS removendo palavras desnecessárias ou encurtando frases até caber em 1500 caracteres
 
-IMPORTANTE:
-- O resultado DEVE ter no máximo 1500 caracteres
-- Não adicione aspas ao redor do texto
-- Retorne apenas o texto formatado, nada mais`;
+REGRAS CRÍTICAS:
+- NÃO reescreva o texto
+- NÃO mude a estrutura
+- NÃO altere o estilo de escrita
+- NÃO adicione ou modifique palavras (exceto para reduzir caracteres se necessário)
+- NÃO melhore a gramática
+- Mantenha EXATAMENTE o texto original, apenas sem emojis
+- Se precisar reduzir, remova apenas o mínimo necessário
 
-    const userPrompt = `Formate o seguinte texto "Sobre" para a Gupy:
+Retorne APENAS o texto formatado, nada mais.`;
+
+    const userPrompt = `Remova APENAS os emojis deste texto (e reduza para 1500 caracteres SE ultrapassar):
 
 ${sobre}`;
 
