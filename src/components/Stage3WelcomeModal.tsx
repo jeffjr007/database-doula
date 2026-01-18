@@ -30,6 +30,15 @@ const welcomeMessages = [
   }
 ];
 
+// Typing indicator component
+const TypingIndicator = () => (
+  <div className="flex items-center gap-1.5 px-4 py-3">
+    <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  </div>
+);
+
 export const Stage3WelcomeModal = ({ 
   open, 
   onOpenChange, 
@@ -38,26 +47,43 @@ export const Stage3WelcomeModal = ({
 }: Stage3WelcomeModalProps) => {
   const [visibleMessages, setVisibleMessages] = useState(0);
   const [showAction, setShowAction] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setVisibleMessages(0);
       setShowAction(false);
+      setIsTyping(false);
       return;
     }
 
-    // Animate messages one by one
     const timers: NodeJS.Timeout[] = [];
     
+    // Show typing indicator first
+    setIsTyping(true);
+    
     welcomeMessages.forEach((msg, idx) => {
-      const timer = setTimeout(() => {
+      // Show message
+      const showTimer = setTimeout(() => {
         setVisibleMessages(idx + 1);
-      }, msg.delay);
-      timers.push(timer);
+        // Start typing for next message if not the last
+        if (idx < welcomeMessages.length - 1) {
+          setIsTyping(true);
+        } else {
+          setIsTyping(false);
+        }
+      }, msg.delay + 800); // Add 800ms for typing animation
+      timers.push(showTimer);
     });
 
-    // Show action after all messages (slower)
+    // Show action after all messages
+    const actionTypingTimer = setTimeout(() => {
+      setIsTyping(true);
+    }, 4400);
+    timers.push(actionTypingTimer);
+
     const actionTimer = setTimeout(() => {
+      setIsTyping(false);
       setShowAction(true);
     }, 5400);
     timers.push(actionTimer);
@@ -86,133 +112,92 @@ export const Stage3WelcomeModal = ({
           </div>
         </div>
 
-        {/* Messages - fixed height container */}
-        <div className="p-6 space-y-4 h-[200px]">
-          {welcomeMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`p-4 rounded-xl ${
-                msg.id === 2 
-                  ? 'bg-gradient-to-r from-accent/20 to-primary/10 border border-accent/30' 
-                  : 'bg-secondary/40 border border-border/30'
-              }`}
-              style={{ visibility: msg.id <= visibleMessages ? 'visible' : 'hidden' }}
-            >
-              {msg.id <= visibleMessages ? (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className={`${msg.id === 2 ? 'font-semibold text-accent' : 'text-foreground/90'}`}
-                >
-                  {msg.text}
-                </motion.p>
-              ) : (
-                <p className={`${msg.id === 2 ? 'font-semibold text-accent' : 'text-foreground/90'} opacity-0`}>
+        {/* Messages container */}
+        <div className="p-6 pb-2 space-y-3">
+          <AnimatePresence>
+            {welcomeMessages.slice(0, visibleMessages).map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`p-4 rounded-xl ${
+                  msg.id === 2 
+                    ? 'bg-gradient-to-r from-accent/20 to-primary/10 border border-accent/30' 
+                    : 'bg-secondary/40 border border-border/30'
+                }`}
+              >
+                <p className={`${msg.id === 2 ? 'font-semibold text-accent' : 'text-foreground/90'}`}>
                   {msg.text}
                 </p>
-              )}
-            </div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-        {/* Action section - fixed height */}
-        <div className="p-6 pt-0 space-y-4 h-[140px]">
-          {!hasFunnel && (
-            <div 
-              className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30"
-              style={{ visibility: showAction ? 'visible' : 'hidden' }}
-            >
-              {showAction ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-start gap-3"
-                >
-                  <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground mb-1">
-                      Funil em preparação ⏳
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Disponível em até 48h.
-                    </p>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="flex items-start gap-3 opacity-0">
-                  <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground mb-1">
-                      Funil em preparação ⏳
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Disponível em até 48h.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {hasFunnel && (
-            <div 
-              className="p-4 rounded-xl bg-primary/10 border border-primary/30"
-              style={{ visibility: showAction ? 'visible' : 'hidden' }}
-            >
-              {showAction ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-start gap-3"
-                >
-                  <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Seu Funil está pronto! 🚀
-                    </p>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="flex items-start gap-3 opacity-0">
-                  <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Seu Funil está pronto! 🚀
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <Button
-            onClick={handleContinue}
-            className="w-full gap-2"
-            style={{ visibility: showAction ? 'visible' : 'hidden' }}
-          >
-            {showAction ? (
-              <motion.span
+          {/* Typing indicator */}
+          <AnimatePresence>
+            {isTyping && !showAction && (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="flex items-center gap-2"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <TypingIndicator />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Action section */}
+        <AnimatePresence>
+          {showAction && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="p-6 pt-2 space-y-4"
+            >
+              {!hasFunnel && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground mb-1">
+                        Funil em preparação ⏳
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Disponível em até 48h.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {hasFunnel && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground">
+                        Seu Funil está pronto! 🚀
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                onClick={handleContinue}
+                className="w-full gap-2"
               >
                 <Target className="w-4 h-4" />
                 {hasFunnel ? 'Ver meu Funil' : 'Entendi, vou aguardar'}
                 <ArrowRight className="w-4 h-4" />
-              </motion.span>
-            ) : (
-              <span className="flex items-center gap-2 opacity-0">
-                <Target className="w-4 h-4" />
-                {hasFunnel ? 'Ver meu Funil' : 'Entendi, vou aguardar'}
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            )}
-          </Button>
-        </div>
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

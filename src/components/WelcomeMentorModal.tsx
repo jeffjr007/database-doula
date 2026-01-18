@@ -17,33 +17,60 @@ const mentorMessages = [
   "Preparado pra mudar de patamar? Bora! 🚀"
 ];
 
+// Typing indicator component
+const TypingIndicator = () => (
+  <div className="flex items-center gap-1.5 px-4 py-3">
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  </div>
+);
+
 const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
   const [showButton, setShowButton] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setVisibleMessages(0);
       setShowButton(false);
       setIsExiting(false);
+      setIsTyping(false);
       return;
     }
 
-    // Show messages sequentially
     const timers: NodeJS.Timeout[] = [];
 
+    // Start with typing indicator
+    setIsTyping(true);
+
     mentorMessages.forEach((_, index) => {
+      // Show message and start typing for next
       const timer = setTimeout(() => {
         setVisibleMessages(index + 1);
-      }, (index + 1) * 1000); // 1 second delay between each message
+        // Keep typing for next message, or stop if last
+        if (index < mentorMessages.length - 1) {
+          setIsTyping(true);
+        } else {
+          setIsTyping(false);
+        }
+      }, (index + 1) * 1200); // Slightly longer delay for typing effect
       timers.push(timer);
     });
 
+    // Show typing before button
+    const typingButtonTimer = setTimeout(() => {
+      setIsTyping(true);
+    }, mentorMessages.length * 1200 + 400);
+    timers.push(typingButtonTimer);
+
     // Show button after all messages
     const buttonTimer = setTimeout(() => {
+      setIsTyping(false);
       setShowButton(true);
-    }, (mentorMessages.length + 1) * 1000);
+    }, (mentorMessages.length + 1) * 1200);
     timers.push(buttonTimer);
 
     return () => timers.forEach(t => clearTimeout(t));
@@ -106,52 +133,56 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                 </div>
               </div>
 
-              {/* Messages - fixed height container */}
-              <div className="space-y-3 h-[240px]">
-                {mentorMessages.map((message, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
-                    style={{ visibility: index < visibleMessages ? 'visible' : 'hidden' }}
-                  >
-                    {index < visibleMessages ? (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-foreground text-sm leading-relaxed"
-                      >
-                        {message}
-                      </motion.p>
-                    ) : (
-                      <p className="text-foreground text-sm leading-relaxed opacity-0">
+              {/* Messages container */}
+              <div className="space-y-3 mb-6">
+                <AnimatePresence>
+                  {mentorMessages.slice(0, visibleMessages).map((message, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
+                    >
+                      <p className="text-foreground text-sm leading-relaxed">
                         {message}
                       </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
 
-              {/* Button - fixed height */}
-              <div className="mt-6 h-[56px]">
-                <Button
-                  onClick={handleComplete}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
-                  style={{ visibility: showButton ? 'visible' : 'hidden' }}
-                >
-                  {showButton ? (
-                    <motion.span
+                {/* Typing indicator */}
+                <AnimatePresence>
+                  {isTyping && !showButton && (
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <TypingIndicator />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Button */}
+              <AnimatePresence>
+                {showButton && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Button
+                      onClick={handleComplete}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
                     >
                       Começar Jornada 🎯
-                    </motion.span>
-                  ) : (
-                    <span className="opacity-0">Começar Jornada 🎯</span>
-                  )}
-                </Button>
-              </div>
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ) : (
             <motion.div
@@ -173,7 +204,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                   <p className="text-sm text-muted-foreground">Seu mentor</p>
                 </div>
               </div>
-              <div className="space-y-3 min-h-[200px]">
+              <div className="space-y-3 mb-6">
                 {mentorMessages.map((message, index) => (
                   <div
                     key={index}
@@ -183,11 +214,9 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                   </div>
                 ))}
               </div>
-              <div className="mt-6">
-                <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 rounded-xl text-base">
-                  Começar Jornada 🎯
-                </Button>
-              </div>
+              <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 rounded-xl text-base">
+                Começar Jornada 🎯
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
