@@ -56,18 +56,33 @@ const STAGE4_INTRO_KEY = 'stage4_intro_seen';
 export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
   const hasSeenIntroThisSession = sessionStorage.getItem(STAGE4_INTRO_KEY) === 'true';
   
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(hasSeenIntroThisSession ? mentorMessages.length : 0);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(hasSeenIntroThisSession ? mentorMessages.length - 1 : 0);
   const [showFeatures, setShowFeatures] = useState(hasSeenIntroThisSession);
   const [messagesComplete, setMessagesComplete] = useState(hasSeenIntroThisSession);
+  const [showContinueButton, setShowContinueButton] = useState(hasSeenIntroThisSession);
 
-  const handleNextMessage = () => {
+  // Auto-advance messages
+  useEffect(() => {
+    if (hasSeenIntroThisSession) return;
+    
     if (currentMessageIndex < mentorMessages.length - 1) {
-      setCurrentMessageIndex(prev => prev + 1);
-    } else {
-      setMessagesComplete(true);
-      sessionStorage.setItem(STAGE4_INTRO_KEY, 'true');
-      setTimeout(() => setShowFeatures(true), 800);
+      const timer = setTimeout(() => {
+        setCurrentMessageIndex(prev => prev + 1);
+      }, 2800);
+      return () => clearTimeout(timer);
+    } else if (currentMessageIndex === mentorMessages.length - 1 && !showContinueButton) {
+      // All messages shown, show the continue button after a delay
+      const timer = setTimeout(() => {
+        setShowContinueButton(true);
+      }, 1200);
+      return () => clearTimeout(timer);
     }
+  }, [currentMessageIndex, hasSeenIntroThisSession, showContinueButton]);
+
+  const handleContinue = () => {
+    setMessagesComplete(true);
+    sessionStorage.setItem(STAGE4_INTRO_KEY, 'true');
+    setTimeout(() => setShowFeatures(true), 600);
   };
 
   return (
@@ -142,32 +157,25 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
               </AnimatePresence>
             </div>
 
-            {/* Next Button - Minimalist */}
-            {!messagesComplete && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-              >
-                <Button
-                  variant="ghost"
-                  onClick={handleNextMessage}
-                  className="gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300"
+            {/* Continue Button - appears only after all messages */}
+            <AnimatePresence>
+              {showContinueButton && !messagesComplete && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
                 >
-                  {currentMessageIndex < mentorMessages.length - 1 ? (
-                    <>
-                      <span className="text-sm">Continuar</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm">Ver o que vamos fazer</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            )}
+                  <Button
+                    variant="ghost"
+                    onClick={handleContinue}
+                    className="gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300"
+                  >
+                    <span className="text-sm">Continuar</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
