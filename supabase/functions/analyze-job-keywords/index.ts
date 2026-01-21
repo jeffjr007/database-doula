@@ -25,36 +25,41 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Você é um especialista em recrutamento e preparação para entrevistas. Sua tarefa é extrair palavras-chave de uma descrição de vaga que o candidato deve usar para criar seu roteiro de entrevista.
+    const systemPrompt = `Você é um especialista em recrutamento e preparação para entrevistas. Sua tarefa é identificar as habilidades e competências que o candidato JÁ POSSUI e que são relevantes para a vaga.
+
+FOCO PRINCIPAL: Extraia palavras-chave baseadas no que o candidato REALMENTE sabe fazer, não no que a vaga pede.
 
 REGRAS IMPORTANTES:
-1. Extraia APENAS palavras-chave técnicas e comportamentais relevantes para a ENTREVISTA
-2. NUNCA inclua nomes de empresas (ex: Magazine Luiza, Nubank, Google, etc.)
-3. NUNCA inclua nomes de pessoas
-4. NUNCA inclua localizações geográficas
+1. Analise PRIMEIRO as experiências e perfil do candidato
+2. Depois cruze com os requisitos da vaga
+3. Extraia APENAS habilidades que o candidato DEMONSTRA ter
+4. NUNCA inclua nomes de empresas, pessoas ou localizações
 5. Foque em: 
-   - Habilidades técnicas (ex: Python, Excel, SQL, análise de dados)
-   - Competências comportamentais (ex: liderança, trabalho em equipe, comunicação)
-   - Metodologias e frameworks (ex: Scrum, Agile, Lean)
-   - Ferramentas e tecnologias (ex: Power BI, SAP, Salesforce)
-   - Áreas de conhecimento (ex: gestão de projetos, marketing digital)
-6. Retorne entre 10 e 15 palavras-chave
-7. Priorize termos que o candidato possa conectar com suas experiências
-8. Cada palavra-chave deve ser um termo que faça sentido o candidato abordar na entrevista`;
+   - Habilidades técnicas que o candidato já usou (ex: Python, Excel, SQL)
+   - Competências comportamentais demonstradas nas experiências (ex: liderança, comunicação)
+   - Metodologias e ferramentas que ele já trabalhou (ex: Scrum, Power BI)
+   - Resultados e conquistas mencionados
+6. Retorne entre 8 e 12 palavras-chave
+7. Priorize termos que o candidato pode comprovar com exemplos reais
+8. Se a vaga pede algo que o candidato NÃO tem experiência, NÃO inclua`;
 
-    const userPrompt = `Faça uma análise dessa vaga:
+    const userPrompt = `Analise o perfil e experiências deste candidato:
 
-${jobDescription}
-
-Esse é o meu perfil e minhas experiências:
-
+PERFIL:
 ${linkedinAbout}
 
+EXPERIÊNCIAS:
 ${experiences}
 
-Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de entrevista. Liste as palavras-chave que eu deva conectar com minhas experiências profissionais e perfil.
+VAGA (para contexto de relevância):
+${jobDescription}
 
-IMPORTANTE: NÃO inclua nomes de empresas, pessoas ou localizações. Apenas termos técnicos, habilidades e competências.`;
+Com base no que o candidato REALMENTE fez e sabe, liste as palavras-chave mais relevantes para ele usar no roteiro de entrevista.
+
+IMPORTANTE: 
+- Foque no que ELE SABE, não no que a vaga pede
+- Extraia apenas habilidades que ele pode comprovar com suas experiências
+- NÃO inclua nomes de empresas, pessoas ou localizações`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
