@@ -39,6 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AIGeneratedScripts, KeywordScript } from "./AIGeneratedScripts";
 import { SupportLink } from "./SupportLink";
+import { Stage4Introduction } from "./Stage4Introduction";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -63,7 +64,12 @@ const STEPS = [
   { id: 7, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
 ];
 
+const STAGE4_STARTED_KEY = 'stage4_started';
+
 export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
+  const hasStartedBefore = sessionStorage.getItem(STAGE4_STARTED_KEY) === 'true';
+  
+  const [showIntroduction, setShowIntroduction] = useState(!hasStartedBefore);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -107,6 +113,10 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
         if (progress?.data_content) {
           const savedData = progress.data_content as unknown as StepData;
           setData(savedData);
+          
+          // Hide introduction if user has saved progress
+          setShowIntroduction(false);
+          sessionStorage.setItem(STAGE4_STARTED_KEY, 'true');
 
           if (isStageCompleted) {
             setCurrentStep(1);
@@ -722,6 +732,20 @@ análise de dados"
         return null;
     }
   };
+
+  const handleStartFromIntro = () => {
+    setShowIntroduction(false);
+    sessionStorage.setItem(STAGE4_STARTED_KEY, 'true');
+  };
+
+  // Show introduction first if user hasn't started
+  if (showIntroduction) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Stage4Introduction onStart={handleStartFromIntro} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
