@@ -95,7 +95,7 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="flex flex-col items-center gap-6 max-w-2xl mx-auto text-center"
+            className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto text-center"
           >
             {/* Mentor Photo */}
             <div className="relative">
@@ -105,8 +105,8 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
               </div>
             </div>
 
-            {/* Messages Container */}
-            <div className="min-h-[220px] flex flex-col justify-center space-y-3 w-full">
+            {/* Messages Container - Fixed width to prevent layout shift */}
+            <div className="min-h-[220px] flex flex-col justify-center space-y-3 w-full max-w-xl">
               {mentorMessages.slice(0, currentMessageIndex + 1).map((message, index) => {
                 const IconComponent = message.icon;
                 const isLatest = index === currentMessageIndex;
