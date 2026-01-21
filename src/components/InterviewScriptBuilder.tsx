@@ -14,9 +14,13 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Quote
+  Quote,
+  Wand2,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import mentorPhoto from "@/assets/mentor-photo.png";
 
 // Cada palavra-chave tem seu próprio roteiro
@@ -39,6 +43,9 @@ interface Experience {
 interface InterviewScriptBuilderProps {
   keywords: string[];
   companyName: string;
+  jobDescription: string;
+  linkedinAbout: string;
+  experiences: string;
   onComplete: (scripts: KeywordScript[]) => void | Promise<void>;
 }
 
@@ -57,6 +64,9 @@ const mentorMessages = [
 export const InterviewScriptBuilder = ({
   keywords,
   companyName,
+  jobDescription,
+  linkedinAbout,
+  experiences: userExperiences,
   onComplete
 }: InterviewScriptBuilderProps) => {
   const [experiences, setExperiences] = useState<Experience[]>([
@@ -65,6 +75,7 @@ export const InterviewScriptBuilder = ({
   const [expandedExp, setExpandedExp] = useState<string | null>('1');
   const [conversationStep, setConversationStep] = useState(0);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [isGeneratingScripts, setIsGeneratingScripts] = useState(false);
 
   // Animate conversation
   useEffect(() => {
@@ -158,6 +169,78 @@ export const InterviewScriptBuilder = ({
 
   const canComplete = () => {
     return getTotalScriptsCount() > 0;
+  };
+
+  const canGenerateWithAI = () => {
+    // Precisa ter pelo menos uma experiência com empresa, cargo e keywords selecionadas
+    return experiences.some(exp => 
+      exp.company.trim() && 
+      exp.role.trim() && 
+      exp.selectedKeywords.length > 0
+    );
+  };
+
+  const generateScriptsWithAI = async () => {
+    if (!canGenerateWithAI()) {
+      toast.error("Preencha empresa, cargo e selecione palavras-chave em pelo menos uma experiência.");
+      return;
+    }
+
+    setIsGeneratingScripts(true);
+    
+    try {
+      // Formata as experiências para enviar para a IA
+      const experiencesForAI = experiences
+        .filter(exp => exp.company.trim() && exp.role.trim() && exp.selectedKeywords.length > 0)
+        .map(exp => ({
+          company: exp.company,
+          role: exp.role,
+          keywords: exp.selectedKeywords
+        }));
+
+      const keywordsToGenerate = experiencesForAI.flatMap(exp => 
+        exp.keywords.map(kw => ({ keyword: kw, company: exp.company, role: exp.role }))
+      );
+
+      const { data: result, error } = await supabase.functions.invoke('generate-interview-scripts', {
+        body: {
+          keywords: keywordsToGenerate.map(k => k.keyword),
+          experiences: userExperiences,
+          linkedinAbout,
+          companyName,
+          jobDescription,
+          experiencesMapping: keywordsToGenerate
+        }
+      });
+
+      if (error) throw error;
+
+      if (result?.scripts && result.scripts.length > 0) {
+        // Atualiza os scripts nas experiências
+        const newExperiences = [...experiences];
+        
+        result.scripts.forEach((generatedScript: { keyword: string; script: string; experience?: string }) => {
+          // Encontra em qual experiência está essa keyword
+          const expIndex = newExperiences.findIndex(exp => 
+            exp.selectedKeywords.includes(generatedScript.keyword)
+          );
+          
+          if (expIndex !== -1) {
+            newExperiences[expIndex].keywordScripts[generatedScript.keyword] = generatedScript.script;
+          }
+        });
+        
+        setExperiences(newExperiences);
+        toast.success(`${result.scripts.length} roteiros gerados com sucesso!`);
+      } else {
+        throw new Error("Nenhum roteiro foi gerado");
+      }
+    } catch (error) {
+      console.error("Erro ao gerar roteiros:", error);
+      toast.error("Erro ao gerar roteiros. Tente novamente.");
+    } finally {
+      setIsGeneratingScripts(false);
+    }
   };
 
   const handleComplete = () => {
@@ -487,6 +570,47 @@ export const InterviewScriptBuilder = ({
               ))}
             </div>
 
+            {/* AI Generate Button */}
+            {getTotalKeywordsCount() > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-6"
+              >
+                <Card className="p-5 bg-gradient-to-r from-primary/5 via-amber-500/5 to-primary/5 border-primary/20">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex-1 text-center sm:text-left">
+                      <h4 className="font-medium flex items-center gap-2 justify-center sm:justify-start">
+                        <Wand2 className="w-5 h-5 text-primary" />
+                        Gerar Roteiros com IA
+                      </h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        A IA criará roteiros personalizados para cada palavra-chave selecionada, 
+                        baseados nas suas experiências reais.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={generateScriptsWithAI}
+                      disabled={isGeneratingScripts || !canGenerateWithAI()}
+                      className="gap-2 bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
+                    >
+                      {isGeneratingScripts ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Gerar Roteiros
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Closing Questions */}
             <Card className="p-4 bg-secondary/50">
               <h4 className="font-medium mb-3 flex items-center gap-2">
@@ -508,7 +632,7 @@ export const InterviewScriptBuilder = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex justify-center pt-4"
+              className="flex justify-center gap-4 pt-4"
             >
               <Button
                 size="lg"

@@ -39,8 +39,9 @@ REGRAS IMPORTANTES:
    - Competências comportamentais demonstradas nas experiências (ex: liderança, comunicação)
    - Metodologias e ferramentas que ele já trabalhou (ex: Scrum, Power BI)
    - Resultados e conquistas mencionados
-6. Retorne entre 8 e 12 palavras-chave
+6. Retorne entre 15 e 20 palavras-chave (mínimo obrigatório: 15)
 7. Priorize termos que o candidato pode comprovar com exemplos reais
+8. Seja abrangente: inclua variações e termos relacionados para maximizar a cobertura
 8. Se a vaga pede algo que o candidato NÃO tem experiência, NÃO inclua`;
 
     const userPrompt = `Analise o perfil e experiências deste candidato:
@@ -85,7 +86,7 @@ IMPORTANTE:
                   keywords: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Lista de 8-15 palavras-chave relevantes para a entrevista"
+                    description: "Lista de 15-20 palavras-chave relevantes para a entrevista (mínimo 15)"
                   }
                 },
                 required: ["keywords"],

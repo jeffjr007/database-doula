@@ -612,6 +612,9 @@ análise de dados"
             <InterviewScriptBuilder
               keywords={data.keywords}
               companyName={data.companyName}
+              jobDescription={data.jobDescription}
+              linkedinAbout={data.linkedinAbout}
+              experiences={data.experiences}
               onComplete={async (scripts) => {
                 if (user?.id) {
                   try {
