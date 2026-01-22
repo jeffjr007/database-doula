@@ -428,19 +428,15 @@ const Portal = () => {
           </div>
         ) : (
           <div className="p-4 border-t border-border/30">
-            <motion.button
+            <button
               onClick={() => navigate('/auth')}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 hover:border-primary/50 transition-all"
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <LogIn className="w-5 h-5 text-primary" />
-              </div>
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium text-primary">
+              <LogIn className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-muted-foreground">
                 Entrar
               </span>
-            </motion.button>
+            </button>
           </div>
         )}
 
@@ -535,12 +531,13 @@ const Portal = () => {
                 </div>
               ) : (
                 <div className="p-4 border-t border-border/30">
-                  <Button 
+                  <button 
                     onClick={() => { navigate('/auth'); setSidebarOpen(false); }}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 rounded-xl"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all"
                   >
-                    <LogIn className="w-4 h-4" /> Entrar
-                  </Button>
+                    <LogIn className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Entrar</span>
+                  </button>
                 </div>
               )}
 
