@@ -15,6 +15,7 @@ import Stage3Page from "./pages/Stage3Page";
 import Stage4Page from "./pages/Stage4Page";
 import Stage5Page from "./pages/Stage5Page";
 import Stage6Page from "./pages/Stage6Page";
+import Stage7Page from "./pages/Stage7Page";
 import Admin from "./pages/Admin";
 import ActivatePlatform from "./pages/ActivatePlatform";
 import SupportPage from "./pages/SupportPage";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/etapa/4" element={<Stage4Page />} />
             <Route path="/etapa/5" element={<Stage5Page />} />
             <Route path="/etapa/6" element={<Stage6Page />} />
+            <Route path="/etapa/7" element={<Stage7Page />} />
             <Route path="/etapa/:stageNumber" element={<StagePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

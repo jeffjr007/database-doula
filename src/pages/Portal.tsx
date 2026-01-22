@@ -15,7 +15,8 @@ import {
   Lock,
   Linkedin,
   Shield,
-  Check
+  Check,
+  PenTool
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +103,15 @@ const stages = [
     icon: Target,
     path: "/etapa/6",
     color: "from-green-500/20 to-primary/10",
+    isDeliverable: false,
+  },
+  {
+    number: 7,
+    title: "Esteira de Conteúdos",
+    description: "Crie posts estratégicos para o LinkedIn com IA",
+    icon: PenTool,
+    path: "/etapa/7",
+    color: "from-pink-500/20 to-purple-500/10",
     isDeliverable: false,
   },
 ];
