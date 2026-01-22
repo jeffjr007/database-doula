@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import ActivatePlatform from "./pages/ActivatePlatform";
 import SupportPage from "./pages/SupportPage";
 import SettingsPage from "./pages/SettingsPage";
+import GiftPage from "./pages/GiftPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/suporte" element={<SupportPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
+            <Route path="/presente" element={<GiftPage />} />
             <Route path="/etapa/1" element={<Stage1Page />} />
             <Route path="/etapa/3" element={<Stage3Page />} />
             <Route path="/etapa/4" element={<Stage4Page />} />

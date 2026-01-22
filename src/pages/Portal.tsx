@@ -173,7 +173,7 @@ const Portal = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, platform_activated, stage2_unlocked, stage2_completed')
+        .select('full_name, platform_activated, stage2_unlocked, stage2_completed, learning_path')
         .eq('user_id', user.id)
         .single();
 
@@ -192,6 +192,19 @@ const Portal = () => {
       if (!activated) {
         window.location.href = '/ativar';
         return;
+      }
+
+      // Check if user has a learning path gift and hasn't seen it yet
+      if (profile?.learning_path && !isAdmin) {
+        const giftSeenKey = `gift_seen_${user.id}`;
+        const hasSeenGift = localStorage.getItem(giftSeenKey);
+        if (!hasSeenGift) {
+          // Redirect to gift page after initial animation
+          setTimeout(() => {
+            navigate('/presente');
+          }, 1500);
+          return;
+        }
       }
 
       const { data: progressData } = await supabase
