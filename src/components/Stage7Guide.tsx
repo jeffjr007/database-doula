@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ArrowRight, Sparkles, Copy, Check, 
   Lightbulb, BarChart3, Zap, Target, RefreshCw,
-  Globe, ChevronRight, ExternalLink, BookOpen
+  Globe, ChevronRight, ExternalLink, BookOpen, PenLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,12 +29,46 @@ interface Stage7GuideProps {
   stageNumber: number;
 }
 
+// Animation variants (same as GupyGuide)
+const fadeInUp = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 }
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.95 }
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 }
+};
+
 const STEPS = [
-  { id: 1, title: 'Escolher Tipo de Conteúdo', icon: Lightbulb },
-  { id: 2, title: 'Colar Referência', icon: Globe },
+  { id: 1, title: 'Escolher Tipo', icon: Lightbulb },
+  { id: 2, title: 'Criar Tema', icon: PenLine },
   { id: 3, title: 'Escolher Tema', icon: Target },
   { id: 4, title: 'Gerar Conteúdo', icon: Sparkles },
-  { id: 5, title: 'Copiar e Publicar', icon: Copy },
+  { id: 5, title: 'Publicar', icon: Copy },
 ];
 
 const CONTENT_TYPES: { type: ContentType; label: string; icon: string; description: string }[] = [
@@ -65,7 +101,9 @@ const CONTENT_TYPES: { type: ContentType; label: string; icon: string; descripti
 export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedType, setSelectedType] = useState<ContentType | null>(null);
+  const [inputMode, setInputMode] = useState<'paste' | 'type'>('paste');
   const [referenceContent, setReferenceContent] = useState('');
+  const [manualTheme, setManualTheme] = useState('');
   const [themes, setThemes] = useState<ContentTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<ContentTheme | null>(null);
   const [generatedPost, setGeneratedPost] = useState<GeneratedPost | null>(null);
@@ -74,9 +112,20 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const [copied, setCopied] = useState(false);
   const [savedPosts, setSavedPosts] = useState<GeneratedPost[]>([]);
   
+  const contentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Scroll to top when step changes
+  const scrollToTop = () => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToTop();
+  }, [currentStep]);
 
   // Load saved posts
   useEffect(() => {
@@ -188,6 +237,62 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
     }
   };
 
+  const generateFromManualTheme = async () => {
+    if (!manualTheme.trim()) {
+      toast({
+        title: 'Tema vazio',
+        description: 'Digite o tema ou ideia que você quer desenvolver.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-linkedin-content', {
+        body: {
+          action: 'generate',
+          contentType: selectedType,
+          theme: manualTheme.trim(),
+          manualInput: true,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Erro ao gerar conteúdo');
+
+      const newPost: GeneratedPost = {
+        id: `post-${Date.now()}`,
+        type: selectedType!,
+        headline: data.data.headline,
+        content: data.data.content,
+        created_at: new Date().toISOString(),
+        theme: manualTheme,
+      };
+
+      setGeneratedPost(newPost);
+      setCurrentStep(5);
+      
+      // Save post automatically
+      await savePost(newPost);
+      
+      toast({
+        title: 'Post gerado!',
+        description: 'Seu conteúdo está pronto para publicar no LinkedIn.',
+      });
+    } catch (error: any) {
+      console.error('Error generating post:', error);
+      toast({
+        title: 'Erro ao gerar',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const generatePost = async () => {
     if (!selectedTheme || !selectedType) return;
 
@@ -262,7 +367,9 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const resetFlow = () => {
     setCurrentStep(1);
     setSelectedType(null);
+    setInputMode('paste');
     setReferenceContent('');
+    setManualTheme('');
     setThemes([]);
     setSelectedTheme(null);
     setGeneratedPost(null);
@@ -274,174 +381,358 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
       case 1:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="step-1"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Que tipo de conteúdo você quer criar?
-              </h2>
-              <p className="text-muted-foreground">
-                Cada tipo tem um objetivo específico na sua estratégia
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {CONTENT_TYPES.map((content) => (
-                <Card
-                  key={content.type}
-                  className={`cursor-pointer transition-all hover:shadow-lg ${
-                    selectedType === content.type
-                      ? 'ring-2 ring-primary border-primary'
-                      : 'hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedType(content.type)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <span className="text-3xl">{content.icon}</span>
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">{content.label}</h3>
-                        <p className="text-sm text-muted-foreground">{content.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {selectedType && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-center pt-4"
+            <motion.div 
+              className="text-center mb-8"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.h2 
+                variants={staggerItem}
+                className="text-2xl font-bold text-foreground mb-2"
               >
-                <Button onClick={() => setCurrentStep(2)} size="lg">
-                  Continuar <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </motion.div>
-            )}
+                Que tipo de conteúdo você quer criar?
+              </motion.h2>
+              <motion.p 
+                variants={staggerItem}
+                className="text-muted-foreground"
+              >
+                Cada tipo tem um objetivo específico na sua estratégia
+              </motion.p>
+            </motion.div>
+
+            <motion.div 
+              className="grid md:grid-cols-2 gap-4"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              {CONTENT_TYPES.map((content, index) => (
+                <motion.div
+                  key={content.type}
+                  variants={staggerItem}
+                  transition={{ delay: index * 0.08 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Card
+                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                      selectedType === content.type
+                        ? 'ring-2 ring-primary border-primary bg-primary/5'
+                        : 'hover:border-primary/50'
+                    }`}
+                    onClick={() => setSelectedType(content.type)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <motion.span 
+                          className="text-3xl"
+                          animate={selectedType === content.type ? { scale: [1, 1.2, 1] } : {}}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {content.icon}
+                        </motion.span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">{content.label}</h3>
+                          <p className="text-sm text-muted-foreground">{content.description}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <AnimatePresence>
+              {selectedType && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex justify-center pt-4"
+                >
+                  <Button onClick={() => setCurrentStep(2)} size="lg" className="gap-2">
+                    Continuar <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         );
 
       case 2:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="step-2"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center mb-6">
-              <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
-                {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
-              </Badge>
-              <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">
-                Cole um conteúdo de referência
-              </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                Encontre um artigo, post ou texto na internet sobre o tema que você quer abordar.
-                A IA vai analisar e sugerir novos temas baseados nele.
-              </p>
-            </div>
-
-            <Card className="bg-muted/30 border-dashed">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <BookOpen className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <h4 className="font-medium mb-1">Como encontrar um bom conteúdo:</h4>
-                    <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                      <li>Pesquise no Google um tema da sua área</li>
-                      <li>Abra um artigo ou post interessante</li>
-                      <li>Copie o texto (sem links de venda)</li>
-                      <li>Cole aqui abaixo</li>
-                    </ol>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Textarea
-              value={referenceContent}
-              onChange={(e) => setReferenceContent(e.target.value)}
-              placeholder="Cole aqui o conteúdo que você encontrou na internet..."
-              className="min-h-[200px] text-base"
-            />
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-              </Button>
-              <Button 
-                onClick={analyzeContent} 
-                disabled={isAnalyzing || !referenceContent.trim()}
-                size="lg"
+            <motion.div 
+              className="text-center mb-6"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.div variants={staggerItem}>
+                <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
+                  {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
+                </Badge>
+              </motion.div>
+              <motion.h2 
+                variants={staggerItem}
+                className="text-2xl font-bold text-foreground mt-4 mb-2"
               >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Analisar e Sugerir Temas
-                  </>
-                )}
-              </Button>
-            </div>
+                Como você quer criar seu conteúdo?
+              </motion.h2>
+              <motion.p 
+                variants={staggerItem}
+                className="text-muted-foreground"
+              >
+                Escolha entre colar uma referência ou digitar sua própria ideia
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              variants={scaleIn}
+              initial="initial"
+              animate="animate"
+              transition={{ delay: 0.2 }}
+            >
+              <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'paste' | 'type')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="paste" className="gap-2">
+                    <Globe className="h-4 w-4" />
+                    Colar da Internet
+                  </TabsTrigger>
+                  <TabsTrigger value="type" className="gap-2">
+                    <PenLine className="h-4 w-4" />
+                    Digitar Tema
+                  </TabsTrigger>
+                </TabsList>
+
+                <AnimatePresence mode="wait">
+                  <TabsContent value="paste" className="space-y-4">
+                    <motion.div
+                      key="paste-content"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Card className="bg-muted/30 border-dashed">
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-3 mb-4">
+                            <BookOpen className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <h4 className="font-medium mb-1">Como encontrar um bom conteúdo:</h4>
+                              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                                <li>Pesquise no Google um tema da sua área</li>
+                                <li>Abra um artigo ou post interessante</li>
+                                <li>Copie o texto (sem links de venda)</li>
+                                <li>Cole aqui abaixo</li>
+                              </ol>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Textarea
+                        value={referenceContent}
+                        onChange={(e) => setReferenceContent(e.target.value)}
+                        placeholder="Cole aqui o conteúdo que você encontrou na internet..."
+                        className="min-h-[200px] text-base"
+                      />
+
+                      <div className="flex justify-between pt-2">
+                        <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                        </Button>
+                        <Button 
+                          onClick={analyzeContent} 
+                          disabled={isAnalyzing || !referenceContent.trim()}
+                          size="lg"
+                          className="gap-2"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Analisando...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              Analisar e Sugerir Temas
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="type" className="space-y-4">
+                    <motion.div
+                      key="type-content"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Card className="bg-gradient-to-br from-primary/10 to-accent/5 border-primary/20">
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-3 mb-4">
+                            <PenLine className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <h4 className="font-medium mb-1">Digite seu tema ou ideia</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Escreva sobre o que você quer falar. A IA vai desenvolver um post completo com formatação profissional.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium">Seu tema ou ideia:</label>
+                        <Textarea
+                          value={manualTheme}
+                          onChange={(e) => setManualTheme(e.target.value)}
+                          placeholder="Ex: Como desenvolver líderes na indústria 4.0, 5 erros que gestores cometem em reuniões, A importância de feedbacks construtivos..."
+                          className="min-h-[120px] text-base"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          💡 Dica: Seja específico! Quanto mais detalhes, melhor será o conteúdo gerado.
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between pt-2">
+                        <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                        </Button>
+                        <Button 
+                          onClick={generateFromManualTheme} 
+                          disabled={isGenerating || !manualTheme.trim()}
+                          size="lg"
+                          className="gap-2 bg-gradient-to-r from-primary to-accent"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Gerando post...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              Gerar Post Direto
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </TabsContent>
+                </AnimatePresence>
+              </Tabs>
+            </motion.div>
           </motion.div>
         );
 
       case 3:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="step-3"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center mb-6">
-              <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
-                {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
-              </Badge>
-              <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">
+            <motion.div 
+              className="text-center mb-6"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.div variants={staggerItem}>
+                <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
+                  {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
+                </Badge>
+              </motion.div>
+              <motion.h2 
+                variants={staggerItem}
+                className="text-2xl font-bold text-foreground mt-4 mb-2"
+              >
                 Escolha um tema para seu post
-              </h2>
-              <p className="text-muted-foreground">
+              </motion.h2>
+              <motion.p 
+                variants={staggerItem}
+                className="text-muted-foreground"
+              >
                 A IA analisou o conteúdo e sugeriu esses temas. Escolha o que mais te interessa.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
-            <div className="grid gap-3">
-              {themes.map((theme) => (
-                <Card
+            <motion.div 
+              className="grid gap-3"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              {themes.map((theme, index) => (
+                <motion.div
                   key={theme.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedTheme?.id === theme.id
-                      ? 'ring-2 ring-primary border-primary bg-primary/5'
-                      : 'hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedTheme(theme)}
+                  variants={staggerItem}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        selectedTheme?.id === theme.id ? 'border-primary bg-primary' : 'border-muted-foreground'
-                      }`}>
-                        {selectedTheme?.id === theme.id && <Check className="h-3 w-3 text-white" />}
+                  <Card
+                    className={`cursor-pointer transition-all ${
+                      selectedTheme?.id === theme.id
+                        ? 'ring-2 ring-primary border-primary bg-primary/5'
+                        : 'hover:border-primary/50'
+                    }`}
+                    onClick={() => setSelectedTheme(theme)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <motion.div 
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            selectedTheme?.id === theme.id ? 'border-primary bg-primary' : 'border-muted-foreground'
+                          }`}
+                          animate={selectedTheme?.id === theme.id ? { scale: [1, 1.2, 1] } : {}}
+                        >
+                          {selectedTheme?.id === theme.id && <Check className="h-3 w-3 text-white" />}
+                        </motion.div>
+                        <div>
+                          <h4 className="font-medium">{theme.title}</h4>
+                          <p className="text-sm text-muted-foreground">{theme.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium">{theme.title}</h4>
-                        <p className="text-sm text-muted-foreground">{theme.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
-            <div className="flex justify-between pt-4">
+            <motion.div 
+              className="flex justify-between pt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               <Button variant="outline" onClick={() => setCurrentStep(2)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Button>
@@ -449,41 +740,71 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                 onClick={() => setCurrentStep(4)} 
                 disabled={!selectedTheme}
                 size="lg"
+                className="gap-2"
               >
-                Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                Continuar <ArrowRight className="h-4 w-4" />
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
       case 4:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="step-4"
+            variants={scaleIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center mb-6">
-              <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
-                {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
-              </Badge>
-              <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">
+            <motion.div 
+              className="text-center mb-6"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.div variants={staggerItem}>
+                <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
+                  {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
+                </Badge>
+              </motion.div>
+              <motion.h2 
+                variants={staggerItem}
+                className="text-2xl font-bold text-foreground mt-4 mb-2"
+              >
                 Pronto para gerar seu post?
-              </h2>
-            </div>
+              </motion.h2>
+            </motion.div>
 
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10">
-              <CardContent className="p-6 text-center">
-                <div className="mb-4">
-                  <span className="text-4xl">{CONTENT_TYPE_ICONS[selectedType!]}</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Tema escolhido:</h3>
-                <p className="text-xl font-bold text-primary mb-2">{selectedTheme?.title}</p>
-                <p className="text-muted-foreground">{selectedTheme?.description}</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <Card className="bg-gradient-to-br from-primary/10 to-accent/10">
+                <CardContent className="p-6 text-center">
+                  <motion.div 
+                    className="mb-4"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                  >
+                    <span className="text-5xl">{CONTENT_TYPE_ICONS[selectedType!]}</span>
+                  </motion.div>
+                  <h3 className="font-semibold text-lg mb-2">Tema escolhido:</h3>
+                  <p className="text-xl font-bold text-primary mb-2">{selectedTheme?.title}</p>
+                  <p className="text-muted-foreground">{selectedTheme?.description}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <div className="flex justify-between pt-4">
+            <motion.div 
+              className="flex justify-between pt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
               <Button variant="outline" onClick={() => setCurrentStep(3)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Button>
@@ -491,86 +812,112 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                 onClick={generatePost} 
                 disabled={isGenerating}
                 size="lg"
-                className="bg-gradient-to-r from-primary to-accent"
+                className="gap-2 bg-gradient-to-r from-primary to-accent"
               >
                 {isGenerating ? (
                   <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     Gerando post...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <Sparkles className="h-4 w-4" />
                     Gerar Post com IA
                   </>
                 )}
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
       case 5:
         return (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="step-5"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-6"
           >
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 mb-4">
-                <Check className="h-8 w-8 text-accent" />
-              </div>
+            <motion.div 
+              className="text-center mb-6"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+            >
+              <motion.div 
+                className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 mb-4"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Check className="h-8 w-8 text-green-500" />
+              </motion.div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 Seu post está pronto! 🎉
               </h2>
               <p className="text-muted-foreground">
                 Copie o conteúdo e publique no LinkedIn
               </p>
-            </div>
+            </motion.div>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
-                    {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
-                  </Badge>
-                  <Button
-                    variant={copied ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={copyToClipboard}
-                    className={copied ? 'bg-green-600' : ''}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4" /> Copiado!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="mr-2 h-4 w-4" /> Copiar tudo
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
-                  <p className="font-bold text-lg mb-4">{generatedPost?.headline}</p>
-                  <p>{generatedPost?.content}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Badge className={CONTENT_TYPE_COLORS[selectedType!]}>
+                      {CONTENT_TYPE_ICONS[selectedType!]} {CONTENT_TYPE_LABELS[selectedType!]}
+                    </Badge>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant={copied ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={copyToClipboard}
+                        className={copied ? 'bg-green-600' : ''}
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="mr-2 h-4 w-4" /> Copiado!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="mr-2 h-4 w-4" /> Copiar tudo
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                    <p className="font-bold text-lg mb-4">{generatedPost?.headline}</p>
+                    <p>{generatedPost?.content}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <div className="flex justify-center gap-4 pt-4">
-              <Button variant="outline" onClick={resetFlow}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Criar outro post
+            <motion.div 
+              className="flex justify-center gap-4 pt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Button variant="outline" onClick={resetFlow} className="gap-2">
+                <RefreshCw className="h-4 w-4" /> Criar outro post
               </Button>
               <Button 
                 onClick={() => window.open('https://www.linkedin.com/feed/', '_blank')}
-                className="bg-[#0077B5] hover:bg-[#006699]"
+                className="bg-[#0077B5] hover:bg-[#006699] gap-2"
               >
-                <ExternalLink className="mr-2 h-4 w-4" /> Abrir LinkedIn
+                <ExternalLink className="h-4 w-4" /> Abrir LinkedIn
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
@@ -580,9 +927,14 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20" ref={contentRef}>
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur sticky top-0 z-10">
+      <motion.div 
+        className="border-b bg-background/95 backdrop-blur sticky top-0 z-10"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -600,11 +952,16 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
           </div>
           <SupportButton />
         </div>
-      </div>
+      </motion.div>
 
       {/* Progress Steps */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-8">
+        <motion.div 
+          className="flex items-center justify-between mb-8 overflow-x-auto pb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
@@ -613,7 +970,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
             return (
               <div key={step.id} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div
+                  <motion.div
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       isActive
                         ? 'bg-primary text-primary-foreground'
@@ -621,24 +978,31 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                         ? 'bg-green-500 text-white'
                         : 'bg-muted text-muted-foreground'
                     }`}
+                    animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+                    transition={{ duration: 0.3 }}
                   >
                     {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
-                  </div>
-                  <span className={`text-xs mt-2 text-center max-w-[80px] ${
+                  </motion.div>
+                  <span className={`text-xs mt-2 text-center max-w-[70px] ${
                     isActive ? 'text-primary font-medium' : 'text-muted-foreground'
                   }`}>
                     {step.title}
                   </span>
                 </div>
                 {index < STEPS.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-2 ${
-                    currentStep > step.id ? 'bg-green-500' : 'bg-muted'
-                  }`} />
+                  <motion.div 
+                    className={`w-8 md:w-12 h-0.5 mx-1 md:mx-2 ${
+                      currentStep > step.id ? 'bg-green-500' : 'bg-muted'
+                    }`}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  />
                 )}
               </div>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Step Content */}
         <AnimatePresence mode="wait">
@@ -647,43 +1011,64 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
       </div>
 
       {/* Saved Posts Section */}
-      {savedPosts.length > 0 && currentStep === 1 && (
-        <div className="max-w-4xl mx-auto px-4 py-8 border-t">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Seus posts salvos ({savedPosts.length})
-          </h3>
-          <div className="grid gap-3">
-            {savedPosts.slice(-5).reverse().map((post) => (
-              <Card key={post.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <Badge className={CONTENT_TYPE_COLORS[post.type]} variant="outline">
-                        {CONTENT_TYPE_ICONS[post.type]} {CONTENT_TYPE_LABELS[post.type]}
-                      </Badge>
-                      <p className="font-medium mt-2 line-clamp-2">{post.headline}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(post.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${post.headline}\n\n${post.content}`);
-                        toast({ title: 'Copiado!' });
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {savedPosts.length > 0 && currentStep === 1 && (
+          <motion.div 
+            className="max-w-4xl mx-auto px-4 py-8 border-t"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Seus posts salvos ({savedPosts.length})
+            </h3>
+            <motion.div 
+              className="grid gap-3"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              {savedPosts.slice(-5).reverse().map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  variants={staggerItem}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <Badge className={CONTENT_TYPE_COLORS[post.type]} variant="outline">
+                            {CONTENT_TYPE_ICONS[post.type]} {CONTENT_TYPE_LABELS[post.type]}
+                          </Badge>
+                          <p className="font-medium mt-2 line-clamp-2">{post.headline}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${post.headline}\n\n${post.content}`);
+                              toast({ title: 'Copiado!' });
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
