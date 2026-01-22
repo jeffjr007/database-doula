@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ArrowRight, Sparkles, Copy, Check, 
   Lightbulb, BarChart3, Zap, Target, RefreshCw,
-  Globe, ChevronRight, ExternalLink, BookOpen, PenLine
+  Globe, ChevronRight, ExternalLink, BookOpen, PenLine, Pencil, Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -107,6 +107,9 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const [themes, setThemes] = useState<ContentTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<ContentTheme | null>(null);
   const [generatedPost, setGeneratedPost] = useState<GeneratedPost | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedHeadline, setEditedHeadline] = useState('');
+  const [editedContent, setEditedContent] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -893,11 +896,108 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                     </motion.div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
-                    <p className="font-bold text-lg mb-4">{generatedPost?.headline}</p>
-                    <p>{generatedPost?.content}</p>
-                  </div>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Headline</label>
+                        <Input
+                          value={editedHeadline}
+                          onChange={(e) => setEditedHeadline(e.target.value)}
+                          className="font-bold text-lg"
+                          placeholder="Headline do post..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Conteúdo</label>
+                        <Textarea
+                          value={editedContent}
+                          onChange={(e) => setEditedContent(e.target.value)}
+                          className="min-h-[200px] text-sm leading-relaxed"
+                          placeholder="Conteúdo do post..."
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditedHeadline(generatedPost?.headline || '');
+                            setEditedContent(generatedPost?.content || '');
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={async () => {
+                            if (generatedPost) {
+                              const updatedPost = {
+                                ...generatedPost,
+                                headline: editedHeadline,
+                                content: editedContent,
+                              };
+                              setGeneratedPost(updatedPost);
+                              
+                              // Update saved posts
+                              const updatedPosts = savedPosts.map(p => 
+                                p.id === updatedPost.id ? updatedPost : p
+                              );
+                              setSavedPosts(updatedPosts);
+                              
+                              // Save to database
+                              if (user) {
+                                const { data: existing } = await supabase
+                                  .from('collected_data')
+                                  .select('id')
+                                  .eq('user_id', user.id)
+                                  .eq('data_type', 'linkedin_posts')
+                                  .single();
+                                
+                                if (existing) {
+                                  await supabase
+                                    .from('collected_data')
+                                    .update({
+                                      data_content: JSON.parse(JSON.stringify({ posts: updatedPosts })),
+                                    })
+                                    .eq('id', existing.id);
+                                }
+                              }
+                              
+                              setIsEditing(false);
+                              toast({
+                                title: 'Post atualizado!',
+                                description: 'Suas alterações foram salvas.',
+                              });
+                            }
+                          }}
+                          className="gap-2"
+                        >
+                          <Save className="h-4 w-4" /> Salvar alterações
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative group">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          setEditedHeadline(generatedPost?.headline || '');
+                          setEditedContent(generatedPost?.content || '');
+                          setIsEditing(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                        <p className="font-bold text-lg mb-4">{generatedPost?.headline}</p>
+                        <p>{generatedPost?.content}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -913,7 +1013,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
               </Button>
               <Button 
                 onClick={() => window.open('https://www.linkedin.com/feed/', '_blank')}
-                className="bg-[#0077B5] hover:bg-[#006699] gap-2"
+                className="bg-[#0077B5] hover:bg-[#006699] gap-2 text-white"
               >
                 <ExternalLink className="h-4 w-4" /> Abrir LinkedIn
               </Button>
