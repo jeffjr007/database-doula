@@ -113,6 +113,33 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_paths: {
+        Row: {
+          created_at: string | null
+          formatted_data: Json
+          id: string
+          raw_hash: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          formatted_data: Json
+          id?: string
+          raw_hash: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          formatted_data?: Json
+          id?: string
+          raw_hash?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       linkedin_diagnostics: {
         Row: {
           created_at: string
@@ -234,8 +261,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          learning_path: string | null
           phone: string | null
           platform_activated: boolean
           stage2_completed: boolean | null
@@ -247,8 +276,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          learning_path?: string | null
           phone?: string | null
           platform_activated?: boolean
           stage2_completed?: boolean | null
@@ -260,8 +291,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          learning_path?: string | null
           phone?: string | null
           platform_activated?: boolean
           stage2_completed?: boolean | null
