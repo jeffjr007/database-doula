@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
+import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import logoAD from '@/assets/logo-ad.png';
@@ -37,6 +37,7 @@ const hashContent = (content: string): string => {
 
 const GiftPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   
   const [step, setStep] = useState<'loading' | 'intro' | 'explanation' | 'reveal'>('loading');
@@ -58,6 +59,10 @@ const GiftPage = () => {
   const fetchLearningPath = async () => {
     if (!user) return;
 
+    // When the user comes from the Portal sidebar, we want a direct reveal (no gift animation).
+    const directFromSidebar =
+      (location.state as { direct?: boolean } | null)?.direct === true;
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('learning_path')
@@ -67,15 +72,22 @@ const GiftPage = () => {
     if (profile?.learning_path) {
       setLearningPath(profile.learning_path);
       
-      // Check if user has already seen this gift - go directly to reveal
       const seenKey = `gift_seen_${user.id}`;
       const seen = localStorage.getItem(seenKey);
+
+      // If user came from sidebar, skip intro/explanation entirely.
+      if (directFromSidebar) {
+        localStorage.setItem(seenKey, 'true');
+        setStep('reveal');
+        loadFormattedPath(profile.learning_path);
+        return;
+      }
+
+      // Normal flow: show animation only on the first time.
       if (seen) {
-        // Already seen - go straight to reveal with loading
         setStep('reveal');
         loadFormattedPath(profile.learning_path);
       } else {
-        // First time - show intro animation
         setStep('intro');
       }
     } else {
