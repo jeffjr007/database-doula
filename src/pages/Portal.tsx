@@ -34,6 +34,7 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 import { StageWarningModal } from "@/components/StageWarningModal";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
+import LogoutModal from "@/components/LogoutModal";
 
 interface StageProgress {
   stage_number: number;
@@ -150,6 +151,7 @@ const Portal = () => {
   const [stage2Completed, setStage2Completed] = useState<boolean>(false);
   const [showStage3Modal, setShowStage3Modal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
@@ -340,6 +342,15 @@ const Portal = () => {
     setShowWelcomeModal(false);
   };
 
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutComplete = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
     { icon: HelpCircle, label: 'Suporte', onClick: () => navigate('/suporte') },
@@ -407,7 +418,7 @@ const Portal = () => {
               <div className="opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden">
                 <p className="text-sm font-medium text-foreground truncate">{userName || 'Usuário'}</p>
                 <button 
-                  onClick={signOut}
+                  onClick={handleLogout}
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                 >
                   Sair
@@ -502,7 +513,7 @@ const Portal = () => {
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={signOut} className="w-full gap-2">
+                  <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2">
                     <LogOut className="w-4 h-4" /> Sair
                   </Button>
                 </div>
@@ -770,6 +781,11 @@ const Portal = () => {
         onOpenChange={setShowStage3Modal}
         hasFunnel={opportunityFunnel?.status === 'published'}
         onContinue={handleStage3Continue}
+      />
+
+      <LogoutModal
+        open={showLogoutModal}
+        onComplete={handleLogoutComplete}
       />
     </div>
   );

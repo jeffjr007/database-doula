@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import logoAD from "@/assets/logo-ad.png";
+import LogoutModal from "@/components/LogoutModal";
 
 type SettingsSection = "profile" | "security" | "notifications" | "appearance" | "support";
 
@@ -69,6 +70,7 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -666,7 +668,7 @@ const SettingsPage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={signOut}
+            onClick={() => setShowLogoutModal(true)}
             className="text-muted-foreground hover:text-destructive gap-2 rounded-xl"
           >
             <LogOut className="w-4 h-4" />
@@ -674,6 +676,14 @@ const SettingsPage = () => {
           </Button>
         </div>
       </header>
+
+      <LogoutModal
+        open={showLogoutModal}
+        onComplete={async () => {
+          await signOut();
+          navigate('/auth');
+        }}
+      />
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
