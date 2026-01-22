@@ -120,6 +120,10 @@
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 
+  html {
+    overflow-y: scroll; /* Always show scrollbar to prevent layout shift */
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
     font-family: var(--font-body);
