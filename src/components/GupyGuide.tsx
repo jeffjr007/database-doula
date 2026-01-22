@@ -34,7 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { SupportLink } from "./SupportLink";
+import { HelpCircle } from 'lucide-react';
 import { MentorAvatar } from "./MentorAvatar";
 
 // Animation variants for reuse
@@ -2139,18 +2139,25 @@ export const GupyGuide = () => {
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="font-display font-semibold text-lg">Etapa 6: Estratégias Gupy</h1>
-            <p className="text-xs text-muted-foreground">Otimização para ATS</p>
-          </div>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        
+        <div className="text-center">
+          <h1 className="font-display font-semibold text-lg">Etapa 6: Estratégias Gupy</h1>
+          <p className="text-xs text-muted-foreground">Otimização para ATS</p>
         </div>
+        
         <div className="flex items-center gap-2">
           {isSaving && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          <SupportLink />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/suporte')}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </Button>
         </div>
       </div>
 

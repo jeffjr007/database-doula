@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import logoAd from "@/assets/logo-ad.png";
 import { motion, AnimatePresence } from "framer-motion";
-import { SupportLink } from "@/components/SupportLink";
+import { HelpCircle } from 'lucide-react';
 
 type CVType = "personalized" | "ats" | "cover-letter" | null;
 type ViewState = "selector" | "form" | "preview";
@@ -383,7 +383,14 @@ const CVPage = () => {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <SupportLink />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/suporte')}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </Button>
           {user ? (
             <>
               <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">

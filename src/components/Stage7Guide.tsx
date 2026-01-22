@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { SupportButton } from './SupportButton';
+import { HelpCircle } from 'lucide-react';
 import { 
   ContentType, 
   ContentTheme, 
@@ -429,28 +429,27 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                   transition={{ delay: index * 0.08 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  className="h-full"
                 >
                   <Card
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                    className={`cursor-pointer transition-all hover:shadow-lg h-full ${
                       selectedType === content.type
                         ? 'ring-2 ring-primary border-primary bg-primary/5'
                         : 'hover:border-primary/50'
                     }`}
                     onClick={() => setSelectedType(content.type)}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <motion.div 
-                          className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
-                          animate={selectedType === content.type ? { scale: [1, 1.15, 1] } : {}}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <content.Icon className="w-5 h-5 text-primary" />
-                        </motion.div>
-                        <div>
-                          <h3 className="font-semibold text-lg mb-1">{content.label}</h3>
-                          <p className="text-sm text-muted-foreground">{content.description}</p>
-                        </div>
+                    <CardContent className="p-6 h-full flex items-start gap-4">
+                      <motion.div 
+                        className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0"
+                        animate={selectedType === content.type ? { scale: [1, 1.15, 1] } : {}}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <content.Icon className="w-6 h-6 text-primary" />
+                      </motion.div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg mb-2">{content.label}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{content.description}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1039,22 +1038,30 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <div>
-              <h1 className="font-semibold">Etapa 7: Esteira de Conteúdos</h1>
-              <p className="text-sm text-muted-foreground">Crie posts estratégicos para o LinkedIn</p>
-            </div>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          
+          <div className="text-center">
+            <h1 className="font-semibold">Etapa 7: Esteira de Conteúdos</h1>
+            <p className="text-sm text-muted-foreground">Crie posts estratégicos para o LinkedIn</p>
           </div>
-          <SupportButton />
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/suporte')}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
         </div>
       </motion.div>
 

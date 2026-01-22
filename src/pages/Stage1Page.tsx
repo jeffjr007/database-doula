@@ -8,7 +8,7 @@ import { ArrowLeft, Download, FileText, Linkedin, ExternalLink, Sparkles, ArrowR
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
 import { MentorAvatar } from '@/components/MentorAvatar';
-import { SupportLink } from '@/components/SupportLink';
+import { HelpCircle } from 'lucide-react';
 import { StageCompleteButton } from '@/components/StageCompleteButton';
 
 interface Diagnostic {
@@ -188,10 +188,14 @@ const Stage1Page = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <SupportLink />
-            <img src={logoAd} alt="Logo" className="h-8" />
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/suporte')}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 
