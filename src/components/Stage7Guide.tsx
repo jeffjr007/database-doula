@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ArrowRight, Sparkles, Copy, Check, 
   Lightbulb, BarChart3, Zap, Target, RefreshCw,
-  Globe, ChevronRight, ExternalLink, BookOpen, PenLine, Pencil, Save
+  Globe, ChevronRight, ExternalLink, BookOpen, PenLine, Pencil, Save, Eye, Trash2, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -114,6 +114,10 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [savedPosts, setSavedPosts] = useState<GeneratedPost[]>([]);
+  const [viewingPost, setViewingPost] = useState<GeneratedPost | null>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editPostHeadline, setEditPostHeadline] = useState('');
+  const [editPostContent, setEditPostContent] = useState('');
   
   const contentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -1130,7 +1134,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
               initial="initial"
               animate="animate"
             >
-              {savedPosts.slice(-5).reverse().map((post, index) => (
+              {savedPosts.slice().reverse().map((post, index) => (
                 <motion.div
                   key={post.id}
                   variants={staggerItem}
@@ -1138,33 +1142,220 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
                 >
                   <Card className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <Badge className={CONTENT_TYPE_COLORS[post.type]} variant="outline">
-                            {CONTENT_TYPE_ICONS[post.type]} {CONTENT_TYPE_LABELS[post.type]}
-                          </Badge>
-                          <p className="font-medium mt-2 line-clamp-2">{post.headline}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(post.created_at).toLocaleDateString('pt-BR')}
-                          </p>
+                      {editingPostId === post.id ? (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">Headline</label>
+                            <Input
+                              value={editPostHeadline}
+                              onChange={(e) => setEditPostHeadline(e.target.value)}
+                              className="font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">Conteúdo</label>
+                            <Textarea
+                              value={editPostContent}
+                              onChange={(e) => setEditPostContent(e.target.value)}
+                              className="min-h-[150px] text-sm"
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingPostId(null)}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={async () => {
+                                const updatedPosts = savedPosts.map(p => 
+                                  p.id === post.id 
+                                    ? { ...p, headline: editPostHeadline, content: editPostContent }
+                                    : p
+                                );
+                                setSavedPosts(updatedPosts);
+                                
+                                if (user) {
+                                  const { data: existing } = await supabase
+                                    .from('collected_data')
+                                    .select('id')
+                                    .eq('user_id', user.id)
+                                    .eq('data_type', 'linkedin_posts')
+                                    .maybeSingle();
+                                  
+                                  if (existing) {
+                                    await supabase
+                                      .from('collected_data')
+                                      .update({
+                                        data_content: JSON.parse(JSON.stringify({ posts: updatedPosts })),
+                                      })
+                                      .eq('id', existing.id);
+                                  }
+                                }
+                                
+                                setEditingPostId(null);
+                                toast({ title: 'Post atualizado!' });
+                              }}
+                              className="gap-2"
+                            >
+                              <Save className="h-4 w-4" /> Salvar
+                            </Button>
+                          </div>
                         </div>
-                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${post.headline}\n\n${post.content}`);
-                              toast({ title: 'Copiado!' });
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </motion.div>
-                      </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <Badge className={CONTENT_TYPE_COLORS[post.type]} variant="outline">
+                              {CONTENT_TYPE_ICONS[post.type]} {CONTENT_TYPE_LABELS[post.type]}
+                            </Badge>
+                            <p className="font-medium mt-2 line-clamp-2">{post.headline}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setViewingPost(post)}
+                                title="Visualizar"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditPostHeadline(post.headline);
+                                  setEditPostContent(post.content);
+                                  setEditingPostId(post.id);
+                                }}
+                                title="Editar"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${post.headline}\n\n${post.content}`);
+                                  toast({ title: 'Copiado!' });
+                                }}
+                                title="Copiar"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={async () => {
+                                  const updatedPosts = savedPosts.filter(p => p.id !== post.id);
+                                  setSavedPosts(updatedPosts);
+                                  
+                                  if (user) {
+                                    const { data: existing } = await supabase
+                                      .from('collected_data')
+                                      .select('id')
+                                      .eq('user_id', user.id)
+                                      .eq('data_type', 'linkedin_posts')
+                                      .maybeSingle();
+                                    
+                                    if (existing) {
+                                      await supabase
+                                        .from('collected_data')
+                                        .update({
+                                          data_content: JSON.parse(JSON.stringify({ posts: updatedPosts })),
+                                        })
+                                        .eq('id', existing.id);
+                                    }
+                                  }
+                                  
+                                  toast({ title: 'Post excluído!' });
+                                }}
+                                title="Excluir"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* View Post Modal */}
+      <AnimatePresence>
+        {viewingPost && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setViewingPost(null)}
+          >
+            <motion.div
+              className="bg-card border rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-auto shadow-xl"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge className={CONTENT_TYPE_COLORS[viewingPost.type]}>
+                    {CONTENT_TYPE_ICONS[viewingPost.type]} {CONTENT_TYPE_LABELS[viewingPost.type]}
+                  </Badge>
+                  <Button variant="ghost" size="sm" onClick={() => setViewingPost(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed mb-4">
+                  <p className="font-bold text-lg mb-4">{viewingPost.headline}</p>
+                  <p>{viewingPost.content}</p>
+                </div>
+                
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditPostHeadline(viewingPost.headline);
+                      setEditPostContent(viewingPost.content);
+                      setEditingPostId(viewingPost.id);
+                      setViewingPost(null);
+                    }}
+                    className="gap-2"
+                  >
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${viewingPost.headline}\n\n${viewingPost.content}`);
+                      toast({ title: 'Copiado!' });
+                    }}
+                    className="gap-2"
+                  >
+                    <Copy className="h-4 w-4" /> Copiar tudo
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
