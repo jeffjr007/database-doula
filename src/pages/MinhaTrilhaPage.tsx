@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -31,14 +31,24 @@ interface FormattedLearningPath {
   estimatedHours: number | null;
 }
 
-const normalizeLearningPathText = (input: string) => {
-  // Some legacy content may contain HTML-ish fragments (e.g. target="_blank" ... class="...")
-  // Normalize to plain text so formatting + caching is stable and rendering never becomes “invisible”.
+// Normalize text to prevent invisible characters / HTML fragments
+const normalizeLearningPathText = (input: string): string => {
   return input
-    .replace(/<[^>]*>/g, ' ') // strip tags
+    .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/\s+\n/g, '\n')
     .trim();
+};
+
+// Simple hash function for comparing text changes
+const computeHash = (text: string): string => {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return String(hash);
 };
 
 // Animation variants
@@ -72,7 +82,7 @@ const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
   
   for (const line of lines) {
     if (line.includes('MÓDULO') || line.match(/^[🔹🔸🔷🔶]/)) {
-      if (currentModule) {
+      if (currentModule && currentModule.courses.length > 0) {
         modules.push(currentModule);
       }
       
@@ -95,7 +105,7 @@ const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
       if (currentModule) {
         const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
         const url = urlMatch ? urlMatch[1] : null;
-        const name = line.replace(url || '', '').trim();
+        const name = line.replace(url || '', '').replace(/[-–•]\s*/, '').trim();
         
         let platform: string | null = null;
         if (url) {
@@ -106,24 +116,25 @@ const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
           else if (url.includes('youtube')) platform = 'YouTube';
         }
         
-        if (!name && currentModule.courses.length > 0) {
+        if (name) {
+          currentModule.courses.push({ name, url, platform, duration: null });
+        } else if (currentModule.courses.length > 0) {
+          // URL on its own line - attach to previous course
           currentModule.courses[currentModule.courses.length - 1].url = url;
           currentModule.courses[currentModule.courses.length - 1].platform = platform;
-        } else {
-          currentModule.courses.push({ name, url, platform, duration: null });
         }
       }
     }
     else if (currentModule && line.trim() && !line.startsWith('Foco:')) {
-      const name = line.replace(/➤.*/, '').trim();
+      const name = line.replace(/^[-–•➤]\s*/, '').trim();
       
-      if (name && !name.toLowerCase().includes('módulo')) {
+      if (name && !name.toLowerCase().includes('módulo') && name.length > 3) {
         currentModule.courses.push({ name, url: null, platform: null, duration: null });
       }
     }
   }
   
-  if (currentModule) {
+  if (currentModule && currentModule.courses.length > 0) {
     modules.push(currentModule);
   }
   
@@ -134,6 +145,22 @@ const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
   };
 };
 
+// Filter out empty/invalid courses and modules
+const sanitizeFormattedPath = (path: FormattedLearningPath): FormattedLearningPath => {
+  const validModules = path.modules
+    .map(module => ({
+      ...module,
+      courses: module.courses.filter(c => c.name && c.name.trim().length > 0)
+    }))
+    .filter(module => module.courses.length > 0);
+
+  return {
+    modules: validModules,
+    totalCourses: validModules.reduce((acc, m) => acc + m.courses.length, 0),
+    estimatedHours: path.estimatedHours
+  };
+};
+
 const MinhaTrilhaPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -141,12 +168,22 @@ const MinhaTrilhaPage = () => {
   const [formattedPath, setFormattedPath] = useState<FormattedLearningPath | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedModules, setExpandedModules] = useState<number[]>([0]);
-  const hasFormattedRef = useRef(false);
 
   const cleanedLearningPath = useMemo(() => {
     if (!learningPath) return null;
     return normalizeLearningPathText(learningPath);
   }, [learningPath]);
+
+  // Clear old localStorage cache on mount
+  useEffect(() => {
+    try {
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('formatted_learning_path_'))
+        .forEach(key => localStorage.removeItem(key));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -154,104 +191,114 @@ const MinhaTrilhaPage = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Main data fetching effect
   useEffect(() => {
-    const fetchLearningPath = async () => {
+    const fetchAndProcessLearningPath = async () => {
       if (!user?.id) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('learning_path')
-        .eq('user_id', user.id)
-        .single();
+      setIsLoading(true);
 
-      if (profile?.learning_path) {
-        setLearningPath(profile.learning_path);
-      } else {
+      try {
+        // 1. Fetch raw learning path from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('learning_path')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!profile?.learning_path) {
+          setLearningPath(null);
+          setFormattedPath(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const rawText = profile.learning_path;
+        setLearningPath(rawText);
+
+        const normalizedText = normalizeLearningPathText(rawText);
+        const currentHash = computeHash(normalizedText);
+
+        // 2. Check if we already have a saved formatted path with matching hash
+        const { data: savedPath } = await supabase
+          .from('learning_paths')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (savedPath && savedPath.raw_hash === currentHash) {
+          // Hash matches - use saved data
+          const savedData = savedPath.formatted_data as unknown as FormattedLearningPath;
+          const sanitized = sanitizeFormattedPath(savedData);
+          if (sanitized.modules.length > 0) {
+            setFormattedPath(sanitized);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // 3. Need to format (first time or mentor changed the path)
+        console.log('Formatting learning path with AI...');
+        
+        const { data: aiResult, error: aiError } = await supabase.functions.invoke('format-learning-path', {
+          body: { learningPath: normalizedText }
+        });
+
+        let finalPath: FormattedLearningPath;
+
+        if (aiError || !aiResult?.modules) {
+          console.error('AI formatting failed, using fallback:', aiError);
+          finalPath = fallbackParseLearningPath(normalizedText);
+        } else {
+          finalPath = sanitizeFormattedPath(aiResult);
+        }
+
+        // If AI result is empty, try fallback
+        if (finalPath.modules.length === 0) {
+          finalPath = fallbackParseLearningPath(normalizedText);
+        }
+
+        setFormattedPath(finalPath);
+
+        // 4. Save to database (upsert)
+        if (finalPath.modules.length > 0) {
+          const dataToSave = JSON.parse(JSON.stringify(finalPath));
+          
+          if (savedPath) {
+            await supabase
+              .from('learning_paths')
+              .update({
+                raw_hash: currentHash,
+                formatted_data: dataToSave
+              })
+              .eq('user_id', user.id);
+          } else {
+            await supabase
+              .from('learning_paths')
+              .insert([{
+                user_id: user.id,
+                raw_hash: currentHash,
+                formatted_data: dataToSave
+              }]);
+          }
+        }
+
+      } catch (error) {
+        console.error('Error processing learning path:', error);
+        // Try fallback with raw text
+        if (learningPath) {
+          const fallback = fallbackParseLearningPath(normalizeLearningPathText(learningPath));
+          setFormattedPath(fallback);
+        }
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchLearningPath();
+    if (user?.id) {
+      fetchAndProcessLearningPath();
+    }
   }, [user?.id]);
-
-  useEffect(() => {
-    if (learningPath && !hasFormattedRef.current) {
-      loadOrFormatLearningPath();
-    }
-  }, [learningPath]);
-
-  const getCacheKey = () => {
-    if (!user?.id || !cleanedLearningPath) return null;
-    const hash = cleanedLearningPath.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return `formatted_learning_path_${user.id}_${hash}`;
-  };
-
-  const loadOrFormatLearningPath = async () => {
-    const cacheKey = getCacheKey();
-    
-    if (cacheKey) {
-      try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached) as FormattedLearningPath;
-          if (parsed.modules && parsed.modules.length > 0) {
-            setFormattedPath(parsed);
-            setIsLoading(false);
-            hasFormattedRef.current = true;
-            return;
-          }
-        }
-      } catch (e) {
-        console.error('Error reading cached learning path:', e);
-      }
-    }
-
-    await formatLearningPath(cacheKey);
-  };
-
-  const formatLearningPath = async (cacheKey: string | null) => {
-    setIsLoading(true);
-    try {
-      if (!cleanedLearningPath) {
-        setFormattedPath(null);
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke('format-learning-path', {
-        body: { learningPath: cleanedLearningPath }
-      });
-
-      if (error) throw error;
-      
-      setFormattedPath(data);
-      hasFormattedRef.current = true;
-
-      if (cacheKey && data) {
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-        } catch (e) {
-          console.error('Error caching learning path:', e);
-        }
-      }
-    } catch (error) {
-      console.error('Error formatting learning path with AI:', error);
-      const fallback = fallbackParseLearningPath(cleanedLearningPath || learningPath || '');
-      setFormattedPath(fallback);
-      hasFormattedRef.current = true;
-
-      if (cacheKey && fallback) {
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(fallback));
-        } catch (e) {
-          console.error('Error caching fallback learning path:', e);
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const toggleModule = (index: number) => {
     setExpandedModules(prev => 
@@ -384,16 +431,16 @@ const MinhaTrilhaPage = () => {
             >
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border">
                 <BookOpen className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">{formattedPath.modules.length} Módulos</span>
+                <span className="text-sm font-medium text-foreground">{formattedPath.modules.length} Módulos</span>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border">
                 <Target className="w-5 h-5 text-accent" />
-                <span className="text-sm font-medium">{formattedPath.totalCourses} Cursos</span>
+                <span className="text-sm font-medium text-foreground">{formattedPath.totalCourses} Cursos</span>
               </div>
               {formattedPath.estimatedHours && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border">
                   <Clock className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">~{formattedPath.estimatedHours}h</span>
+                  <span className="text-sm font-medium text-foreground">~{formattedPath.estimatedHours}h</span>
                 </div>
               )}
             </motion.div>
@@ -479,32 +526,32 @@ const MinhaTrilhaPage = () => {
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       {course.platform && (
-                                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Globe className="w-3 h-3" />
                                           {course.platform}
                                         </span>
                                       )}
                                       {course.duration && (
-                                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Clock className="w-3 h-3" />
                                           {course.duration}
                                         </span>
                                       )}
                                     </div>
                                   </div>
-                                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                                 </a>
                               ) : (
                                 <div className="flex items-center gap-4 p-4 rounded-xl bg-card/30 border border-border/20">
-                                  <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0">
+                                  <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
                                     <BookOpen className="w-5 h-5 text-muted-foreground" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-muted-foreground line-clamp-2">
+                                    <p className="font-medium text-foreground line-clamp-2">
                                       {course.name}
                                     </p>
                                     {course.duration && (
-                                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                         <Clock className="w-3 h-3" />
                                         {course.duration}
                                       </span>
@@ -522,15 +569,18 @@ const MinhaTrilhaPage = () => {
               ))}
             </div>
 
-            {/* Footer */}
+            {/* Footer CTA */}
             <motion.div 
               variants={fadeInUp}
-              className="pt-8 pb-4"
+              className="text-center pt-8"
             >
-              <Button 
-                onClick={() => navigate('/')} 
-                variant="outline" 
-                className="w-full gap-2"
+              <p className="text-sm text-muted-foreground mb-4">
+                Explore sua trilha no seu ritmo 💜
+              </p>
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="gap-2"
               >
                 <Home className="w-4 h-4" />
                 Voltar ao Portal
@@ -538,7 +588,7 @@ const MinhaTrilhaPage = () => {
             </motion.div>
           </motion.div>
         ) : (
-          // Fallback: show raw learning path when formatting fails
+          // Fallback: show raw text if formatting failed completely
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -560,14 +610,16 @@ const MinhaTrilhaPage = () => {
               </pre>
             </div>
             
-            <Button 
-              onClick={() => navigate('/')} 
-              variant="outline" 
-              className="w-full gap-2"
-            >
-              <Home className="w-4 h-4" />
-              Voltar ao Portal
-            </Button>
+            <div className="text-center pt-4">
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="gap-2"
+              >
+                <Home className="w-4 h-4" />
+                Voltar ao Portal
+              </Button>
+            </div>
           </motion.div>
         )}
       </main>

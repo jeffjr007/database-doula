@@ -113,6 +113,33 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_paths: {
+        Row: {
+          created_at: string | null
+          formatted_data: Json
+          id: string
+          raw_hash: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          formatted_data: Json
+          id?: string
+          raw_hash: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          formatted_data?: Json
+          id?: string
+          raw_hash?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       linkedin_diagnostics: {
         Row: {
           created_at: string
