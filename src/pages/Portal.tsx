@@ -22,7 +22,8 @@ import {
   Instagram,
   Home,
   Menu,
-  X
+  X,
+  Gift
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +156,7 @@ const Portal = () => {
   const [showStage3Modal, setShowStage3Modal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [hasLearningPath, setHasLearningPath] = useState(false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
@@ -201,6 +203,7 @@ const Portal = () => {
       if (profile) {
         setStage2Unlocked(profile.stage2_unlocked ?? false);
         setStage2Completed(profile.stage2_completed ?? false);
+        setHasLearningPath(!!profile.learning_path);
       }
 
       if (profile?.full_name) {
@@ -394,6 +397,7 @@ const Portal = () => {
 
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
+    ...(hasLearningPath ? [{ icon: Gift, label: 'Minha Trilha', onClick: () => navigate('/presente'), highlight: true }] : []),
     { icon: HelpCircle, label: 'Suporte', onClick: () => { window.location.href = '/suporte'; } },
     { icon: Settings, label: 'Configurações', onClick: () => { window.location.href = '/configuracoes'; } },
     { divider: true },
@@ -431,9 +435,11 @@ const Portal = () => {
                 whileTap={{ scale: 0.98 }}
                 className={`
                   w-full flex items-center gap-3 p-3 rounded-xl transition-all
-                  ${link.active 
-                    ? 'bg-primary/15 text-primary' 
-                    : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                  ${'highlight' in link && link.highlight
+                    ? 'bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/30'
+                    : link.active 
+                      ? 'bg-primary/15 text-primary' 
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                   }
                 `}
               >

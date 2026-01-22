@@ -24,6 +24,17 @@ interface FormattedPath {
   modules: Module[];
 }
 
+// Simple hash function for comparing content
+const hashContent = (content: string): string => {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(36);
+};
+
 const GiftPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -48,14 +59,14 @@ const GiftPage = () => {
   const fetchLearningPath = async () => {
     if (!user) return;
 
-    const { data } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('learning_path')
       .eq('user_id', user.id)
       .single();
 
-    if (data?.learning_path) {
-      setLearningPath(data.learning_path);
+    if (profile?.learning_path) {
+      setLearningPath(profile.learning_path);
       
       // Check if user has already seen this gift
       const seenKey = `gift_seen_${user.id}`;
@@ -63,7 +74,7 @@ const GiftPage = () => {
       if (seen) {
         setHasSeenGift(true);
         setStep('reveal');
-        formatLearningPath(data.learning_path);
+        loadFormattedPath(profile.learning_path);
       }
     } else {
       // No gift available, redirect back
@@ -71,9 +82,44 @@ const GiftPage = () => {
     }
   };
 
-  const formatLearningPath = async (content: string) => {
-    setLoadingPath(true);
+  const loadFormattedPath = async (rawContent: string) => {
+    if (!user) return;
     
+    setLoadingPath(true);
+    const currentHash = hashContent(rawContent);
+
+    try {
+      // First, check if we have a saved formatted path in the database
+      const { data: savedPath } = await supabase
+        .from('learning_paths')
+        .select('formatted_data, raw_hash')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // If we have a saved path and the hash matches, use it
+      if (savedPath && savedPath.raw_hash === currentHash) {
+        console.log('[GiftPage] Using cached formatted path from database');
+        const formatted = savedPath.formatted_data as unknown as FormattedPath;
+        if (formatted?.modules && formatted.modules.length > 0) {
+          setFormattedPath(formatted);
+          setLoadingPath(false);
+          return;
+        }
+      }
+
+      // Otherwise, format via AI and save
+      console.log('[GiftPage] Formatting via AI and saving to database');
+      await formatAndSaveLearningPath(rawContent, currentHash);
+    } catch (error) {
+      console.error('Error loading formatted path:', error);
+      // Fallback to AI formatting
+      await formatAndSaveLearningPath(rawContent, currentHash);
+    }
+  };
+
+  const formatAndSaveLearningPath = async (content: string, contentHash: string) => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase.functions.invoke('format-learning-path', {
         body: { rawContent: content }
@@ -82,12 +128,46 @@ const GiftPage = () => {
       if (error) throw error;
 
       if (data?.formattedPath) {
-        setFormattedPath(data.formattedPath);
+        const formatted = data.formattedPath as FormattedPath;
+        setFormattedPath(formatted);
+
+        // Save to database
+        const { error: upsertError } = await supabase
+          .from('learning_paths')
+          .upsert({
+            user_id: user.id,
+            raw_hash: contentHash,
+            formatted_data: formatted as any
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (upsertError) {
+          console.error('Error saving formatted path:', upsertError);
+        } else {
+          console.log('[GiftPage] Formatted path saved to database');
+        }
       }
     } catch (error) {
       console.error('Error formatting learning path:', error);
       // Fallback: try to parse manually
-      setFormattedPath(parseManually(content));
+      const fallback = parseManually(content);
+      setFormattedPath(fallback);
+      
+      // Still try to save the fallback
+      try {
+        await supabase
+          .from('learning_paths')
+          .upsert({
+            user_id: user.id,
+            raw_hash: contentHash,
+            formatted_data: fallback as any
+          }, {
+            onConflict: 'user_id'
+          });
+      } catch (saveError) {
+        console.error('Error saving fallback path:', saveError);
+      }
     } finally {
       setLoadingPath(false);
     }
@@ -134,7 +214,7 @@ const GiftPage = () => {
   const handleContinue = () => {
     setStep('reveal');
     if (learningPath) {
-      formatLearningPath(learningPath);
+      loadFormattedPath(learningPath);
       // Mark as seen
       if (user) {
         localStorage.setItem(`gift_seen_${user.id}`, 'true');
