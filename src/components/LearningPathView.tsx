@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -118,17 +119,55 @@ const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
 };
 
 const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps) => {
+  const { user } = useAuth();
   const [expandedModules, setExpandedModules] = useState<number[]>([0]);
   const [formattedPath, setFormattedPath] = useState<FormattedLearningPath | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hasFormattedRef = useRef(false);
+
+  // Generate a cache key based on user id and a hash of the learning path content
+  const getCacheKey = () => {
+    if (!user?.id) return null;
+    // Simple hash of learning path to detect changes
+    const hash = learningPath.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return `formatted_learning_path_${user.id}_${hash}`;
+  };
 
   useEffect(() => {
-    if (open && learningPath) {
-      formatLearningPath();
+    if (open && learningPath && !hasFormattedRef.current) {
+      loadOrFormatLearningPath();
     }
   }, [open, learningPath]);
 
-  const formatLearningPath = async () => {
+  const loadOrFormatLearningPath = async () => {
+    const cacheKey = getCacheKey();
+    
+    // Try to load from cache first
+    if (cacheKey) {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as FormattedLearningPath;
+          if (parsed.modules && parsed.modules.length > 0) {
+            setFormattedPath(parsed);
+            setIsLoading(false);
+            hasFormattedRef.current = true;
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Error reading cached learning path:', e);
+      }
+    }
+
+    // No cache found, format with AI
+    await formatLearningPath(cacheKey);
+  };
+
+  const formatLearningPath = async (cacheKey: string | null) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('format-learning-path', {
@@ -138,11 +177,31 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
       if (error) throw error;
       
       setFormattedPath(data);
+      hasFormattedRef.current = true;
+
+      // Save to cache
+      if (cacheKey && data) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          console.error('Error caching learning path:', e);
+        }
+      }
     } catch (error) {
       console.error('Error formatting learning path with AI:', error);
       // Use fallback parser
       const fallback = fallbackParseLearningPath(learningPath);
       setFormattedPath(fallback);
+      hasFormattedRef.current = true;
+
+      // Also cache the fallback
+      if (cacheKey && fallback) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(fallback));
+        } catch (e) {
+          console.error('Error caching fallback learning path:', e);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
