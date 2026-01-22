@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,14 +10,26 @@ import {
   ChevronDown,
   ChevronUp,
   GraduationCap,
-  X
+  X,
+  Clock,
+  Loader2,
+  Globe
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LearningPathViewProps {
   open: boolean;
   onClose: () => void;
   learningPath: string;
+}
+
+interface Course {
+  name: string;
+  url: string | null;
+  platform: string | null;
+  duration: string | null;
 }
 
 interface Module {
@@ -27,29 +39,27 @@ interface Module {
   courses: Course[];
 }
 
-interface Course {
-  name: string;
-  url: string | null;
-  note?: string;
+interface FormattedLearningPath {
+  modules: Module[];
+  totalCourses: number;
+  estimatedHours: number | null;
 }
 
-// Parse learning path text into structured data
-const parseLearningPath = (text: string): Module[] => {
+// Fallback parser for when AI is unavailable
+const fallbackParseLearningPath = (text: string): FormattedLearningPath => {
   const modules: Module[] = [];
   const lines = text.split('\n').filter(line => line.trim());
   
   let currentModule: Module | null = null;
   
   for (const line of lines) {
-    // Check if it's a module header (starts with emoji like 🔹)
     if (line.includes('MÓDULO') || line.match(/^[🔹🔸🔷🔶]/)) {
       if (currentModule) {
         modules.push(currentModule);
       }
       
-      // Extract module title
       const titleMatch = line.match(/MÓDULO\s*\d+\s*[–-]\s*(.+)/);
-      const emoji = line.match(/^([🔹🔸🔷🔶])/)?.[1] || '🔹';
+      const emoji = line.match(/^([🔹🔸🔷🔶])/)?.[1] || '🎯';
       
       currentModule = {
         title: titleMatch ? titleMatch[1].trim() : line.replace(/^[🔹🔸🔷🔶]\s*/, '').trim(),
@@ -58,34 +68,40 @@ const parseLearningPath = (text: string): Module[] => {
         courses: [],
       };
     } 
-    // Check if it's a focus line
     else if (line.toLowerCase().startsWith('foco:')) {
       if (currentModule) {
         currentModule.focus = line.replace(/^foco:\s*/i, '').trim();
       }
     }
-    // Check if it's a course with URL
     else if (line.includes('http')) {
       if (currentModule) {
         const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
         const url = urlMatch ? urlMatch[1] : null;
         const name = line.replace(url || '', '').trim();
         
-        // Find the course name from previous line if this line only has URL
+        // Infer platform from URL
+        let platform: string | null = null;
+        if (url) {
+          if (url.includes('udemy')) platform = 'Udemy';
+          else if (url.includes('coursera')) platform = 'Coursera';
+          else if (url.includes('linkedin')) platform = 'LinkedIn Learning';
+          else if (url.includes('alura')) platform = 'Alura';
+          else if (url.includes('youtube')) platform = 'YouTube';
+        }
+        
         if (!name && currentModule.courses.length > 0) {
           currentModule.courses[currentModule.courses.length - 1].url = url;
+          currentModule.courses[currentModule.courses.length - 1].platform = platform;
         } else {
-          currentModule.courses.push({ name, url });
+          currentModule.courses.push({ name, url, platform, duration: null });
         }
       }
     }
-    // Check if it's a course name (without URL)
     else if (currentModule && line.trim() && !line.startsWith('Foco:')) {
-      const note = line.includes('➤') ? line.split('➤')[1]?.trim() : undefined;
       const name = line.replace(/➤.*/, '').trim();
       
       if (name && !name.toLowerCase().includes('módulo')) {
-        currentModule.courses.push({ name, url: null, note });
+        currentModule.courses.push({ name, url: null, platform: null, duration: null });
       }
     }
   }
@@ -94,12 +110,43 @@ const parseLearningPath = (text: string): Module[] => {
     modules.push(currentModule);
   }
   
-  return modules;
+  return {
+    modules,
+    totalCourses: modules.reduce((acc, m) => acc + m.courses.length, 0),
+    estimatedHours: null
+  };
 };
 
 const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps) => {
   const [expandedModules, setExpandedModules] = useState<number[]>([0]);
-  const modules = parseLearningPath(learningPath);
+  const [formattedPath, setFormattedPath] = useState<FormattedLearningPath | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (open && learningPath) {
+      formatLearningPath();
+    }
+  }, [open, learningPath]);
+
+  const formatLearningPath = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('format-learning-path', {
+        body: { learningPath }
+      });
+
+      if (error) throw error;
+      
+      setFormattedPath(data);
+    } catch (error) {
+      console.error('Error formatting learning path with AI:', error);
+      // Use fallback parser
+      const fallback = fallbackParseLearningPath(learningPath);
+      setFormattedPath(fallback);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleModule = (index: number) => {
     setExpandedModules(prev => 
@@ -110,20 +157,24 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
   };
 
   const moduleColors = [
-    'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
-    'from-purple-500/20 to-pink-500/20 border-purple-500/30',
-    'from-green-500/20 to-emerald-500/20 border-green-500/30',
-    'from-amber-500/20 to-orange-500/20 border-amber-500/30',
-    'from-rose-500/20 to-red-500/20 border-rose-500/30',
+    'from-primary/20 to-primary/5 border-primary/30',
+    'from-accent/20 to-accent/5 border-accent/30',
+    'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30',
+    'from-amber-500/20 to-amber-500/5 border-amber-500/30',
+    'from-rose-500/20 to-rose-500/5 border-rose-500/30',
   ];
 
   const moduleIconColors = [
-    'text-blue-400',
-    'text-purple-400',
-    'text-green-400',
-    'text-amber-400',
-    'text-rose-400',
+    'text-primary',
+    'text-accent',
+    'text-emerald-500',
+    'text-amber-500',
+    'text-rose-500',
   ];
+
+  const getPlatformIcon = (platform: string | null) => {
+    return <Globe className="w-3 h-3" />;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -155,30 +206,45 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
                   Sua Trilha de Desenvolvimento
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Cursos selecionados exclusivamente para sua área de atuação
+                  Cursos selecionados exclusivamente para você
                 </p>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="flex gap-4 mt-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                <BookOpen className="w-4 h-4 text-primary" />
-                <span className="text-xs font-medium text-primary">{modules.length} Módulos</span>
+            {formattedPath && !isLoading && (
+              <div className="flex gap-3 mt-4 flex-wrap">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium text-primary">{formattedPath.modules.length} Módulos</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                  <Target className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-medium text-accent">
+                    {formattedPath.totalCourses} Cursos
+                  </span>
+                </div>
+                {formattedPath.estimatedHours && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      ~{formattedPath.estimatedHours}h estimadas
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                <Target className="w-4 h-4 text-accent" />
-                <span className="text-xs font-medium text-accent">
-                  {modules.reduce((acc, m) => acc + m.courses.length, 0)} Cursos
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Content */}
           <ScrollArea className="max-h-[60vh]">
             <div className="p-6 space-y-4">
-              {modules.map((module, moduleIndex) => (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <p className="text-sm text-muted-foreground">Organizando sua trilha...</p>
+                </div>
+              ) : formattedPath?.modules.map((module, moduleIndex) => (
                 <motion.div
                   key={moduleIndex}
                   initial={{ opacity: 0, y: 20 }}
@@ -192,19 +258,19 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
                     className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl bg-card/50 border border-border/50 flex items-center justify-center ${moduleIconColors[moduleIndex % moduleIconColors.length]}`}>
-                        <Sparkles className="w-5 h-5" />
+                      <div className={`w-10 h-10 rounded-xl bg-card/50 border border-border/50 flex items-center justify-center text-lg`}>
+                        {module.emoji}
                       </div>
                       <div className="text-left">
                         <h3 className="font-display font-semibold text-foreground text-sm">
-                          {module.emoji} Módulo {moduleIndex + 1}
+                          Módulo {moduleIndex + 1}
                         </h3>
                         <p className="text-xs text-muted-foreground">{module.title}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-card/50">
-                        {module.courses.length} cursos
+                        {module.courses.length} {module.courses.length === 1 ? 'curso' : 'cursos'}
                       </span>
                       {expandedModules.includes(moduleIndex) ? (
                         <ChevronUp className="w-5 h-5 text-muted-foreground" />
@@ -253,12 +319,23 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
                                     <BookOpen className="w-4 h-4 text-primary" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
                                       {course.name}
                                     </p>
-                                    {course.note && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">{course.note}</p>
-                                    )}
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {course.platform && (
+                                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                                          {getPlatformIcon(course.platform)}
+                                          {course.platform}
+                                        </span>
+                                      )}
+                                      {course.duration && (
+                                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                          <Clock className="w-3 h-3" />
+                                          {course.duration}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                                 </a>
@@ -268,11 +345,14 @@ const LearningPathView = ({ open, onClose, learningPath }: LearningPathViewProps
                                     <BookOpen className="w-4 h-4 text-muted-foreground" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-muted-foreground truncate">
+                                    <p className="text-sm text-muted-foreground line-clamp-2">
                                       {course.name}
                                     </p>
-                                    {course.note && (
-                                      <p className="text-xs text-muted-foreground/70 mt-0.5">{course.note}</p>
+                                    {course.duration && (
+                                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                        <Clock className="w-3 h-3" />
+                                        {course.duration}
+                                      </span>
                                     )}
                                   </div>
                                 </div>

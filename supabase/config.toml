@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.generate-linkedin-content]
 verify_jwt = false
+
+[functions.format-learning-path]
+verify_jwt = false
