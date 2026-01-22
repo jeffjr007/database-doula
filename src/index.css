@@ -125,20 +125,6 @@
     scrollbar-gutter: stable; /* Reserve space for scrollbar even when hidden */
   }
 
-  /* Prevent layout shift when Radix removes scroll - target the actual class used */
-  body[data-scroll-locked],
-  body.ReactModal__Body--open,
-  body[style*="overflow: hidden"],
-  body[style*="overflow:hidden"] {
-    padding-right: var(--scrollbar-width, 6px) !important;
-    overflow-y: scroll !important;
-  }
-
-  /* Calculate scrollbar width dynamically */
-  :root {
-    --scrollbar-width: 6px;
-  }
-
   body {
     @apply bg-background text-foreground font-body antialiased;
     font-family: var(--font-body);
