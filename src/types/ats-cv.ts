@@ -1,3 +1,13 @@
+export interface ATSCVLabels {
+  telefone: string;
+  localizacao: string;
+  email: string;
+  linkedin: string;
+  experiencias: string;
+  educacao: string;
+  idiomas: string;
+}
+
 export interface ATSCVData {
   // Personal info
   nome: string;
@@ -16,6 +26,9 @@ export interface ATSCVData {
 
   // Languages
   idiomas: IdiomaItem[];
+
+  // Custom labels (optional)
+  labels?: ATSCVLabels;
 }
 
 export interface ATSExperienciaItem {

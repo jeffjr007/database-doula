@@ -1,22 +1,184 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   Download,
-  Save
+  Save,
+  Pencil,
+  Check,
+  X,
+  Plus,
+  Trash2
 } from "lucide-react";
-import { ATSCVData } from "@/types/ats-cv";
+import { ATSCVData, ATSCVLabels, ATSExperienciaItem, ATSEducacaoItem, IdiomaItem } from "@/types/ats-cv";
 import { motion } from "framer-motion";
 
 interface ATSCVPreviewProps {
   data: ATSCVData;
   onReset: () => void;
   onSave?: () => void;
+  onDataChange?: (data: ATSCVData) => void;
 }
 
-export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
+const defaultLabels: ATSCVLabels = {
+  telefone: "Telefone",
+  localizacao: "Localização",
+  email: "E-mail",
+  linkedin: "Linkedin",
+  experiencias: "Experiências",
+  educacao: "Educação",
+  idiomas: "Idiomas"
+};
+
+// Editable text component with inline editing
+function EditableText({
+  value,
+  onChange,
+  className = "",
+  isEditing,
+  multiline = false,
+  placeholder = ""
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  isEditing: boolean;
+  multiline?: boolean;
+  placeholder?: string;
+}) {
+  if (!isEditing) {
+    return <span className={className}>{value || placeholder}</span>;
+  }
+
+  if (multiline) {
+    return (
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`bg-yellow-50 border-yellow-300 text-black min-h-[60px] ${className}`}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  return (
+    <Input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`bg-yellow-50 border-yellow-300 text-black h-auto py-0.5 px-1 ${className}`}
+      placeholder={placeholder}
+    />
+  );
+}
+
+export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPreviewProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<ATSCVData>(data);
+
+  const labels = editData.labels || defaultLabels;
+
   const handlePrint = () => {
     window.print();
   };
+
+  const startEditing = () => {
+    setEditData({ ...data });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditData(data);
+    setIsEditing(false);
+  };
+
+  const saveEditing = () => {
+    if (onDataChange) {
+      onDataChange(editData);
+    }
+    setIsEditing(false);
+  };
+
+  const updateField = (field: keyof ATSCVData, value: any) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateLabel = (field: keyof ATSCVLabels, value: string) => {
+    setEditData(prev => ({
+      ...prev,
+      labels: { ...defaultLabels, ...prev.labels, [field]: value }
+    }));
+  };
+
+  const updateExperiencia = (index: number, field: keyof ATSExperienciaItem, value: any) => {
+    const newExp = [...editData.experiencias];
+    newExp[index] = { ...newExp[index], [field]: value };
+    updateField('experiencias', newExp);
+  };
+
+  const updateBullet = (expIndex: number, bulletIndex: number, value: string) => {
+    const newExp = [...editData.experiencias];
+    const newBullets = [...newExp[expIndex].bullets];
+    newBullets[bulletIndex] = value;
+    newExp[expIndex] = { ...newExp[expIndex], bullets: newBullets };
+    updateField('experiencias', newExp);
+  };
+
+  const addBullet = (expIndex: number) => {
+    const newExp = [...editData.experiencias];
+    newExp[expIndex] = { ...newExp[expIndex], bullets: [...newExp[expIndex].bullets, ""] };
+    updateField('experiencias', newExp);
+  };
+
+  const removeBullet = (expIndex: number, bulletIndex: number) => {
+    const newExp = [...editData.experiencias];
+    const newBullets = newExp[expIndex].bullets.filter((_, i) => i !== bulletIndex);
+    newExp[expIndex] = { ...newExp[expIndex], bullets: newBullets };
+    updateField('experiencias', newExp);
+  };
+
+  const addExperiencia = () => {
+    updateField('experiencias', [
+      ...editData.experiencias,
+      { empresa: "", localizacao: "", cargo: "", periodo: "", bullets: [""] }
+    ]);
+  };
+
+  const removeExperiencia = (index: number) => {
+    updateField('experiencias', editData.experiencias.filter((_, i) => i !== index));
+  };
+
+  const updateEducacao = (index: number, field: keyof ATSEducacaoItem, value: string) => {
+    const newEdu = [...editData.educacao];
+    newEdu[index] = { ...newEdu[index], [field]: value };
+    updateField('educacao', newEdu);
+  };
+
+  const addEducacao = () => {
+    updateField('educacao', [...editData.educacao, { instituicao: "", curso: "" }]);
+  };
+
+  const removeEducacao = (index: number) => {
+    updateField('educacao', editData.educacao.filter((_, i) => i !== index));
+  };
+
+  const updateIdioma = (index: number, field: keyof IdiomaItem, value: string) => {
+    const newIdiomas = [...editData.idiomas];
+    newIdiomas[index] = { ...newIdiomas[index], [field]: value };
+    updateField('idiomas', newIdiomas);
+  };
+
+  const addIdioma = () => {
+    updateField('idiomas', [...editData.idiomas, { idioma: "", nivel: "" }]);
+  };
+
+  const removeIdioma = (index: number) => {
+    updateField('idiomas', editData.idiomas.filter((_, i) => i !== index));
+  };
+
+  const currentData = isEditing ? editData : data;
+  const currentLabels = currentData.labels || defaultLabels;
 
   return (
     <div className="space-y-4">
@@ -28,18 +190,43 @@ export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
         </Button>
 
         <div className="flex gap-2">
-          {onSave && (
-            <Button variant="outline" size="sm" onClick={onSave} className="gap-2">
-              <Save className="w-4 h-4" />
-              Salvar
-            </Button>
+          {isEditing ? (
+            <>
+              <Button variant="outline" size="sm" onClick={cancelEditing} className="gap-2">
+                <X className="w-4 h-4" />
+                Cancelar
+              </Button>
+              <Button variant="default" size="sm" onClick={saveEditing} className="gap-2 bg-green-600 hover:bg-green-700">
+                <Check className="w-4 h-4" />
+                Aplicar
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={startEditing} className="gap-2">
+                <Pencil className="w-4 h-4" />
+                Editar
+              </Button>
+              {onSave && (
+                <Button variant="outline" size="sm" onClick={onSave} className="gap-2">
+                  <Save className="w-4 h-4" />
+                  Salvar
+                </Button>
+              )}
+              <Button variant="glow" size="sm" onClick={handlePrint} className="gap-2">
+                <Download className="w-4 h-4" />
+                Exportar PDF
+              </Button>
+            </>
           )}
-          <Button variant="glow" size="sm" onClick={handlePrint} className="gap-2">
-            <Download className="w-4 h-4" />
-            Exportar PDF
-          </Button>
         </div>
       </div>
+
+      {isEditing && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800 print:hidden">
+          <strong>Modo de edição ativo:</strong> Clique nos textos para editar. Você pode personalizar os rótulos dos campos (Telefone, Localização, etc.) clicando neles.
+        </div>
+      )}
 
       {/* CV Preview */}
       <motion.div
@@ -52,40 +239,122 @@ export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
           {/* Contact info aligned right */}
           <div className="flex justify-end mb-4">
             <div className="text-right text-sm text-black space-y-0.5">
-              {data.telefone && (
-                <p>
-                  <span className="font-semibold">Telefone:</span>{" "}
-                  <a href={`tel:${data.telefone}`} className="text-blue-600 hover:underline">
-                    {data.telefone}
-                  </a>
+              {(currentData.telefone || isEditing) && (
+                <p className="flex items-center justify-end gap-1">
+                  <EditableText
+                    value={currentLabels.telefone}
+                    onChange={(v) => updateLabel('telefone', v)}
+                    isEditing={isEditing}
+                    className="font-semibold"
+                  />
+                  <span>:</span>{" "}
+                  {isEditing ? (
+                    <Input
+                      value={editData.telefone}
+                      onChange={(e) => updateField('telefone', e.target.value)}
+                      className="bg-yellow-50 border-yellow-300 text-blue-600 h-auto py-0.5 px-1 w-32 inline-block"
+                      placeholder="(00) 00000-0000"
+                    />
+                  ) : (
+                    <a href={`tel:${currentData.telefone}`} className="text-blue-600 hover:underline">
+                      {currentData.telefone}
+                    </a>
+                  )}
                 </p>
               )}
-              {data.localizacao && (
-                <p>
-                  <span className="font-semibold">Localização:</span>{" "}
-                  <span className="text-blue-600">{data.localizacao}</span>
+              {(currentData.localizacao || isEditing) && (
+                <p className="flex items-center justify-end gap-1">
+                  <EditableText
+                    value={currentLabels.localizacao}
+                    onChange={(v) => updateLabel('localizacao', v)}
+                    isEditing={isEditing}
+                    className="font-semibold"
+                  />
+                  <span>:</span>{" "}
+                  {isEditing ? (
+                    <Input
+                      value={editData.localizacao}
+                      onChange={(e) => updateField('localizacao', e.target.value)}
+                      className="bg-yellow-50 border-yellow-300 text-blue-600 h-auto py-0.5 px-1 w-40 inline-block"
+                      placeholder="Cidade, Estado"
+                    />
+                  ) : (
+                    <span className="text-blue-600">{currentData.localizacao}</span>
+                  )}
                 </p>
               )}
-              {data.email && (
-                <p>
-                  <span className="font-semibold">E-mail:</span>{" "}
-                  <a href={`mailto:${data.email}`} className="text-blue-600 hover:underline">
-                    {data.email}
-                  </a>
+              {(currentData.email || isEditing) && (
+                <p className="flex items-center justify-end gap-1">
+                  <EditableText
+                    value={currentLabels.email}
+                    onChange={(v) => updateLabel('email', v)}
+                    isEditing={isEditing}
+                    className="font-semibold"
+                  />
+                  <span>:</span>{" "}
+                  {isEditing ? (
+                    <Input
+                      value={editData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      className="bg-yellow-50 border-yellow-300 text-blue-600 h-auto py-0.5 px-1 w-48 inline-block"
+                      placeholder="email@exemplo.com"
+                    />
+                  ) : (
+                    <a href={`mailto:${currentData.email}`} className="text-blue-600 hover:underline">
+                      {currentData.email}
+                    </a>
+                  )}
                 </p>
               )}
-              {data.linkedin && (
-                <p>
-                  <span className="font-semibold">Linkedin:</span>
-                  <br />
-                  <a href={data.linkedin} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                    {data.linkedin}
-                  </a>
-                </p>
+              {(currentData.linkedin || isEditing) && (
+                <div className="flex items-start justify-end gap-1">
+                  <EditableText
+                    value={currentLabels.linkedin}
+                    onChange={(v) => updateLabel('linkedin', v)}
+                    isEditing={isEditing}
+                    className="font-semibold"
+                  />
+                  <span>:</span>
+                  <div>
+                    {isEditing ? (
+                      <Input
+                        value={editData.linkedin}
+                        onChange={(e) => updateField('linkedin', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-blue-600 h-auto py-0.5 px-1 w-56 inline-block"
+                        placeholder="linkedin.com/in/seu-perfil"
+                      />
+                    ) : (
+                      <a href={currentData.linkedin} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                        {currentData.linkedin}
+                      </a>
+                    )}
+                  </div>
+                </div>
               )}
-              {(data.nacionalidade || data.idade) && (
-                <p className="mt-2 uppercase font-semibold">
-                  {data.nacionalidade}{data.nacionalidade && data.idade ? ", " : ""}{data.idade ? `${data.idade} ANOS` : ""}.
+              {(currentData.nacionalidade || currentData.idade || isEditing) && (
+                <p className="mt-2 uppercase font-semibold flex items-center justify-end gap-1">
+                  {isEditing ? (
+                    <>
+                      <Input
+                        value={editData.nacionalidade}
+                        onChange={(e) => updateField('nacionalidade', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-black h-auto py-0.5 px-1 w-24 inline-block uppercase"
+                        placeholder="Nacionalidade"
+                      />
+                      <span>,</span>
+                      <Input
+                        value={editData.idade}
+                        onChange={(e) => updateField('idade', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-black h-auto py-0.5 px-1 w-12 inline-block"
+                        placeholder="00"
+                      />
+                      <span>ANOS.</span>
+                    </>
+                  ) : (
+                    <>
+                      {currentData.nacionalidade}{currentData.nacionalidade && currentData.idade ? ", " : ""}{currentData.idade ? `${currentData.idade} ANOS` : ""}.
+                    </>
+                  )}
                 </p>
               )}
             </div>
@@ -93,38 +362,139 @@ export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
 
           {/* Black bar and name below */}
           <div className="border-b-4 border-black mb-2" />
-          <h1 className="text-3xl font-light tracking-wide text-black uppercase">
-            {data.nome}
-          </h1>
+          {isEditing ? (
+            <Input
+              value={editData.nome}
+              onChange={(e) => updateField('nome', e.target.value)}
+              className="text-3xl font-light tracking-wide text-black uppercase bg-yellow-50 border-yellow-300 h-auto py-1"
+              placeholder="SEU NOME"
+            />
+          ) : (
+            <h1 className="text-3xl font-light tracking-wide text-black uppercase">
+              {currentData.nome}
+            </h1>
+          )}
         </header>
 
         {/* Experiências */}
-        {data.experiencias.length > 0 && (
+        {(currentData.experiencias.length > 0 || isEditing) && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase">
-              Experiências
+            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase flex items-center gap-2">
+              <EditableText
+                value={currentLabels.experiencias}
+                onChange={(v) => updateLabel('experiencias', v)}
+                isEditing={isEditing}
+              />
+              {isEditing && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={addExperiencia}
+                  className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
             </h2>
 
             <div className="space-y-6">
-              {data.experiencias.map((exp, index) => (
-                <div key={index}>
+              {currentData.experiencias.map((exp, index) => (
+                <div key={index} className={isEditing ? "relative border border-dashed border-gray-300 p-3 rounded-lg" : ""}>
+                  {isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeExperiencia(index)}
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 bg-white rounded-full shadow"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
                   <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
-                    <h3 className="font-bold text-black">
-                      {exp.empresa}{exp.localizacao && `, ${exp.localizacao}`}
-                    </h3>
-                    <span className="text-gray-700">—</span>
-                    <span className="font-semibold text-gray-800">{exp.cargo}</span>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          value={editData.experiencias[index].empresa}
+                          onChange={(e) => updateExperiencia(index, 'empresa', e.target.value)}
+                          className="bg-yellow-50 border-yellow-300 text-black font-bold h-auto py-0.5 px-1 w-40"
+                          placeholder="Empresa"
+                        />
+                        <span>,</span>
+                        <Input
+                          value={editData.experiencias[index].localizacao}
+                          onChange={(e) => updateExperiencia(index, 'localizacao', e.target.value)}
+                          className="bg-yellow-50 border-yellow-300 text-black h-auto py-0.5 px-1 w-32"
+                          placeholder="Localização"
+                        />
+                        <span className="text-gray-700">—</span>
+                        <Input
+                          value={editData.experiencias[index].cargo}
+                          onChange={(e) => updateExperiencia(index, 'cargo', e.target.value)}
+                          className="bg-yellow-50 border-yellow-300 text-gray-800 font-semibold h-auto py-0.5 px-1 w-40"
+                          placeholder="Cargo"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="font-bold text-black">
+                          {exp.empresa}{exp.localizacao && `, ${exp.localizacao}`}
+                        </h3>
+                        <span className="text-gray-700">—</span>
+                        <span className="font-semibold text-gray-800">{exp.cargo}</span>
+                      </>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600 uppercase mb-2">{exp.periodo}</p>
+                  {isEditing ? (
+                    <Input
+                      value={editData.experiencias[index].periodo}
+                      onChange={(e) => updateExperiencia(index, 'periodo', e.target.value)}
+                      className="bg-yellow-50 border-yellow-300 text-gray-600 text-sm uppercase h-auto py-0.5 px-1 w-48 mb-2"
+                      placeholder="Jan 2020 - Presente"
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-600 uppercase mb-2">{exp.periodo}</p>
+                  )}
 
-                  {exp.bullets.length > 0 && (
+                  {(exp.bullets.length > 0 || isEditing) && (
                     <ul className="space-y-1">
-                      {exp.bullets.map((bullet, bulletIndex) => (
-                        <li key={bulletIndex} className="text-sm text-gray-700 pl-4 relative">
+                      {(isEditing ? editData.experiencias[index].bullets : exp.bullets).map((bullet, bulletIndex) => (
+                        <li key={bulletIndex} className="text-sm text-gray-700 pl-4 relative flex items-start gap-1">
                           <span className="absolute left-0">&gt;</span>
-                          {bullet}
+                          {isEditing ? (
+                            <div className="flex-1 flex items-center gap-1">
+                              <Textarea
+                                value={bullet}
+                                onChange={(e) => updateBullet(index, bulletIndex, e.target.value)}
+                                className="bg-yellow-50 border-yellow-300 text-gray-700 text-sm min-h-[32px] py-1 px-1 flex-1"
+                                placeholder="Descreva uma conquista ou responsabilidade..."
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeBullet(index, bulletIndex)}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            bullet
+                          )}
                         </li>
                       ))}
+                      {isEditing && (
+                        <li className="pl-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addBullet(index)}
+                            className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Adicionar bullet
+                          </Button>
+                        </li>
+                      )}
                     </ul>
                   )}
                 </div>
@@ -134,16 +504,56 @@ export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
         )}
 
         {/* Educação */}
-        {data.educacao.length > 0 && (
+        {(currentData.educacao.length > 0 || isEditing) && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase">
-              Educação
+            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase flex items-center gap-2">
+              <EditableText
+                value={currentLabels.educacao}
+                onChange={(v) => updateLabel('educacao', v)}
+                isEditing={isEditing}
+              />
+              {isEditing && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={addEducacao}
+                  className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
             </h2>
 
             <ul className="space-y-1">
-              {data.educacao.map((edu, index) => (
-                <li key={index} className="text-sm text-gray-700">
-                  {edu.instituicao}, - {edu.curso}
+              {currentData.educacao.map((edu, index) => (
+                <li key={index} className="text-sm text-gray-700 flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <Input
+                        value={editData.educacao[index].instituicao}
+                        onChange={(e) => updateEducacao(index, 'instituicao', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-gray-700 h-auto py-0.5 px-1 w-48"
+                        placeholder="Instituição"
+                      />
+                      <span>-</span>
+                      <Input
+                        value={editData.educacao[index].curso}
+                        onChange={(e) => updateEducacao(index, 'curso', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-gray-700 h-auto py-0.5 px-1 flex-1"
+                        placeholder="Curso"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeEducacao(index)}
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </>
+                  ) : (
+                    `${edu.instituicao}, - ${edu.curso}`
+                  )}
                 </li>
               ))}
             </ul>
@@ -151,17 +561,57 @@ export function ATSCVPreview({ data, onReset, onSave }: ATSCVPreviewProps) {
         )}
 
         {/* Idiomas */}
-        {data.idiomas.length > 0 && (
+        {(currentData.idiomas.length > 0 || isEditing) && (
           <section>
-            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase">
-              Idiomas
+            <h2 className="text-lg font-bold text-black border-b border-gray-300 pb-1 mb-4 uppercase flex items-center gap-2">
+              <EditableText
+                value={currentLabels.idiomas}
+                onChange={(v) => updateLabel('idiomas', v)}
+                isEditing={isEditing}
+              />
+              {isEditing && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={addIdioma}
+                  className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
             </h2>
 
             <ul className="space-y-1">
-              {data.idiomas.map((idioma, index) => (
-                <li key={index} className="text-sm text-gray-700 pl-4 relative">
+              {currentData.idiomas.map((idioma, index) => (
+                <li key={index} className="text-sm text-gray-700 pl-4 relative flex items-center gap-2">
                   <span className="absolute left-0">-</span>
-                  {idioma.idioma} - {idioma.nivel}
+                  {isEditing ? (
+                    <>
+                      <Input
+                        value={editData.idiomas[index].idioma}
+                        onChange={(e) => updateIdioma(index, 'idioma', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-gray-700 h-auto py-0.5 px-1 w-32"
+                        placeholder="Idioma"
+                      />
+                      <span>-</span>
+                      <Input
+                        value={editData.idiomas[index].nivel}
+                        onChange={(e) => updateIdioma(index, 'nivel', e.target.value)}
+                        className="bg-yellow-50 border-yellow-300 text-gray-700 h-auto py-0.5 px-1 w-32"
+                        placeholder="Nível"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeIdioma(index)}
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </>
+                  ) : (
+                    `${idioma.idioma} - ${idioma.nivel}`
+                  )}
                 </li>
               ))}
             </ul>
