@@ -263,8 +263,9 @@ const Portal = () => {
     const hasSeenWelcome = localStorage.getItem(welcomeSeenKey);
     const hasSeenGift = localStorage.getItem(giftSeenKey);
     
-    // If user already saw welcome modal before (returning user) and hasn't seen gift, show it
-    if (hasSeenWelcome && !hasSeenGift && !showWelcomeModal) {
+    // If user has a learning path and hasn't seen the gift, show it
+    // Either after welcome modal completes (for new users) or directly (for returning users)
+    if (learningPath && !hasSeenGift && hasSeenWelcome && !showWelcomeModal) {
       const timer = setTimeout(() => {
         setShowGiftModal(true);
       }, 1500); // Give time for page to load
