@@ -48,9 +48,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
   const [savingDiagnostic, setSavingDiagnostic] = useState(false);
   const [savingFunnel, setSavingFunnel] = useState(false);
   const [stage2Unlocked, setStage2Unlocked] = useState(false);
-  const [stage3Unlocked, setStage3Unlocked] = useState(false);
   const [togglingStage2, setTogglingStage2] = useState(false);
-  const [togglingStage3, setTogglingStage3] = useState(false);
 
   // Form states
   const [diagnosticTitle, setDiagnosticTitle] = useState('Diagnóstico LinkedIn');
@@ -78,7 +76,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
           .maybeSingle(),
         supabase
           .from('profiles')
-          .select('stage2_unlocked, stage3_unlocked')
+          .select('stage2_unlocked')
           .eq('user_id', menteeId)
           .maybeSingle(),
       ]);
@@ -102,7 +100,6 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
 
       if (profileResult.data) {
         setStage2Unlocked(profileResult.data.stage2_unlocked ?? false);
-        setStage3Unlocked(profileResult.data.stage3_unlocked ?? false);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -428,82 +425,6 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
         </div>
       </motion.div>
 
-      {/* Stage 3 Access Control */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card rounded-xl p-6"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stage3Unlocked ? 'bg-green-500/20' : 'bg-destructive/20'}`}>
-              {stage3Unlocked ? (
-                <Unlock className="w-5 h-5 text-green-500" />
-              ) : (
-                <Lock className="w-5 h-5 text-destructive" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-display font-semibold text-foreground">
-                Etapa 3 - Funil de Oportunidades
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {stage3Unlocked
-                  ? '✓ Liberada - Mentorado pode acessar'
-                  : '○ Bloqueada - Aguardando conclusão da Etapa 2'}
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant={stage3Unlocked ? 'outline' : 'default'}
-            onClick={async () => {
-              setTogglingStage3(true);
-              try {
-                const { error } = await supabase
-                  .from('profiles')
-                  .update({ stage3_unlocked: !stage3Unlocked })
-                  .eq('user_id', menteeId);
-
-                if (error) throw error;
-
-                setStage3Unlocked(!stage3Unlocked);
-                toast({
-                  title: stage3Unlocked ? "Etapa 3 bloqueada" : "Etapa 3 liberada!",
-                  description: stage3Unlocked
-                    ? "O mentorado não pode mais acessar a Etapa 3."
-                    : "O mentorado agora pode acessar a Etapa 3.",
-                });
-              } catch (error: any) {
-                toast({
-                  title: "Erro",
-                  description: error.message,
-                  variant: "destructive",
-                });
-              } finally {
-                setTogglingStage3(false);
-              }
-            }}
-            disabled={togglingStage3}
-            className={stage3Unlocked ? '' : 'bg-green-600 hover:bg-green-700'}
-          >
-            {togglingStage3 ? (
-              'Salvando...'
-            ) : stage3Unlocked ? (
-              <>
-                <Lock className="w-4 h-4 mr-2" />
-                Bloquear Etapa 3
-              </>
-            ) : (
-              <>
-                <Unlock className="w-4 h-4 mr-2" />
-                Liberar Etapa 3
-              </>
-            )}
-          </Button>
-        </div>
-      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}

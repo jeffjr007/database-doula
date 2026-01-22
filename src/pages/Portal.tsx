@@ -149,7 +149,6 @@ const Portal = () => {
   });
   const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false);
   const [stage2Completed, setStage2Completed] = useState<boolean>(false);
-  const [stage3Unlocked, setStage3Unlocked] = useState<boolean>(false);
   const [showStage3Modal, setShowStage3Modal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -174,14 +173,13 @@ const Portal = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, platform_activated, stage2_unlocked, stage2_completed, stage3_unlocked')
+        .select('full_name, platform_activated, stage2_unlocked, stage2_completed')
         .eq('user_id', user.id)
         .single();
 
       if (profile) {
         setStage2Unlocked(profile.stage2_unlocked ?? false);
         setStage2Completed(profile.stage2_completed ?? false);
-        setStage3Unlocked(profile.stage3_unlocked ?? false);
       }
 
       if (profile?.full_name) {
@@ -278,7 +276,7 @@ const Portal = () => {
     }
 
     if (stageNumber === 3) {
-      return !stage3Unlocked;
+      return !stage2Completed;
     }
 
     if (stageNumber === 4) {
