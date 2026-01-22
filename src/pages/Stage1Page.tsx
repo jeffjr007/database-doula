@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Download, FileText, Linkedin, ExternalLink, Sparkles, ArrowRight, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
-import mentorPhoto from '@/assets/mentor-photo.png';
+import { MentorAvatar } from '@/components/MentorAvatar';
 import { SupportLink } from '@/components/SupportLink';
 
 interface Diagnostic {
@@ -248,13 +248,7 @@ const Stage1Page = () => {
                       >
                         {/* Mentor avatar */}
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30">
-                            <img
-                              src={mentorPhoto}
-                              alt="Mentor"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
+                          <MentorAvatar size="md" />
                         </div>
 
                         {/* Message bubble */}
@@ -279,9 +273,7 @@ const Stage1Page = () => {
                       exit={{ opacity: 0 }}
                       className="flex gap-3"
                     >
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0">
-                        <img src={mentorPhoto} alt="Mentor" className="w-full h-full object-cover" />
-                      </div>
+                      <MentorAvatar size="md" className="flex-shrink-0" />
                       <Card className="p-4 bg-secondary/50 inline-flex items-center gap-1">
                         <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                         <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

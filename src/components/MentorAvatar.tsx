@@ -16,11 +16,13 @@ preloadedImage.src = mentorPhoto;
 let globalImageLoaded = preloadedImage.complete;
 const loadListeners: Array<() => void> = [];
 
-preloadedImage.onload = () => {
-  globalImageLoaded = true;
-  loadListeners.forEach(cb => cb());
-  loadListeners.length = 0;
-};
+if (!preloadedImage.complete) {
+  preloadedImage.onload = () => {
+    globalImageLoaded = true;
+    loadListeners.forEach(cb => cb());
+    loadListeners.length = 0;
+  };
+}
 
 const sizeClasses = {
   sm: "w-8 h-8",
@@ -57,48 +59,44 @@ export function MentorAvatar({
       className={`
         relative rounded-full overflow-hidden flex-shrink-0
         ${sizeClasses[size] || sizeClasses.md}
-        ${showBorder ? "border-2 border-primary/30 shadow-lg" : ""}
+        ${showBorder ? "border-2 border-primary/30" : ""}
         ${className}
       `}
+      style={{ backgroundColor: 'hsl(var(--muted))' }}
     >
-      {/* Skeleton placeholder */}
-      <motion.div 
-        className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: imageLoaded ? 0 : 1 }}
-        transition={{ duration: 0.2 }}
+      {/* Solid background placeholder - always visible initially */}
+      <div 
+        className="absolute inset-0 bg-muted flex items-center justify-center"
+        style={{ 
+          opacity: imageLoaded ? 0 : 1,
+          transition: 'opacity 0.2s ease-out'
+        }}
       >
-        {/* Animated pulse ring */}
-        <motion.div
-          className="absolute inset-0 rounded-full border-2 border-primary/30"
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.5, 0.2, 0.5]
-          }}
-          transition={{ 
-            duration: 1.5, 
-            repeat: Infinity,
-            ease: "easeInOut"
+        {/* Subtle shimmer effect */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
+            animation: 'shimmer 1.5s infinite',
           }}
         />
-        {/* Initial icon placeholder */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1/3 h-1/3 rounded-full bg-primary/30" />
-        </div>
-      </motion.div>
+        {/* Circle placeholder */}
+        <div className="w-2/5 h-2/5 rounded-full bg-muted-foreground/20" />
+      </div>
 
       {/* Actual image */}
-      <motion.img
+      <img
         src={mentorPhoto}
         alt="Mentor Duarte"
         className="w-full h-full object-cover relative z-10"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ 
+        style={{ 
           opacity: imageLoaded ? 1 : 0,
-          scale: imageLoaded ? 1 : 0.95
+          transition: 'opacity 0.25s ease-out'
         }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        onLoad={() => setImageLoaded(true)}
+        onLoad={() => {
+          globalImageLoaded = true;
+          setImageLoaded(true);
+        }}
       />
     </div>
   );
