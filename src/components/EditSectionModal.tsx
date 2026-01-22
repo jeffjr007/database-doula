@@ -42,12 +42,38 @@ export function EditSectionModal({ open, onClose, title, type, data, onSave }: E
         <Input value={formData.telefone || ""} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} />
       </div>
       <div>
+        <Label>Localização</Label>
+        <Input 
+          value={formData.localizacao || ""} 
+          onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })} 
+          placeholder="Ex: São Paulo, Brasil"
+        />
+      </div>
+      <div>
         <Label>Email</Label>
         <Input value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
       </div>
       <div>
         <Label>LinkedIn</Label>
         <Input value={formData.linkedin || ""} onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Nacionalidade</Label>
+          <Input 
+            value={formData.nacionalidade || ""} 
+            onChange={(e) => setFormData({ ...formData, nacionalidade: e.target.value })} 
+            placeholder="Ex: BRASILEIRO"
+          />
+        </div>
+        <div>
+          <Label>Idade</Label>
+          <Input 
+            value={formData.idade || ""} 
+            onChange={(e) => setFormData({ ...formData, idade: e.target.value })} 
+            placeholder="Ex: 30"
+          />
+        </div>
       </div>
     </div>
   );
