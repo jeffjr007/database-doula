@@ -1,9 +1,27 @@
-import { useMentorImageReady, mentorPhoto } from "@/hooks/useMentorImageReady";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import mentorPhoto from "@/assets/mentor-photo.png";
 
 interface MentorAvatarProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
   className?: string;
   showBorder?: boolean;
+}
+
+// Preload the image globally when module loads
+const preloadedImage = new Image();
+preloadedImage.src = mentorPhoto;
+
+// Track global load state
+let globalImageLoaded = preloadedImage.complete;
+const loadListeners: Array<() => void> = [];
+
+if (!preloadedImage.complete) {
+  preloadedImage.onload = () => {
+    globalImageLoaded = true;
+    loadListeners.forEach(cb => cb());
+    loadListeners.length = 0;
+  };
 }
 
 const sizeClasses = {
@@ -19,7 +37,22 @@ export function MentorAvatar({
   className = "",
   showBorder = true 
 }: MentorAvatarProps) {
-  const imageReady = useMentorImageReady();
+  const [imageLoaded, setImageLoaded] = useState(globalImageLoaded);
+
+  useEffect(() => {
+    if (globalImageLoaded) {
+      setImageLoaded(true);
+      return;
+    }
+    
+    const handleLoad = () => setImageLoaded(true);
+    loadListeners.push(handleLoad);
+    
+    return () => {
+      const idx = loadListeners.indexOf(handleLoad);
+      if (idx > -1) loadListeners.splice(idx, 1);
+    };
+  }, []);
 
   return (
     <div 
@@ -29,18 +62,53 @@ export function MentorAvatar({
         ${showBorder ? "border-2 border-primary/30" : ""}
         ${className}
       `}
+      style={{ backgroundColor: 'hsl(var(--muted))' }}
     >
-      {/* Only render image when ready - no flash */}
-      {imageReady && (
-        <img
-          src={mentorPhoto}
-          alt="Mentor Duarte"
-          className="w-full h-full object-cover"
+      {/* Solid background placeholder - always visible initially */}
+      <div 
+        className="absolute inset-0 bg-muted flex items-center justify-center"
+        style={{ 
+          opacity: imageLoaded ? 0 : 1,
+          transition: 'opacity 0.2s ease-out'
+        }}
+      >
+        {/* Subtle shimmer effect */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
+            animation: 'shimmer 1.5s infinite',
+          }}
         />
-      )}
+        {/* Circle placeholder */}
+        <div className="w-2/5 h-2/5 rounded-full bg-muted-foreground/20" />
+      </div>
+
+      {/* Actual image */}
+      <img
+        src={mentorPhoto}
+        alt="Mentor Duarte"
+        className="w-full h-full object-cover relative z-10"
+        style={{ 
+          opacity: imageLoaded ? 1 : 0,
+          transition: 'opacity 0.25s ease-out'
+        }}
+        onLoad={() => {
+          globalImageLoaded = true;
+          setImageLoaded(true);
+        }}
+      />
     </div>
   );
 }
 
-// Re-export the hook for components that need to wait for the image
-export { useMentorImageReady } from "@/hooks/useMentorImageReady";
+// Export preload function for eager loading
+export function preloadMentorImage() {
+  return new Promise<void>((resolve) => {
+    if (globalImageLoaded) {
+      resolve();
+    } else {
+      loadListeners.push(resolve);
+    }
+  });
+}

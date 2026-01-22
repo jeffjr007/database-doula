@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Download, FileText, Linkedin, ExternalLink, Sparkles, ArrowRight, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
-import { MentorAvatar, useMentorImageReady } from '@/components/MentorAvatar';
+import { MentorAvatar } from '@/components/MentorAvatar';
 import { SupportLink } from '@/components/SupportLink';
 
 interface Diagnostic {
@@ -67,16 +67,12 @@ const Stage1Page = () => {
   const navigate = useNavigate();
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
   const [loading, setLoading] = useState(true);
-  const imageReady = useMentorImageReady();
 
   // Check if animation was already seen
   const hasSeenAnimation = useCallback(() => {
     if (!user?.id) return false;
     return localStorage.getItem(`${STAGE_1_SEEN_KEY}_${user.id}`) === 'true';
   }, [user?.id]);
-
-  // Only allow conversation to start when image is ready (or if skipping animation)
-  const canStartConversation = imageReady || hasSeenAnimation();
 
   // Conversation state
   const [visibleMessages, setVisibleMessages] = useState(0);
@@ -125,9 +121,9 @@ const Stage1Page = () => {
     }
   }, [showDiagnostic, user?.id]);
 
-  // Animate conversation messages (only if not seen before and image is ready)
+  // Animate conversation messages (only if not seen before)
   useEffect(() => {
-    if (!diagnostic || hasSeenAnimation() || !canStartConversation) return;
+    if (!diagnostic || hasSeenAnimation()) return;
 
     if (visibleMessages < mentorMessages.length && !messagesExiting) {
       const nextMessage = mentorMessages[visibleMessages];
@@ -146,7 +142,7 @@ const Stage1Page = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [visibleMessages, showDiagnostic, messagesExiting, diagnostic, hasSeenAnimation, canStartConversation]);
+  }, [visibleMessages, showDiagnostic, messagesExiting, diagnostic, hasSeenAnimation]);
 
   // After messages exit, show diagnostic
   useEffect(() => {
@@ -223,22 +219,8 @@ const Stage1Page = () => {
         ) : (
           <div className="max-w-xl mx-auto">
             <AnimatePresence mode="wait">
-              {/* Loading state - waiting for image */}
-              {!canStartConversation && !showDiagnostic && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center gap-4 py-12"
-                >
-                  <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
-                  <div className="w-48 h-4 rounded bg-muted animate-pulse" />
-                </motion.div>
-              )}
-
               {/* Conversation phase */}
-              {canStartConversation && !showDiagnostic && (
+              {!showDiagnostic && (
                 <motion.div
                   key="messages"
                   initial={{ opacity: 0 }}

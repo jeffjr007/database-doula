@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { MentorAvatar, useMentorImageReady } from "@/components/MentorAvatar";
+import { MentorAvatar } from "@/components/MentorAvatar";
 
 interface WelcomeMentorModalProps {
   open: boolean;
@@ -27,27 +27,13 @@ const TypingIndicator = () => (
 );
 
 const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
-  const imageReady = useMentorImageReady();
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
   const [showButton, setShowButton] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [contentReady, setContentReady] = useState(false);
 
-  // Only start content animation when image is ready
   useEffect(() => {
-    if (open && imageReady && !contentReady) {
-      // Small delay to ensure smooth transition
-      const timer = setTimeout(() => setContentReady(true), 50);
-      return () => clearTimeout(timer);
-    }
     if (!open) {
-      setContentReady(false);
-    }
-  }, [open, imageReady, contentReady]);
-
-  useEffect(() => {
-    if (!open || !contentReady) {
       setVisibleMessages(0);
       setShowButton(false);
       setIsExiting(false);
@@ -88,7 +74,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
     timers.push(buttonTimer);
 
     return () => timers.forEach(t => clearTimeout(t));
-  }, [open, contentReady]);
+  }, [open]);
 
   const handleComplete = () => {
     setIsExiting(true);

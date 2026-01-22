@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, Target, Brain, Sparkles, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MentorAvatar, useMentorImageReady } from "@/components/MentorAvatar";
+import { MentorAvatar } from "@/components/MentorAvatar";
 
 interface Stage4IntroductionProps {
   onStart: () => void;
@@ -35,17 +35,13 @@ const STAGE4_INTRO_KEY = 'stage4_intro_seen';
 
 export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
   const hasSeenIntro = sessionStorage.getItem(STAGE4_INTRO_KEY) === 'true';
-  const imageReady = useMentorImageReady();
-  
-  // Only start animation once image is ready
-  const canStart = imageReady || hasSeenIntro;
   
   const [visibleMessages, setVisibleMessages] = useState(hasSeenIntro ? messages.length : 0);
-  const [isTyping, setIsTyping] = useState(!hasSeenIntro && canStart);
+  const [isTyping, setIsTyping] = useState(!hasSeenIntro);
   const [showButton, setShowButton] = useState(hasSeenIntro);
 
   useEffect(() => {
-    if (hasSeenIntro || !canStart) return;
+    if (hasSeenIntro) return;
 
     if (visibleMessages < messages.length) {
       // Show typing indicator
@@ -63,7 +59,7 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [visibleMessages, hasSeenIntro, canStart]);
+  }, [visibleMessages, hasSeenIntro]);
 
   const handleContinue = () => {
     sessionStorage.setItem(STAGE4_INTRO_KEY, 'true');
@@ -72,35 +68,16 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4">
-      <AnimatePresence mode="wait">
-        {!canStart ? (
-          // Loading state - subtle spinner
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-4"
-          >
-            <div className="w-24 h-24 rounded-full bg-muted animate-pulse" />
-            <div className="w-32 h-4 rounded bg-muted animate-pulse" />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-lg mx-auto flex flex-col items-center gap-8"
-          >
-            {/* Mentor Avatar */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <MentorAvatar size="xxl" />
-            </motion.div>
+      <div className="w-full max-w-lg mx-auto flex flex-col items-center gap-8">
+        
+        {/* Mentor Avatar */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <MentorAvatar size="xxl" />
+        </motion.div>
 
         {/* Messages */}
         <div className="w-full space-y-3">
@@ -172,21 +149,19 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
         </div>
 
         {/* Continue Button */}
-            {showButton && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <Button onClick={handleContinue} size="lg" className="gap-2">
-                  Começar Preparação
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </motion.div>
-            )}
+        {showButton && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Button onClick={handleContinue} size="lg" className="gap-2">
+              Começar Preparação
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 };
