@@ -16,7 +16,13 @@ import {
   Linkedin,
   Shield,
   Check,
-  PenTool
+  PenTool,
+  Settings,
+  HelpCircle,
+  Instagram,
+  Home,
+  Menu,
+  X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +34,6 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 import { StageWarningModal } from "@/components/StageWarningModal";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
-import { SupportButton } from "@/components/SupportButton";
 
 interface StageProgress {
   stage_number: number;
@@ -57,7 +62,7 @@ const stages = [
     description: "Seu diagnóstico completo do LinkedIn com todas as seções reformuladas",
     icon: Linkedin,
     path: "/etapa/1",
-    color: "from-[#0077B5]/20 to-primary/10",
+    color: "from-[#0077B5] to-[#0077B5]/50",
     isDeliverable: true,
   },
   {
@@ -66,7 +71,7 @@ const stages = [
     description: "Crie seu currículo estratégico com IA, otimizado para indicações diretas",
     icon: FileText,
     path: "/cv",
-    color: "from-primary/20 to-accent/10",
+    color: "from-primary to-accent",
     isDeliverable: false,
   },
   {
@@ -75,7 +80,7 @@ const stages = [
     description: "Seu funil personalizado para conquistar as melhores vagas",
     icon: Target,
     path: "/etapa/3",
-    color: "from-accent/20 to-primary/10",
+    color: "from-accent to-primary",
     isDeliverable: true,
   },
   {
@@ -84,7 +89,7 @@ const stages = [
     description: "Monte seu roteiro de entrevista com palavras-chave da vaga",
     icon: UserCheck,
     path: "/etapa/4",
-    color: "from-blue-500/20 to-primary/10",
+    color: "from-blue-500 to-cyan-500",
     isDeliverable: false,
   },
   {
@@ -93,7 +98,7 @@ const stages = [
     description: "Transforme seu roteiro em apresentação e mostre autoridade",
     icon: Briefcase,
     path: "/etapa/5",
-    color: "from-purple-500/20 to-primary/10",
+    color: "from-purple-500 to-pink-500",
     isDeliverable: false,
   },
   {
@@ -102,7 +107,7 @@ const stages = [
     description: "Otimize seu perfil na Gupy para passar no ATS",
     icon: Target,
     path: "/etapa/6",
-    color: "from-green-500/20 to-primary/10",
+    color: "from-green-500 to-emerald-500",
     isDeliverable: false,
   },
   {
@@ -111,7 +116,7 @@ const stages = [
     description: "Crie posts estratégicos para o LinkedIn com IA",
     icon: PenTool,
     path: "/etapa/7",
-    color: "from-pink-500/20 to-purple-500/10",
+    color: "from-pink-500 to-purple-500",
     isDeliverable: false,
   },
 ];
@@ -130,14 +135,13 @@ const Portal = () => {
   const [progress, setProgress] = useState<StageProgress[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState(false);
-  const [showPhrase, setShowPhrase] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [linkedinDiagnostic, setLinkedinDiagnostic] = useState<LinkedInDiagnostic | null>(null);
   const [opportunityFunnel, setOpportunityFunnel] = useState<OpportunityFunnel | null>(null);
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
   const [platformActivated, setPlatformActivated] = useState<boolean | null>(null);
-const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
     open: false,
     type: 'linkedin-cv',
     targetPath: '',
@@ -145,19 +149,17 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
   const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false);
   const [stage2Completed, setStage2Completed] = useState<boolean>(false);
   const [showStage3Modal, setShowStage3Modal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
 
   useEffect(() => {
-    // Sequência de animação conversacional
     const titleTimer = setTimeout(() => setShowTitle(true), 300);
-    const phraseTimer = setTimeout(() => setShowPhrase(true), 1200);
-    const contentTimer = setTimeout(() => setShowContent(true), 2200);
+    const contentTimer = setTimeout(() => setShowContent(true), 800);
 
     return () => {
       clearTimeout(titleTimer);
-      clearTimeout(phraseTimer);
       clearTimeout(contentTimer);
     };
   }, []);
@@ -165,8 +167,6 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
-
-      // Wait admin role check to avoid redirect loops
       if (adminLoading) return;
 
       const { data: profile } = await supabase
@@ -184,11 +184,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         setUserName(profile.full_name.split(' ')[0]);
       }
 
-      // Admins bypass activation
       const activated = isAdmin ? true : (profile?.platform_activated ?? false);
       setPlatformActivated(activated);
 
-      // Redirect to activation page if not activated (non-admin only)
       if (!activated) {
         navigate('/ativar');
         return;
@@ -203,7 +201,6 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         setProgress(progressData);
       }
 
-      // Fetch deliverables status
       const { data: diagnosticData } = await supabase
         .from('linkedin_diagnostics')
         .select('status')
@@ -226,7 +223,6 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         setOpportunityFunnel(funnelData);
       }
 
-      // Fetch saved CVs to check for personalized and ATS
       const { data: cvsData } = await supabase
         .from('saved_cvs')
         .select('id, name, cv_data')
@@ -240,7 +236,6 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
     fetchData();
   }, [user?.id, adminLoading, isAdmin, navigate]);
 
-  // Check if user has both CV types
   const hasPersonalizedCV = savedCVs.some(cv => {
     const data = cv.cv_data as any;
     return data?.sumario && !data?.isATS;
@@ -318,12 +313,10 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
       return;
     }
 
-    // Stage 3: Only navigate if funnel is published, otherwise show modal
     if (stage.number === 3) {
       if (opportunityFunnel?.status === 'published') {
         navigate(stage.path);
       } else {
-        // No funnel - show modal (or show again)
         setShowStage3Modal(true);
       }
       return;
@@ -333,11 +326,9 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
   };
 
   const handleStage3Continue = () => {
-    // Only navigate to Stage 3 if there's a published funnel
     if (opportunityFunnel?.status === 'published') {
       navigate('/etapa/3');
     }
-    // Otherwise just close the modal (user stays on Portal)
   };
 
   const handleWarningConfirm = () => {
@@ -349,302 +340,394 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
     setShowWelcomeModal(false);
   };
 
+  const sidebarLinks = [
+    { icon: Home, label: 'Início', onClick: () => {}, active: true },
+    { icon: HelpCircle, label: 'Suporte', onClick: () => navigate('/suporte') },
+    { icon: Settings, label: 'Configurações', onClick: () => {}, disabled: true },
+    { divider: true },
+    { icon: Instagram, label: 'Instagram', onClick: () => window.open('https://www.instagram.com/oduarteeoficial/', '_blank'), external: true },
+    { icon: Linkedin, label: 'LinkedIn', onClick: () => window.open('https://www.linkedin.com/in/oduarteoficial/', '_blank'), external: true },
+  ];
+
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Mentor Photo Background - Mobile */}
-      <motion.div
-        className="lg:hidden fixed inset-0 z-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar - Desktop */}
+      <motion.aside 
+        className="hidden lg:flex flex-col w-20 hover:w-64 transition-all duration-300 group bg-card/50 backdrop-blur-xl border-r border-border/50 fixed left-0 top-0 bottom-0 z-50"
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        <div className="relative h-full w-full">
-          <img
-            src={mentorPhoto}
-            alt=""
-            className="h-full w-full object-cover object-top opacity-[0.08]"
-          />
-          {/* Gradient overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+        {/* Logo */}
+        <div className="p-4 flex items-center gap-3 border-b border-border/30">
+          <img src={logoAD} alt="AD" className="w-12 h-12 rounded-xl flex-shrink-0" />
+          <span className="font-display font-bold text-lg text-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            Perfil Glorioso
+          </span>
         </div>
-      </motion.div>
 
-      {/* Mentor Photo - Left Side (Desktop Only) */}
-      <motion.div
-        className="hidden lg:block fixed left-0 top-0 h-full w-[45%] z-0"
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <div className="relative h-full w-full">
-          <img
-            src={mentorPhoto}
-            alt="Adriano Duarte - Mentor"
-            className="h-full w-full object-cover object-center grayscale"
-          />
-          {/* Gradient overlay to blend with background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-        </div>
-      </motion.div>
-
-      {/* Navigation - Mobile First */}
-      <nav className="mobile-header relative z-50 md:py-4 md:px-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <img
-            src={logoAD}
-            alt="AD Logo"
-            className="w-11 h-11 md:w-12 md:h-12 rounded-2xl md:rounded-lg"
-          />
-        </motion.div>
-
-        <motion.div
-          className="flex items-center gap-3 md:gap-2"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {user ? (
-            <>
-              {isAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/admin')}
-                  className="gap-2 border-primary/30 hover:bg-primary/10 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
-                >
-                  <Shield className="w-5 h-5 md:w-4 md:h-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Button>
-              )}
-              <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
-                <User className="w-3 h-3" />
-                {user.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={signOut}
-                className="gap-2 relative z-50 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
+        {/* Navigation Links */}
+        <nav className="flex-1 py-6 px-3 space-y-2">
+          {sidebarLinks.map((link, index) => {
+            if ('divider' in link) {
+              return <div key={index} className="h-px bg-border/30 my-4" />;
+            }
+            
+            const Icon = link.icon;
+            return (
+              <motion.button
+                key={index}
+                onClick={link.onClick}
+                disabled={link.disabled}
+                whileHover={{ scale: link.disabled ? 1 : 1.02 }}
+                whileTap={{ scale: link.disabled ? 1 : 0.98 }}
+                className={`
+                  w-full flex items-center gap-3 p-3 rounded-xl transition-all
+                  ${link.active 
+                    ? 'bg-primary/15 text-primary' 
+                    : link.disabled 
+                      ? 'text-muted-foreground/40 cursor-not-allowed'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                  }
+                `}
               >
-                <LogOut className="w-5 h-5 md:w-4 md:h-4" />
-                <span className="hidden sm:inline">Sair</span>
-              </Button>
-            </>
-          ) : (
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-sm font-medium">
+                  {link.label}
+                </span>
+                {link.external && (
+                  <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-50 transition-opacity" />
+                )}
+              </motion.button>
+            );
+          })}
+        </nav>
+
+        {/* User Section */}
+        {user && (
+          <div className="p-4 border-t border-border/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden">
+                <p className="text-sm font-medium text-foreground truncate">{userName || 'Usuário'}</p>
+                <button 
+                  onClick={signOut}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Sair
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Button */}
+        {isAdmin && (
+          <div className="p-4 pt-0">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/auth'}
-              className="gap-2 border-primary/30 hover:bg-primary/10 rounded-xl md:rounded-lg min-h-[44px] md:min-h-[36px] px-4 md:px-3"
+              onClick={() => navigate('/admin')}
+              className="w-full gap-2 border-primary/30 hover:bg-primary/10 rounded-xl"
             >
-              <LogIn className="w-5 h-5 md:w-4 md:h-4" />
-              Entrar
+              <Shield className="w-4 h-4" />
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity">Admin</span>
             </Button>
-          )}
-        </motion.div>
-      </nav>
+          </div>
+        )}
+      </motion.aside>
 
-      {/* Main Content - Pushed to the right on desktop */}
-      <div className="relative z-10 flex flex-col min-h-[calc(100vh-80px)] lg:ml-[40%]">
-        {/* Hero Section - Mobile First - More spacious */}
-        <header className="md:bg-transparent md:rounded-none py-10 md:py-12 px-6 md:px-4 lg:px-8 xl:px-16">
-          <AnimatePresence>
-            {showTitle && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="mb-8 md:mb-6"
-              >
-                <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
-                  <Crown className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-display font-semibold text-primary tracking-wide">
-                    Método Perfil Glorioso
-                  </span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showPhrase && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="mb-10 md:mb-8"
-              >
-                <h1 className="text-[1.75rem] md:text-4xl lg:text-5xl font-display font-bold leading-[1.3] max-w-4xl">
-                  <span className="text-gradient">{currentPhrase}</span>
-                </h1>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showPhrase && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-              >
-                {user && userName && (
-                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <div className="w-14 h-14 md:w-10 md:h-10 rounded-2xl md:rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center">
-                      <User className="w-6 h-6 md:w-5 md:h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground/80">Bem-vindo de volta,</p>
-                      <p className="text-xl md:text-lg font-semibold text-foreground">{userName}</p>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </header>
-
-        {/* Stages Section - Mobile First - More spacious */}
-        <AnimatePresence>
-          {showContent && (
-            <motion.main
-              className="flex-1 px-6 md:px-4 lg:px-8 xl:px-16 pb-28 md:pb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.aside
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col"
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
             >
-              <motion.div
-                className="mb-8 md:mb-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              >
-                <h2 className="text-xl md:text-xl font-display font-bold text-foreground mb-2">
-                  Escolha sua próxima etapa
-                </h2>
-                <p className="text-sm text-muted-foreground/70">
-                  Continue sua jornada de transformação profissional
-                </p>
-              </motion.div>
-
-              <div className="flex flex-col gap-5 md:gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 max-w-4xl">
-                {stages.map((stage, index) => {
-                  const status = getStageStatus(stage.number);
-                  const blocked = isStageBlocked(stage.number);
-                  const Icon = stage.icon;
-                  const isCompleted = status === 'completed';
-
-                  return (
-                    <motion.button
-                      key={stage.number}
-                      onClick={() => handleStageClick(stage)}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.06 }}
-                      whileHover={!blocked ? { scale: 1.02, y: -2 } : {}}
-                      whileTap={!blocked ? { scale: 0.97 } : {}}
-                      className={`
-                        relative overflow-hidden
-                        p-5 md:p-4 
-                        rounded-[1.25rem] md:rounded-xl
-                        bg-card/60 backdrop-blur-md
-                        border border-border/40
-                        transition-all duration-300
-                        text-left
-                        ${blocked
-                          ? 'opacity-40 cursor-not-allowed'
-                          : 'cursor-pointer hover:border-primary/30 hover:bg-card/80'
-                        }
-                        ${isCompleted ? 'border-green-500/30 bg-green-500/5' : ''}
-                      `}
-                      disabled={blocked}
-                    >
-                      <div className="flex items-center gap-5 md:gap-3">
-                        <div className={`
-                          relative w-14 h-14 md:w-10 md:h-10 rounded-2xl md:rounded-lg
-                          flex items-center justify-center
-                          transition-colors
-                          ${isCompleted
-                            ? 'bg-green-500/15'
-                            : blocked
-                              ? 'bg-muted/30'
-                              : 'bg-primary/12'
-                          }
-                        `}>
-                          <Icon className={`w-6 h-6 md:w-4 md:h-4 ${
-                            isCompleted
-                              ? 'text-green-500'
-                              : blocked
-                                ? 'text-muted-foreground/50'
-                                : 'text-primary'
-                          }`} />
-
-                          {isCompleted && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 md:w-2.5 md:h-2.5 bg-green-500 rounded-full flex items-center justify-center">
-                              <Check className="w-2.5 h-2.5 md:w-1.5 md:h-1.5 text-background" strokeWidth={4} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2.5 mb-1.5 md:mb-0">
-                            <span className="text-xs text-primary/80 font-mono font-bold bg-primary/10 px-2.5 py-1 md:px-2 md:py-0.5 rounded-full">{stage.number}</span>
-                            <h3 className={`text-base md:text-sm font-semibold md:font-medium ${
-                              blocked ? 'text-muted-foreground/50' : 'text-foreground'
-                            } transition-colors`}>
-                              {stage.title}
-                            </h3>
-                          </div>
-                          <p className="text-sm md:text-[11px] text-muted-foreground/70 line-clamp-2 md:line-clamp-1 mt-1 leading-relaxed">
-                            {stage.description}
-                          </p>
-                        </div>
-
-                        {blocked ? (
-                          <Lock className="w-6 h-6 md:w-3.5 md:h-3.5 text-muted-foreground/40 flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="w-7 h-7 md:w-4 md:h-4 text-muted-foreground/40 flex-shrink-0" />
-                        )}
-                      </div>
-                    </motion.button>
-                  );
-                })}
+              <div className="p-4 flex items-center justify-between border-b border-border/30">
+                <div className="flex items-center gap-3">
+                  <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
+                  <span className="font-display font-bold text-foreground">Perfil Glorioso</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
 
-              {/* Motivational footer - More spacious */}
-              <motion.div
-                className="mt-10 md:mt-8 p-6 md:p-4 rounded-2xl md:rounded-xl bg-gradient-to-r from-primary/8 to-transparent border border-primary/15 max-w-4xl"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <p className="text-[15px] md:text-sm text-muted-foreground/80 italic text-center leading-relaxed">
-                  "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
-                </p>
-              </motion.div>
-            </motion.main>
+              <nav className="flex-1 py-6 px-4 space-y-2">
+                {sidebarLinks.map((link, index) => {
+                  if ('divider' in link) {
+                    return <div key={index} className="h-px bg-border/30 my-4" />;
+                  }
+                  
+                  const Icon = link.icon;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        link.onClick();
+                        setSidebarOpen(false);
+                      }}
+                      disabled={link.disabled}
+                      className={`
+                        w-full flex items-center gap-3 p-3 rounded-xl transition-all
+                        ${link.active 
+                          ? 'bg-primary/15 text-primary' 
+                          : link.disabled 
+                            ? 'text-muted-foreground/40 cursor-not-allowed'
+                            : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                        }
+                      `}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-medium">{link.label}</span>
+                      {link.external && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {user && (
+                <div className="p-4 border-t border-border/30">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{userName || 'Usuário'}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={signOut} className="w-full gap-2">
+                    <LogOut className="w-4 h-4" /> Sair
+                  </Button>
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="p-4 pt-0">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => { navigate('/admin'); setSidebarOpen(false); }}
+                    className="w-full gap-2"
+                  >
+                    <Shield className="w-4 h-4" /> Painel Admin
+                  </Button>
+                </div>
+              )}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div className="flex-1 lg:ml-20 min-h-screen">
+        {/* Mobile Header */}
+        <header className="lg:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-3 flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+            <Menu className="w-6 h-6" />
+          </Button>
+          <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
+          {user ? (
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+          ) : (
+            <Button variant="ghost" size="icon" onClick={() => navigate('/auth')}>
+              <LogIn className="w-5 h-5" />
+            </Button>
           )}
-        </AnimatePresence>
+        </header>
+
+        {/* Content Grid */}
+        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)] lg:min-h-screen">
+          {/* Stages Section - Now on Left */}
+          <div className="flex-1 p-6 lg:p-8 xl:p-12 order-2 lg:order-1">
+            <AnimatePresence>
+              {showTitle && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="mb-8"
+                >
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
+                    <Crown className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
+                  </div>
+
+                  {user && userName && (
+                    <motion.h1 
+                      className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Olá, <span className="text-gradient">{userName}</span>
+                    </motion.h1>
+                  )}
+
+                  <p className="text-lg text-muted-foreground max-w-xl">
+                    {currentPhrase}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showContent && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <h2 className="text-xl font-display font-bold text-foreground mb-6">
+                    Suas Etapas
+                  </h2>
+
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {stages.map((stage, index) => {
+                      const status = getStageStatus(stage.number);
+                      const blocked = isStageBlocked(stage.number);
+                      const Icon = stage.icon;
+                      const isCompleted = status === 'completed';
+
+                      return (
+                        <motion.button
+                          key={stage.number}
+                          onClick={() => handleStageClick(stage)}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: index * 0.05 }}
+                          whileHover={!blocked ? { scale: 1.02, y: -4 } : {}}
+                          whileTap={!blocked ? { scale: 0.98 } : {}}
+                          className={`
+                            relative overflow-hidden p-5 rounded-2xl text-left
+                            bg-card/60 backdrop-blur-xl border border-border/50
+                            transition-all duration-300
+                            ${blocked
+                              ? 'opacity-40 cursor-not-allowed'
+                              : 'cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10'
+                            }
+                            ${isCompleted ? 'border-green-500/40 bg-green-500/5' : ''}
+                          `}
+                          disabled={blocked}
+                        >
+                          {/* Gradient Glow */}
+                          <div className={`absolute inset-0 bg-gradient-to-br ${stage.color} opacity-0 hover:opacity-10 transition-opacity rounded-2xl`} />
+
+                          <div className="relative flex items-start gap-4">
+                            <div className={`
+                              w-12 h-12 rounded-xl flex items-center justify-center
+                              bg-gradient-to-br ${stage.color} 
+                              ${blocked ? 'opacity-40' : ''}
+                            `}>
+                              <Icon className="w-5 h-5 text-white" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                  {stage.number}
+                                </span>
+                                {isCompleted && (
+                                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                  </div>
+                                )}
+                              </div>
+                              <h3 className={`font-semibold mb-1 ${blocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
+                                {stage.title}
+                              </h3>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {stage.description}
+                              </p>
+                            </div>
+
+                            {blocked ? (
+                              <Lock className="w-5 h-5 text-muted-foreground/40" />
+                            ) : (
+                              <ChevronRight className="w-5 h-5 text-muted-foreground/40" />
+                            )}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quote */}
+                  <motion.div
+                    className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <p className="text-sm text-muted-foreground italic text-center">
+                      "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Mentor Section - Now on Right */}
+          <motion.div 
+            className="hidden lg:block w-[45%] xl:w-[40%] relative order-1 lg:order-2"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <div className="sticky top-0 h-screen">
+              <img
+                src={mentorPhoto}
+                alt="Adriano Duarte - Mentor"
+                className="h-full w-full object-cover object-center grayscale"
+              />
+              {/* Gradient overlays */}
+              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+              
+              {/* Mentor Info Overlay */}
+              <div className="absolute bottom-8 left-8 right-8">
+                <motion.div
+                  className="p-6 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1, duration: 0.6 }}
+                >
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Seu Mentor</p>
+                  <h3 className="text-xl font-display font-bold text-foreground mb-2">Adriano Duarte</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Especialista em recolocação profissional e estratégias de LinkedIn
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Welcome Mentor Modal */}
+      {/* Modals */}
       <WelcomeMentorModal
         open={showWelcomeModal}
         onComplete={handleWelcomeComplete}
       />
 
-      {/* Stage Warning Modal */}
       <StageWarningModal
         open={warningModal.open}
         onClose={() => setWarningModal({ ...warningModal, open: false })}
@@ -652,16 +735,12 @@ const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedi
         type={warningModal.type}
       />
 
-      {/* Stage 3 Welcome Modal */}
       <Stage3WelcomeModal
         open={showStage3Modal}
         onOpenChange={setShowStage3Modal}
         hasFunnel={opportunityFunnel?.status === 'published'}
         onContinue={handleStage3Continue}
       />
-
-      {/* Floating Support Button */}
-      {user && <SupportButton />}
     </div>
   );
 };
