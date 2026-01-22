@@ -68,6 +68,7 @@ const SettingsPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -165,10 +166,41 @@ const SettingsPage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    toast({
-      title: "Solicitação recebida",
-      description: "Entre em contato com o suporte para excluir sua conta.",
-    });
+    if (!user) return;
+
+    setDeletingAccount(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account');
+
+      if (error) {
+        console.error('Delete account error:', error);
+        toast({
+          title: "Erro ao excluir conta",
+          description: "Não foi possível excluir sua conta. Tente novamente.",
+          variant: "destructive",
+        });
+        setDeletingAccount(false);
+        return;
+      }
+
+      toast({
+        title: "Conta excluída",
+        description: "Sua conta foi removida com sucesso.",
+      });
+
+      // Sign out and redirect
+      await signOut();
+      navigate("/auth");
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao excluir sua conta.",
+        variant: "destructive",
+      });
+      setDeletingAccount(false);
+    }
   };
 
   const sections = [
@@ -344,25 +376,43 @@ const SettingsPage = () => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="outline"
+                      disabled={deletingAccount}
                       className="w-full h-11 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
                     >
-                      Solicitar exclusão da conta
+                      {deletingAccount ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Excluindo...
+                        </>
+                      ) : (
+                        "Excluir minha conta"
+                      )}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos.
+                      <AlertDialogTitle className="text-destructive">⚠️ Excluir conta permanentemente</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <p>Esta ação <strong>não pode ser desfeita</strong>. Ao confirmar, serão removidos permanentemente:</p>
+                        <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+                          <li>Seu perfil e informações pessoais</li>
+                          <li>Todos os CVs e cartas de apresentação</li>
+                          <li>Histórico de conversas e progresso</li>
+                          <li>Acesso à plataforma</li>
+                        </ul>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDeleteAccount}
+                        disabled={deletingAccount}
                         className="bg-destructive hover:bg-destructive/90 rounded-xl"
                       >
-                        Sim, excluir conta
+                        {deletingAccount ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        Sim, excluir minha conta
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
