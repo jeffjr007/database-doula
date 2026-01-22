@@ -359,11 +359,8 @@ const Portal = () => {
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
         {/* Logo */}
-        <div className="p-4 flex items-center gap-3 border-b border-border/30">
+        <div className="p-4 flex items-center justify-center border-b border-border/30">
           <img src={logoAD} alt="AD" className="w-12 h-12 rounded-xl flex-shrink-0" />
-          <span className="font-display font-bold text-lg text-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Perfil Glorioso
-          </span>
         </div>
 
         {/* Navigation Links */}
@@ -613,55 +610,54 @@ const Portal = () => {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, delay: index * 0.05 }}
-                          whileHover={!blocked ? { scale: 1.02, y: -4 } : {}}
-                          whileTap={!blocked ? { scale: 0.98 } : {}}
+                          whileHover={!blocked ? { scale: 1.01 } : {}}
+                          whileTap={!blocked ? { scale: 0.99 } : {}}
                           className={`
-                            relative overflow-hidden p-5 rounded-2xl text-left
-                            bg-card/60 backdrop-blur-xl border border-border/50
-                            transition-all duration-300
+                            group/card relative p-4 rounded-xl text-left
+                            bg-card/40 border border-border/40
+                            transition-all duration-200
                             ${blocked
                               ? 'opacity-40 cursor-not-allowed'
-                              : 'cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10'
+                              : 'cursor-pointer hover:bg-card/70 hover:border-primary/30'
                             }
-                            ${isCompleted ? 'border-green-500/40 bg-green-500/5' : ''}
+                            ${isCompleted ? 'border-primary/40' : ''}
                           `}
                           disabled={blocked}
                         >
-                          {/* Gradient Glow */}
-                          <div className={`absolute inset-0 bg-gradient-to-br ${stage.color} opacity-0 hover:opacity-10 transition-opacity rounded-2xl`} />
-
-                          <div className="relative flex items-start gap-4">
+                          <div className="flex items-center gap-3">
+                            {/* Number Badge */}
                             <div className={`
-                              w-12 h-12 rounded-xl flex items-center justify-center
-                              bg-gradient-to-br ${stage.color} 
-                              ${blocked ? 'opacity-40' : ''}
+                              w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-sm
+                              transition-colors
+                              ${isCompleted 
+                                ? 'bg-primary/20 text-primary' 
+                                : blocked 
+                                  ? 'bg-muted/30 text-muted-foreground/50'
+                                  : 'bg-primary/10 text-primary group-hover/card:bg-primary/20'
+                              }
                             `}>
-                              <Icon className="w-5 h-5 text-white" />
+                              {isCompleted ? (
+                                <Check className="w-4 h-4" strokeWidth={3} />
+                              ) : (
+                                stage.number
+                              )}
                             </div>
 
+                            {/* Content */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                                  {stage.number}
-                                </span>
-                                {isCompleted && (
-                                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                                  </div>
-                                )}
-                              </div>
-                              <h3 className={`font-semibold mb-1 ${blocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
+                              <h3 className={`text-sm font-medium ${blocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
                                 {stage.title}
                               </h3>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
+                              <p className="text-xs text-muted-foreground/70 line-clamp-1 mt-0.5">
                                 {stage.description}
                               </p>
                             </div>
 
+                            {/* Arrow */}
                             {blocked ? (
-                              <Lock className="w-5 h-5 text-muted-foreground/40" />
+                              <Lock className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" />
                             ) : (
-                              <ChevronRight className="w-5 h-5 text-muted-foreground/40" />
+                              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover/card:text-primary transition-colors flex-shrink-0" />
                             )}
                           </div>
                         </motion.button>
@@ -702,21 +698,6 @@ const Portal = () => {
               <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
               
-              {/* Mentor Info Overlay */}
-              <div className="absolute bottom-8 left-8 right-8">
-                <motion.div
-                  className="p-6 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                >
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Seu Mentor</p>
-                  <h3 className="text-xl font-display font-bold text-foreground mb-2">Adriano Duarte</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Especialista em recolocação profissional e estratégias de LinkedIn
-                  </p>
-                </motion.div>
-              </div>
             </div>
           </motion.div>
         </div>
