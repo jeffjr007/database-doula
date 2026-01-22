@@ -52,7 +52,23 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
       return;
     }
 
+    // Limit file size to 5MB to avoid timeout issues
+    const MAX_SIZE_MB = 5;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: `O arquivo deve ter no máximo ${MAX_SIZE_MB}MB.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setExtractingCV(true);
+    
+    toast({
+      title: "Processando CV...",
+      description: "Isso pode levar até 2 minutos dependendo do tamanho do arquivo.",
+    });
     
     // Convert to base64
     const reader = new FileReader();
@@ -60,11 +76,23 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
       try {
         const base64 = (reader.result as string).split(',')[1];
         
+        // Create AbortController with longer timeout (3 minutes)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        
         const { data, error } = await supabase.functions.invoke('extract-cv-pdf', {
           body: { pdfBase64: base64 }
         });
+        
+        clearTimeout(timeoutId);
 
-        if (error) throw error;
+        if (error) {
+          // Check if it's a timeout/connection error
+          if (error.message?.includes('connection') || error.message?.includes('timeout')) {
+            throw new Error('A extração demorou muito. Tente com um PDF menor ou mais simples.');
+          }
+          throw error;
+        }
         if (data?.error) throw new Error(data.error);
 
         // Format extracted data as text
@@ -77,9 +105,20 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
         });
       } catch (error: any) {
         console.error('Error extracting CV:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = "Tente novamente.";
+        if (error.message?.includes('timeout') || error.message?.includes('demorou')) {
+          errorMessage = "A extração demorou muito. Tente com um PDF menor.";
+        } else if (error.message?.includes('connection')) {
+          errorMessage = "Conexão perdida. Verifique sua internet e tente novamente.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         toast({
           title: "Erro ao extrair CV",
-          description: error.message || "Tente novamente.",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
