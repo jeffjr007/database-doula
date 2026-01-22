@@ -195,14 +195,14 @@ const Portal = () => {
       }
 
       // Check if user has a learning path gift and hasn't seen it yet
+      // Note: First-time gift viewing is handled in ActivatePlatform after welcome modal
       if (profile?.learning_path && !isAdmin) {
         const giftSeenKey = `gift_seen_${user.id}`;
         const hasSeenGift = localStorage.getItem(giftSeenKey);
         if (!hasSeenGift) {
-          // Redirect to gift page after initial animation
-          setTimeout(() => {
-            navigate('/presente');
-          }, 1500);
+          // Only redirect if coming back to portal (not first activation)
+          // This handles the case where user navigates away and back
+          navigate('/presente');
           return;
         }
       }

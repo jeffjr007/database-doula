@@ -132,8 +132,23 @@ const ActivatePlatform = () => {
     }
   };
 
-  const handleWelcomeComplete = () => {
+  const handleWelcomeComplete = async () => {
     setShowWelcomeModal(false);
+    
+    // Check if user has a learning path gift
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('learning_path')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profile?.learning_path) {
+        navigate('/presente');
+        return;
+      }
+    }
+    
     navigate("/");
   };
 
