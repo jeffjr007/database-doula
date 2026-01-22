@@ -5,6 +5,9 @@ export interface CVData {
   telefone: string;
   email: string;
   linkedin: string;
+  localizacao?: string;
+  nacionalidade?: string;
+  idade?: string;
 
   // CV sections
   sumario: {
