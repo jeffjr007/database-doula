@@ -37,7 +37,6 @@ import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
 import LogoutModal from "@/components/LogoutModal";
 import GiftModal from "@/components/GiftModal";
-import LearningPathView from "@/components/LearningPathView";
 
 interface StageProgress {
   stage_number: number;
@@ -161,7 +160,6 @@ const Portal = () => {
   
   // Gift modal states
   const [showGiftModal, setShowGiftModal] = useState(false);
-  const [showLearningPath, setShowLearningPath] = useState(false);
   const [learningPath, setLearningPath] = useState<string | null>(null);
   const giftAutoShownRef = useRef(false);
 
@@ -411,17 +409,8 @@ const Portal = () => {
     }
   };
 
-  const handleOpenGift = () => {
+  const handleCloseGift = () => {
     setShowGiftModal(false);
-    
-    // Mark gift as seen
-    const giftSeenKey = `gift_seen_${user?.id}`;
-    localStorage.setItem(giftSeenKey, 'true');
-    
-    // Show the learning path
-    setTimeout(() => {
-      setShowLearningPath(true);
-    }, 300);
   };
 
   const handleLogout = () => {
@@ -435,7 +424,7 @@ const Portal = () => {
 
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
-    ...(learningPath ? [{ icon: Gift, label: 'Minha Trilha', onClick: () => setShowLearningPath(true), highlight: true }] : []),
+    ...(learningPath ? [{ icon: Gift, label: 'Minha Trilha', onClick: () => navigate('/minha-trilha'), highlight: true }] : []),
     { icon: HelpCircle, label: 'Suporte', onClick: () => { window.location.href = '/suporte'; } },
     { icon: Settings, label: 'Configurações', onClick: () => { window.location.href = '/configuracoes'; } },
     { divider: true },
@@ -902,17 +891,9 @@ const Portal = () => {
       {/* Gift Modal */}
       <GiftModal
         open={showGiftModal}
-        onOpenGift={handleOpenGift}
+        onClose={handleCloseGift}
+        userId={user?.id}
       />
-
-      {/* Learning Path View */}
-      {learningPath && (
-        <LearningPathView
-          open={showLearningPath}
-          onClose={() => setShowLearningPath(false)}
-          learningPath={learningPath}
-        />
-      )}
     </div>
   );
 };

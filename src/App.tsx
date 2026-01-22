@@ -16,6 +16,7 @@ import Stage4Page from "./pages/Stage4Page";
 import Stage5Page from "./pages/Stage5Page";
 import Stage6Page from "./pages/Stage6Page";
 import Stage7Page from "./pages/Stage7Page";
+import MinhaTrilhaPage from "./pages/MinhaTrilhaPage";
 import Admin from "./pages/Admin";
 import ActivatePlatform from "./pages/ActivatePlatform";
 import SupportPage from "./pages/SupportPage";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/ativar" element={<ActivatePlatform />} />
             <Route path="/meus-cvs" element={<MeusCVs />} />
             <Route path="/minhas-cartas" element={<MinhasCartas />} />
+            <Route path="/minha-trilha" element={<MinhaTrilhaPage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/suporte" element={<SupportPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
