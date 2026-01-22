@@ -190,7 +190,7 @@ const Portal = () => {
       setPlatformActivated(activated);
 
       if (!activated) {
-        navigate('/ativar');
+        window.location.href = '/ativar';
         return;
       }
 
