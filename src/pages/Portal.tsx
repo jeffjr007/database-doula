@@ -171,6 +171,11 @@ const Portal = () => {
       if (!user?.id) return;
       if (adminLoading) return;
 
+      // ADMIN = PORTAL DIRETO, sem nenhuma verificação de ativação
+      if (isAdmin) {
+        setPlatformActivated(true);
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, platform_activated, stage2_unlocked, stage2_completed, learning_path')
@@ -186,24 +191,24 @@ const Portal = () => {
         setUserName(profile.full_name.split(' ')[0]);
       }
 
-      const activated = isAdmin ? true : (profile?.platform_activated ?? false);
-      setPlatformActivated(activated);
+      // Apenas non-admin precisa verificar ativação
+      if (!isAdmin) {
+        const activated = profile?.platform_activated ?? false;
+        setPlatformActivated(activated);
 
-      if (!activated) {
-        window.location.href = '/ativar';
-        return;
-      }
-
-      // Check if user has a learning path gift and hasn't seen it yet
-      // Note: First-time gift viewing is handled in ActivatePlatform after welcome modal
-      if (profile?.learning_path && !isAdmin) {
-        const giftSeenKey = `gift_seen_${user.id}`;
-        const hasSeenGift = localStorage.getItem(giftSeenKey);
-        if (!hasSeenGift) {
-          // Only redirect if coming back to portal (not first activation)
-          // This handles the case where user navigates away and back
-          navigate('/presente');
+        if (!activated) {
+          window.location.href = '/ativar';
           return;
+        }
+
+        // Check if user has a learning path gift and hasn't seen it yet
+        if (profile?.learning_path) {
+          const giftSeenKey = `gift_seen_${user.id}`;
+          const hasSeenGift = localStorage.getItem(giftSeenKey);
+          if (!hasSeenGift) {
+            navigate('/presente');
+            return;
+          }
         }
       }
 
