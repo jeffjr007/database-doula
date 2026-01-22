@@ -39,11 +39,10 @@ const GiftPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   
-  const [step, setStep] = useState<'intro' | 'explanation' | 'reveal'>('intro');
+  const [step, setStep] = useState<'loading' | 'intro' | 'explanation' | 'reveal'>('loading');
   const [learningPath, setLearningPath] = useState<string | null>(null);
   const [formattedPath, setFormattedPath] = useState<FormattedPath | null>(null);
   const [loadingPath, setLoadingPath] = useState(false);
-  const [hasSeenGift, setHasSeenGift] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -68,13 +67,16 @@ const GiftPage = () => {
     if (profile?.learning_path) {
       setLearningPath(profile.learning_path);
       
-      // Check if user has already seen this gift
+      // Check if user has already seen this gift - go directly to reveal
       const seenKey = `gift_seen_${user.id}`;
       const seen = localStorage.getItem(seenKey);
       if (seen) {
-        setHasSeenGift(true);
+        // Already seen - go straight to reveal with loading
         setStep('reveal');
         loadFormattedPath(profile.learning_path);
+      } else {
+        // First time - show intro animation
+        setStep('intro');
       }
     } else {
       // No gift available, redirect back
@@ -226,10 +228,13 @@ const GiftPage = () => {
     navigate('/');
   };
 
-  if (authLoading) {
+  if (authLoading || step === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        </div>
+        <p className="text-muted-foreground text-sm">Carregando sua trilha...</p>
       </div>
     );
   }
