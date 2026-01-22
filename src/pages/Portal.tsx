@@ -397,9 +397,7 @@ const Portal = () => {
 
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
-    ...(hasLearningPath
-      ? [{ icon: Gift, label: 'Minha Trilha', onClick: () => navigate('/presente', { state: { direct: true } }), highlight: true }]
-      : []),
+    { icon: Gift, label: 'Minha Trilha', onClick: () => { if (hasLearningPath) navigate('/presente', { state: { direct: true } }); }, highlight: true },
     { icon: HelpCircle, label: 'Suporte', onClick: () => { window.location.href = '/suporte'; } },
     { icon: Settings, label: 'Configurações', onClick: () => { window.location.href = '/configuracoes'; } },
     { divider: true },
