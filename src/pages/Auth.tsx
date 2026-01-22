@@ -5,21 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, User, ArrowRight, Check, X, Phone } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAD from "@/assets/logo-ad.png";
-
-const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
-  <div className={`flex items-center gap-1.5 text-[10px] transition-colors duration-200 ${met ? 'text-primary' : 'text-muted-foreground/60'}`}>
-    {met ? (
-      <Check className="w-3 h-3" />
-    ) : (
-      <X className="w-3 h-3" />
-    )}
-    <span className={met ? 'line-through opacity-60' : ''}>{text}</span>
-  </div>
-);
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -27,6 +17,8 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
@@ -43,6 +35,11 @@ const Auth = () => {
 
   const isPasswordValid = useMemo(() =>
     Object.values(passwordRequirements).every(Boolean),
+    [passwordRequirements]
+  );
+
+  const requirementsMet = useMemo(() => 
+    Object.values(passwordRequirements).filter(Boolean).length,
     [passwordRequirements]
   );
 
@@ -64,6 +61,15 @@ const Auth = () => {
       toast({
         title: "Senha inválida",
         description: "A senha não atende aos requisitos mínimos de segurança.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isLogin && !acceptTerms) {
+      toast({
+        title: "Termos obrigatórios",
+        description: "Você precisa aceitar os termos de uso para criar sua conta.",
         variant: "destructive",
       });
       return;
@@ -92,6 +98,7 @@ const Auth = () => {
             data: {
               full_name: fullName,
               phone: phone,
+              email_notifications: emailNotifications,
             },
           },
         });
@@ -248,53 +255,164 @@ const Auth = () => {
                 />
               </motion.div>
 
-              {/* Password and requirements */}
-              {!isLogin ? (
-                <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
-                  <motion.div variants={itemVariants} className="space-y-2 md:space-y-1.5">
-                    <Label htmlFor="password" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
-                      <Lock className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
-                      Senha
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
-                    />
-                  </motion.div>
+              {/* Password */}
+              <motion.div variants={itemVariants} className="space-y-2 md:space-y-1.5">
+                <Label htmlFor="password" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
+                  <Lock className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
+                  Senha
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
+                />
+                
+                {/* Compact password strength indicator - only show on signup */}
+                <AnimatePresence>
+                  {!isLogin && password.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="pt-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Progress bar */}
+                        <div className="flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full transition-colors ${
+                              requirementsMet <= 2 
+                                ? 'bg-destructive' 
+                                : requirementsMet <= 4 
+                                  ? 'bg-amber-500' 
+                                  : 'bg-primary'
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(requirementsMet / 5) * 100}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                        <span className={`text-[10px] font-medium ${
+                          requirementsMet <= 2 
+                            ? 'text-destructive' 
+                            : requirementsMet <= 4 
+                              ? 'text-amber-500' 
+                              : 'text-primary'
+                        }`}>
+                          {requirementsMet <= 2 && 'Fraca'}
+                          {requirementsMet > 2 && requirementsMet <= 4 && 'Média'}
+                          {requirementsMet === 5 && (
+                            <span className="flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Forte
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      
+                      {/* Compact requirements hint */}
+                      {!isPasswordValid && (
+                        <p className="text-[10px] text-muted-foreground mt-1.5">
+                          Use 8+ caracteres com maiúscula, minúscula, número e especial
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
-                  {/* Password requirements */}
-                  <div className="flex items-end">
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:gap-y-1 p-4 md:p-3 bg-secondary/30 rounded-2xl md:rounded-lg border border-border/20 w-full">
-                      <PasswordRequirement met={passwordRequirements.minLength} text="8+ caracteres" />
-                      <PasswordRequirement met={passwordRequirements.hasUppercase} text="Maiúscula" />
-                      <PasswordRequirement met={passwordRequirements.hasLowercase} text="Minúscula" />
-                      <PasswordRequirement met={passwordRequirements.hasNumber} text="Número" />
-                      <PasswordRequirement met={passwordRequirements.hasSpecial} text="Especial (!@#...)" />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <motion.div variants={itemVariants} className="space-y-2 md:space-y-1.5">
-                  <Label htmlFor="password" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
-                    <Lock className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
-                    Senha
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
-                  />
-                </motion.div>
-              )}
+              {/* Signup Options */}
+              <AnimatePresence>
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-3 pt-2"
+                  >
+                    {/* Email Notifications Toggle */}
+                    <motion.label
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      className={`
+                        flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all
+                        ${emailNotifications 
+                          ? 'bg-primary/10 border border-primary/30' 
+                          : 'bg-muted/20 border border-border/30 hover:bg-muted/30'
+                        }
+                      `}
+                    >
+                      <div className={`
+                        w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
+                        ${emailNotifications ? 'bg-primary/20' : 'bg-muted/30'}
+                      `}>
+                        <Bell className={`w-4 h-4 ${emailNotifications ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium ${emailNotifications ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Notificações por email
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/70 truncate">
+                          Receba atualizações importantes
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={emailNotifications}
+                        onCheckedChange={(checked) => setEmailNotifications(checked as boolean)}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                    </motion.label>
+
+                    {/* Terms and Privacy */}
+                    <motion.label
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      className={`
+                        flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all
+                        ${acceptTerms 
+                          ? 'bg-primary/10 border border-primary/30' 
+                          : 'bg-muted/20 border border-border/30 hover:bg-muted/30'
+                        }
+                      `}
+                    >
+                      <div className={`
+                        w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
+                        ${acceptTerms ? 'bg-primary/20' : 'bg-muted/30'}
+                      `}>
+                        <FileText className={`w-4 h-4 ${acceptTerms ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium ${acceptTerms ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Termos de uso e privacidade
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/70">
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open('#', '_blank');
+                            }}
+                            className="text-primary/80 hover:text-primary hover:underline"
+                          >
+                            Ler termos
+                          </button>
+                          {' '}• Obrigatório
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={acceptTerms}
+                        onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                    </motion.label>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Submit button - Mobile First */}
@@ -302,7 +420,7 @@ const Auth = () => {
               <Button
                 type="submit"
                 className="mobile-btn-primary w-full md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
-                disabled={loading}
+                disabled={loading || (!isLogin && !acceptTerms)}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -326,6 +444,7 @@ const Auth = () => {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setPassword('');
+                setAcceptTerms(false);
               }}
               className="text-sm md:text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
             >
