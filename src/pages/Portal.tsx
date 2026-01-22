@@ -343,7 +343,7 @@ const Portal = () => {
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
     { icon: HelpCircle, label: 'Suporte', onClick: () => navigate('/suporte') },
-    { icon: Settings, label: 'Configurações', onClick: () => {}, disabled: true },
+    { icon: Settings, label: 'Configurações', onClick: () => navigate('/configuracoes') },
     { divider: true },
     { icon: Instagram, label: 'Instagram', onClick: () => window.open('https://www.instagram.com/oduarteeoficial/', '_blank'), external: true },
     { icon: Linkedin, label: 'LinkedIn', onClick: () => window.open('https://www.linkedin.com/in/oduarteoficial/', '_blank'), external: true },
@@ -375,16 +375,13 @@ const Portal = () => {
               <motion.button
                 key={index}
                 onClick={link.onClick}
-                disabled={link.disabled}
-                whileHover={{ scale: link.disabled ? 1 : 1.02 }}
-                whileTap={{ scale: link.disabled ? 1 : 0.98 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className={`
                   w-full flex items-center gap-3 p-3 rounded-xl transition-all
                   ${link.active 
                     ? 'bg-primary/15 text-primary' 
-                    : link.disabled 
-                      ? 'text-muted-foreground/40 cursor-not-allowed'
-                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                   }
                 `}
               >
@@ -478,14 +475,11 @@ const Portal = () => {
                         link.onClick();
                         setSidebarOpen(false);
                       }}
-                      disabled={link.disabled}
                       className={`
                         w-full flex items-center gap-3 p-3 rounded-xl transition-all
                         ${link.active 
                           ? 'bg-primary/15 text-primary' 
-                          : link.disabled 
-                            ? 'text-muted-foreground/40 cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                          : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                         }
                       `}
                     >
