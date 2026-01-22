@@ -176,6 +176,8 @@ const Portal = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
+      
+      // CRITICAL: Wait for admin check to complete before proceeding
       if (adminLoading) return;
 
       const { data: profile } = await supabase
@@ -194,12 +196,17 @@ const Portal = () => {
         setUserName(profile.full_name.split(' ')[0]);
       }
 
-      const activated = isAdmin ? true : (profile?.platform_activated ?? false);
-      setPlatformActivated(activated);
+      // Admins bypass activation check entirely
+      if (isAdmin) {
+        setPlatformActivated(true);
+      } else {
+        const activated = profile?.platform_activated ?? false;
+        setPlatformActivated(activated);
 
-      if (!activated) {
-        window.location.href = '/ativar';
-        return;
+        if (!activated) {
+          window.location.href = '/ativar';
+          return;
+        }
       }
 
       const { data: progressData } = await supabase
