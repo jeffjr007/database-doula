@@ -24,7 +24,7 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -162,6 +162,7 @@ const Portal = () => {
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [showLearningPath, setShowLearningPath] = useState(false);
   const [learningPath, setLearningPath] = useState<string | null>(null);
+  const giftAutoShownRef = useRef(false);
 
   useEffect(() => {
     const titleTimer = setTimeout(() => setShowTitle(true), 300);
@@ -207,6 +208,17 @@ const Portal = () => {
           // Use SPA navigation to avoid full remount loops.
           navigate('/ativar', { replace: true });
           return;
+        }
+      }
+
+      // Auto-trigger the gift modal once we know the user is activated and we already have
+      // the learning path from the profile. This avoids relying on sequencing flags across routes.
+      if (!giftAutoShownRef.current && profile?.learning_path) {
+        const giftSeenKey = `gift_seen_${user.id}`;
+        const hasSeenGift = localStorage.getItem(giftSeenKey);
+        if (!hasSeenGift) {
+          giftAutoShownRef.current = true;
+          setTimeout(() => setShowGiftModal(true), 1200);
         }
       }
 
@@ -263,9 +275,11 @@ const Portal = () => {
     const hasSeenWelcome = localStorage.getItem(welcomeSeenKey);
     const hasSeenGift = localStorage.getItem(giftSeenKey);
     
-    // If user has a learning path and hasn't seen the gift, show it
-    // Either after welcome modal completes (for new users) or directly (for returning users)
-    if (learningPath && !hasSeenGift && hasSeenWelcome && !showWelcomeModal) {
+    // If user has a learning path and hasn't seen the gift, show it.
+    // We don't hard-depend on the welcome flag because welcome can be shown in another route
+    // (activation) or may not have been persisted yet.
+    if (!giftAutoShownRef.current && learningPath && !hasSeenGift && !showWelcomeModal) {
+      giftAutoShownRef.current = true;
       const timer = setTimeout(() => {
         setShowGiftModal(true);
       }, 1500); // Give time for page to load
@@ -380,6 +394,10 @@ const Portal = () => {
 
   const handleWelcomeComplete = () => {
     setShowWelcomeModal(false);
+
+    // Persist welcome as seen (used for sequencing on returning sessions)
+    const welcomeSeenKey = `welcome_seen_${user?.id}`;
+    if (user?.id) localStorage.setItem(welcomeSeenKey, 'true');
     
     // Check if user has a learning path and hasn't seen the gift yet
     const giftSeenKey = `gift_seen_${user?.id}`;

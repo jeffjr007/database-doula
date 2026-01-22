@@ -134,6 +134,12 @@ const ActivatePlatform = () => {
   };
 
   const handleWelcomeComplete = () => {
+    // Persist that the user has completed the welcome animation.
+    // This is used by Portal to decide whether to show follow-up modals (e.g., gift/learning path).
+    if (user?.id) {
+      const welcomeSeenKey = `welcome_seen_${user.id}`;
+      localStorage.setItem(welcomeSeenKey, 'true');
+    }
     setShowWelcomeModal(false);
     navigate("/");
   };
