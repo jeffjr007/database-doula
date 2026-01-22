@@ -321,6 +321,22 @@ const GiftPage = () => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="flex flex-col items-center justify-center min-h-[60vh] text-center"
               >
+                {/* Mentor avatar - primeiro (topo) */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/30">
+                    <img 
+                      src={mentorPhoto} 
+                      alt="Duarte" 
+                      className="w-full h-full object-cover grayscale"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm text-muted-foreground">Mensagem de</p>
+                    <p className="font-display font-bold text-foreground">Duarte</p>
+                  </div>
+                </div>
+
+                {/* Caixa de presente - segundo */}
                 <motion.div
                   animate={{ 
                     y: [0, -10, 0],
@@ -344,20 +360,6 @@ const GiftPage = () => {
                     <Sparkles className="w-8 h-8 text-accent" />
                   </motion.div>
                 </motion.div>
-
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/30">
-                    <img 
-                      src={mentorPhoto} 
-                      alt="Duarte" 
-                      className="w-full h-full object-cover grayscale"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm text-muted-foreground">Mensagem de</p>
-                    <p className="font-display font-bold text-foreground">Duarte</p>
-                  </div>
-                </div>
 
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
