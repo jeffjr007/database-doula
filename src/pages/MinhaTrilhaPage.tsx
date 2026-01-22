@@ -334,7 +334,7 @@ const MinhaTrilhaPage = () => {
               </p>
             </div>
           </motion.div>
-        ) : formattedPath && (
+        ) : formattedPath && formattedPath.modules && formattedPath.modules.length > 0 ? (
           <motion.div
             variants={staggerContainer}
             initial="initial"
@@ -517,6 +517,38 @@ const MinhaTrilhaPage = () => {
                 Voltar ao Portal
               </Button>
             </motion.div>
+          </motion.div>
+        ) : (
+          // Fallback: show raw learning path when formatting fails
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+                <GraduationCap className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-primary">Presente Exclusivo</span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
+                Sua Trilha de Desenvolvimento
+              </h1>
+            </div>
+            
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <pre className="whitespace-pre-wrap text-sm text-foreground font-mono leading-relaxed">
+                {learningPath}
+              </pre>
+            </div>
+            
+            <Button 
+              onClick={() => navigate('/')} 
+              variant="outline" 
+              className="w-full gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Voltar ao Portal
+            </Button>
           </motion.div>
         )}
       </main>
