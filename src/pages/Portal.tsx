@@ -22,7 +22,8 @@ import {
   Instagram,
   Home,
   Menu,
-  X
+  X,
+  Gift
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -434,6 +435,7 @@ const Portal = () => {
 
   const sidebarLinks = [
     { icon: Home, label: 'Início', onClick: () => {}, active: true },
+    ...(learningPath ? [{ icon: Gift, label: 'Minha Trilha', onClick: () => setShowLearningPath(true), highlight: true }] : []),
     { icon: HelpCircle, label: 'Suporte', onClick: () => { window.location.href = '/suporte'; } },
     { icon: Settings, label: 'Configurações', onClick: () => { window.location.href = '/configuracoes'; } },
     { divider: true },
@@ -463,6 +465,7 @@ const Portal = () => {
             }
             
             const Icon = link.icon;
+            const isHighlight = 'highlight' in link && link.highlight;
             return (
               <motion.button
                 key={index}
@@ -473,11 +476,13 @@ const Portal = () => {
                   w-full flex items-center gap-3 p-3 rounded-xl transition-all
                   ${link.active 
                     ? 'bg-primary/15 text-primary' 
-                    : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                    : isHighlight
+                      ? 'bg-accent/15 text-accent hover:bg-accent/20'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                   }
                 `}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${isHighlight ? 'text-accent' : ''}`} />
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-sm font-medium">
                   {link.label}
                 </span>
@@ -572,6 +577,7 @@ const Portal = () => {
                   }
                   
                   const Icon = link.icon;
+                  const isHighlight = 'highlight' in link && link.highlight;
                   return (
                     <button
                       key={index}
@@ -583,11 +589,13 @@ const Portal = () => {
                         w-full flex items-center gap-3 p-3 rounded-xl transition-all
                         ${link.active 
                           ? 'bg-primary/15 text-primary' 
-                          : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                          : isHighlight
+                            ? 'bg-accent/15 text-accent hover:bg-accent/20'
+                            : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                         }
                       `}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className={`w-5 h-5 ${isHighlight ? 'text-accent' : ''}`} />
                       <span className="text-sm font-medium">{link.label}</span>
                       {link.external && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
                     </button>
