@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -30,6 +30,16 @@ interface FormattedLearningPath {
   totalCourses: number;
   estimatedHours: number | null;
 }
+
+const normalizeLearningPathText = (input: string) => {
+  // Some legacy content may contain HTML-ish fragments (e.g. target="_blank" ... class="...")
+  // Normalize to plain text so formatting + caching is stable and rendering never becomes “invisible”.
+  return input
+    .replace(/<[^>]*>/g, ' ') // strip tags
+    .replace(/\s+/g, ' ')
+    .replace(/\s+\n/g, '\n')
+    .trim();
+};
 
 // Animation variants
 const fadeInUp = {
@@ -133,6 +143,11 @@ const MinhaTrilhaPage = () => {
   const [expandedModules, setExpandedModules] = useState<number[]>([0]);
   const hasFormattedRef = useRef(false);
 
+  const cleanedLearningPath = useMemo(() => {
+    if (!learningPath) return null;
+    return normalizeLearningPathText(learningPath);
+  }, [learningPath]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
@@ -166,8 +181,8 @@ const MinhaTrilhaPage = () => {
   }, [learningPath]);
 
   const getCacheKey = () => {
-    if (!user?.id || !learningPath) return null;
-    const hash = learningPath.split('').reduce((a, b) => {
+    if (!user?.id || !cleanedLearningPath) return null;
+    const hash = cleanedLearningPath.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
@@ -200,8 +215,12 @@ const MinhaTrilhaPage = () => {
   const formatLearningPath = async (cacheKey: string | null) => {
     setIsLoading(true);
     try {
+      if (!cleanedLearningPath) {
+        setFormattedPath(null);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('format-learning-path', {
-        body: { learningPath }
+        body: { learningPath: cleanedLearningPath }
       });
 
       if (error) throw error;
@@ -218,7 +237,7 @@ const MinhaTrilhaPage = () => {
       }
     } catch (error) {
       console.error('Error formatting learning path with AI:', error);
-      const fallback = fallbackParseLearningPath(learningPath!);
+      const fallback = fallbackParseLearningPath(cleanedLearningPath || learningPath || '');
       setFormattedPath(fallback);
       hasFormattedRef.current = true;
 
@@ -537,7 +556,7 @@ const MinhaTrilhaPage = () => {
             
             <div className="rounded-2xl border border-border bg-card p-6">
               <pre className="whitespace-pre-wrap text-sm text-foreground font-mono leading-relaxed">
-                {learningPath}
+                {cleanedLearningPath || learningPath || 'Sua trilha ainda está sendo preparada.'}
               </pre>
             </div>
             
