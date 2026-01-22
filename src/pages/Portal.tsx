@@ -204,7 +204,8 @@ const Portal = () => {
         setPlatformActivated(activated);
 
         if (!activated) {
-          window.location.href = '/ativar';
+          // Use SPA navigation to avoid full remount loops.
+          navigate('/ativar', { replace: true });
           return;
         }
       }

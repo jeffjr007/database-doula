@@ -15,6 +15,11 @@ export const useAdmin = () => {
         return;
       }
 
+      // Reset loading state every time we re-check roles.
+      // Without this, pages may read stale `loading=false` with a stale `isAdmin` value
+      // while the new request is still in-flight, causing redirect loops.
+      setLoading(true);
+
       try {
         const { data, error } = await supabase
           .from('user_roles')

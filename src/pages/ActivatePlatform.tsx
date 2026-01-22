@@ -40,7 +40,8 @@ const ActivatePlatform = () => {
 
       // Admins bypass activation - use window.location to force full reload
       if (isAdmin) {
-        window.location.href = "/";
+        // Use SPA navigation to avoid full remount loops.
+        navigate("/", { replace: true });
         return;
       }
 
@@ -51,7 +52,7 @@ const ActivatePlatform = () => {
         .single();
 
       if (profile?.platform_activated) {
-        window.location.href = "/";
+        navigate("/", { replace: true });
         return;
       }
 
