@@ -21,9 +21,6 @@ export interface CVFormData {
   telefone: string;
   email: string;
   linkedin: string;
-  localizacao: string;
-  nacionalidade: string;
-  idade: string;
   educacao: string;
   experiences: string;
   jobDescription: string;
@@ -41,9 +38,6 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
     telefone: "",
     email: "",
     linkedin: "",
-    localizacao: "",
-    nacionalidade: "",
-    idade: "",
     educacao: "",
     experiences: "",
     jobDescription: "",
@@ -198,7 +192,7 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
               <Phone className="w-3 h-3" />
@@ -208,26 +202,11 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
               type="text"
               value={formData.telefone}
               onChange={(e) => handleChange("telefone", e.target.value)}
-              placeholder="+55 11 98601-0599"
+              placeholder="(11) 99999-9999"
               className="w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
-              Localização
-            </label>
-            <input
-              type="text"
-              value={formData.localizacao}
-              onChange={(e) => handleChange("localizacao", e.target.value)}
-              placeholder="São Paulo, Brasil"
-              className="w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
               Email
@@ -250,34 +229,6 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
               value={formData.linkedin}
               onChange={(e) => handleChange("linkedin", e.target.value)}
               placeholder="linkedin.com/in/seuperfil"
-              className="w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
-              Nacionalidade
-            </label>
-            <input
-              type="text"
-              value={formData.nacionalidade}
-              onChange={(e) => handleChange("nacionalidade", e.target.value)}
-              placeholder="BRASILEIRO"
-              className="w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
-              Idade
-            </label>
-            <input
-              type="text"
-              value={formData.idade}
-              onChange={(e) => handleChange("idade", e.target.value)}
-              placeholder="30"
               className="w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
             />
           </div>

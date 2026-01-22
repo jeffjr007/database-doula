@@ -35,7 +35,7 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
   const getModalData = () => {
     switch (editSection) {
       case "header":
-        return { nome: data.nome, cargos: data.cargos, telefone: data.telefone, email: data.email, linkedin: data.linkedin, localizacao: data.localizacao, nacionalidade: data.nacionalidade, idade: data.idade };
+        return { nome: data.nome, cargos: data.cargos, telefone: data.telefone, email: data.email, linkedin: data.linkedin };
       case "sumario":
         return data.sumario;
       case "sistemas":
@@ -113,50 +113,20 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
       {/* CV Document */}
       <div className="bg-card rounded-xl p-8 shadow-card border border-border/50 space-y-8 animate-slide-up print:bg-white print:text-black print:shadow-none print:border-none print:p-0">
 
-        {/* Header - New Layout */}
+        {/* Header */}
         <div className="pb-4 border-b-0 relative group">
-          <div className="absolute top-0 right-0 print:hidden z-10">
+          <div className="absolute top-0 right-0 print:hidden">
             <EditButton section="header" />
           </div>
-          
-          {/* Contact info on the right */}
-          <div className="flex justify-end mb-4">
-            <div className="text-right text-sm text-foreground print:text-black space-y-0.5">
-              <p>
-                <span className="font-semibold">Telefone:</span>{" "}
-                <span className="text-blue-600 underline print:text-blue-600">{data.telefone}</span>
-              </p>
-              {data.localizacao && (
-                <p>
-                  <span className="font-semibold">Localização:</span>{" "}
-                  <span className="text-blue-600 underline print:text-blue-600">{data.localizacao}</span>
-                </p>
-              )}
-              <p>
-                <span className="font-semibold">E-mail:</span>{" "}
-                <span className="text-blue-600 underline print:text-blue-600">{data.email}</span>
-              </p>
-              <p>
-                <span className="font-semibold">Linkedin:</span>
-              </p>
-              <p>
-                <span className="text-blue-600 underline print:text-blue-600">{data.linkedin}</span>
-              </p>
-              {(data.nacionalidade || data.idade) && (
-                <p className="mt-2 font-semibold uppercase">
-                  {data.nacionalidade}{data.nacionalidade && data.idade ? ", " : ""}{data.idade && `${data.idade} ANOS`}.
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Name with black bar */}
-          <div className="mt-2">
-            <div className="w-full h-1 bg-black print:bg-black mb-2"></div>
-            <h1 className="text-2xl font-normal text-foreground print:text-black uppercase tracking-wide">
-              {data.nome}
-            </h1>
-          </div>
+          <h1 className="text-2xl font-bold text-foreground print:text-black uppercase">
+            {data.nome}
+          </h1>
+          <p className="text-sm text-foreground mt-1 print:text-black">
+            {data.cargos}
+          </p>
+          <p className="text-sm text-foreground mt-2 print:text-black">
+            <span className="underline">{data.telefone}</span> | {data.email} | <span className="text-blue-600 underline print:text-blue-600">{data.linkedin}</span>
+          </p>
         </div>
 
         {/* SUMÁRIO */}
