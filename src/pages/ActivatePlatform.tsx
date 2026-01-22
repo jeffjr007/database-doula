@@ -27,18 +27,20 @@ const ActivatePlatform = () => {
 
   useEffect(() => {
     const checkActivation = async () => {
+      // Wait for auth to load
+      if (authLoading) return;
+      
       if (!user) {
-        if (!authLoading) {
-          navigate("/auth");
-        }
+        navigate("/auth");
         return;
       }
 
+      // Wait for admin check to complete
       if (adminLoading) return;
 
-      // Admins bypass activation
+      // Admins bypass activation - use window.location to force full reload
       if (isAdmin) {
-        navigate("/");
+        window.location.href = "/";
         return;
       }
 
@@ -49,7 +51,8 @@ const ActivatePlatform = () => {
         .single();
 
       if (profile?.platform_activated) {
-        navigate("/");
+        window.location.href = "/";
+        return;
       }
 
       setCheckingActivation(false);
