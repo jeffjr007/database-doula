@@ -551,9 +551,81 @@ const Portal = () => {
         </header>
 
         {/* Content Grid */}
-        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)] lg:min-h-screen">
-          {/* Stages Section - Now on Left */}
-          <div className="flex-1 p-6 lg:p-8 xl:p-12 order-2 lg:order-1">
+        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)] lg:min-h-screen relative">
+          {/* Background Decorative Elements */}
+          <div className="hidden lg:block absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Glowing orbs */}
+            <motion.div 
+              className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3] 
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div 
+              className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl"
+              animate={{ 
+                scale: [1.2, 1, 1.2],
+                opacity: [0.2, 0.4, 0.2] 
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            />
+            
+            {/* Geometric lines */}
+            <svg className="absolute top-0 right-0 w-full h-full opacity-[0.03]" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="60" y1="0" x2="100" y2="40" stroke="currentColor" strokeWidth="0.1" className="text-primary" />
+              <line x1="70" y1="0" x2="100" y2="30" stroke="currentColor" strokeWidth="0.1" className="text-primary" />
+              <line x1="80" y1="0" x2="100" y2="20" stroke="currentColor" strokeWidth="0.1" className="text-primary" />
+              <line x1="50" y1="100" x2="100" y2="50" stroke="currentColor" strokeWidth="0.1" className="text-accent" />
+              <line x1="60" y1="100" x2="100" y2="60" stroke="currentColor" strokeWidth="0.1" className="text-accent" />
+            </svg>
+          </div>
+
+          {/* Mentor Section - Now on Left (Background) */}
+          <motion.div 
+            className="hidden lg:block w-[45%] xl:w-[40%] relative"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <div className="sticky top-0 h-screen">
+              <img
+                src={mentorPhoto}
+                alt="Adriano Duarte - Mentor"
+                className="h-full w-full object-cover object-center grayscale"
+              />
+              {/* Gradient overlays */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+              
+              {/* Mentor Info overlay */}
+              <motion.div 
+                className="absolute bottom-12 left-8 right-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/30 p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center border border-primary/30">
+                      <Crown className="w-7 h-7 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-lg text-foreground">Adriano Duarte</h3>
+                      <p className="text-sm text-muted-foreground">Mentor de Carreira</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                    Especialista em recolocação profissional com +500 mentorados de sucesso.
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Stages Section - Now on Right */}
+          <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
             <AnimatePresence>
               {showTitle && (
                 <motion.div
@@ -596,7 +668,7 @@ const Portal = () => {
                     Suas Etapas
                   </h2>
 
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                     {stages.map((stage, index) => {
                       const status = getStageStatus(stage.number);
                       const blocked = isStageBlocked(stage.number);
@@ -614,13 +686,13 @@ const Portal = () => {
                           whileTap={!blocked ? { scale: 0.99 } : {}}
                           className={`
                             group/card relative p-4 rounded-xl text-left
-                            bg-card/40 border border-border/40
+                            bg-card/60 backdrop-blur-sm border border-border/50
                             transition-all duration-200
                             ${blocked
                               ? 'opacity-40 cursor-not-allowed'
-                              : 'cursor-pointer hover:bg-card/70 hover:border-primary/30'
+                              : 'cursor-pointer hover:bg-card/80 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5'
                             }
-                            ${isCompleted ? 'border-primary/40' : ''}
+                            ${isCompleted ? 'border-primary/50 bg-primary/5' : ''}
                           `}
                           disabled={blocked}
                         >
@@ -676,30 +748,35 @@ const Portal = () => {
                       "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                     </p>
                   </motion.div>
+
+                  {/* Progress Stats */}
+                  <motion.div
+                    className="mt-6 grid grid-cols-3 gap-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                  >
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Etapas</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-accent">
+                        {progress.filter(p => p.completed).length}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Concluídas</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-foreground">
+                        {Math.round((progress.filter(p => p.completed).length / stages.length) * 100)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Progresso</p>
+                    </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          {/* Mentor Section - Now on Right */}
-          <motion.div 
-            className="hidden lg:block w-[45%] xl:w-[40%] relative order-1 lg:order-2"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="sticky top-0 h-screen">
-              <img
-                src={mentorPhoto}
-                alt="Adriano Duarte - Mentor"
-                className="h-full w-full object-cover object-center grayscale"
-              />
-              {/* Gradient overlays */}
-              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-              
-            </div>
-          </motion.div>
         </div>
       </div>
 
