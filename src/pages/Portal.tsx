@@ -599,28 +599,6 @@ const Portal = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
               
-              {/* Mentor Info overlay */}
-              <motion.div 
-                className="absolute bottom-12 left-8 right-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-              >
-                <div className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/30 p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center border border-primary/30">
-                      <Crown className="w-7 h-7 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-bold text-lg text-foreground">Adriano Duarte</h3>
-                      <p className="text-sm text-muted-foreground">Mentor de Carreira</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                    Especialista em recolocação profissional com +500 mentorados de sucesso.
-                  </p>
-                </div>
-              </motion.div>
             </div>
           </motion.div>
 
