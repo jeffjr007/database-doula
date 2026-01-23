@@ -329,6 +329,7 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
   const handleSaveLearningPath = async () => {
     setSavingLearningPath(true);
     try {
+      // Save raw content to profile
       const { error } = await supabase
         .from('profiles')
         .update({ learning_path: learningPath || null })
@@ -336,12 +337,71 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
 
       if (error) throw error;
 
-      toast({
-        title: learningPath ? "Trilha salva!" : "Trilha removida!",
-        description: learningPath 
-          ? "O mentorado agora pode ver o presente."
-          : "A trilha foi removida.",
-      });
+      // If there's content, pre-format it via AI so the mentee has instant loading
+      if (learningPath) {
+        toast({
+          title: "Trilha salva!",
+          description: "Formatando trilha para carregamento instantâneo...",
+        });
+
+        try {
+          const { data, error: formatError } = await supabase.functions.invoke('format-learning-path', {
+            body: { rawContent: learningPath }
+          });
+
+          if (formatError) throw formatError;
+
+          if (data?.formattedPath) {
+            // Generate hash for cache validation
+            const hashContent = (content: string): string => {
+              let hash = 0;
+              for (let i = 0; i < content.length; i++) {
+                const char = content.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+              }
+              return hash.toString(36);
+            };
+
+            // Save formatted data to learning_paths table
+            const { error: upsertError } = await supabase
+              .from('learning_paths')
+              .upsert({
+                user_id: menteeId,
+                raw_hash: hashContent(learningPath),
+                formatted_data: data.formattedPath
+              }, {
+                onConflict: 'user_id'
+              });
+
+            if (upsertError) {
+              console.error('Error saving formatted path:', upsertError);
+            }
+
+            toast({
+              title: "Trilha pronta!",
+              description: "O mentorado terá carregamento instantâneo.",
+            });
+          }
+        } catch (formatError) {
+          console.error('Error pre-formatting learning path:', formatError);
+          toast({
+            title: "Trilha salva!",
+            description: "A formatação será feita quando o mentorado abrir.",
+          });
+        }
+      } else {
+        // Remove formatted data if raw content is removed
+        await supabase
+          .from('learning_paths')
+          .delete()
+          .eq('user_id', menteeId);
+
+        toast({
+          title: "Trilha removida!",
+          description: "O presente foi removido.",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Erro",
