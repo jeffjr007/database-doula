@@ -222,16 +222,8 @@ const Portal = () => {
           return;
         }
 
-        // Check if user has a learning path gift and hasn't seen it yet
-        if (profile?.learning_path) {
-          const giftSeenKey = `gift_seen_${user.id}`;
-          const hasSeenGift = localStorage.getItem(giftSeenKey);
-          if (!hasSeenGift) {
-            console.log('[Portal] Non-admin has unseen gift, redirecting to /presente');
-            navigate('/presente');
-            return;
-          }
-        }
+        // NOTE: Gift redirect is handled by ActivatePlatform after user clicks "Começar Jornada"
+        // Do NOT auto-redirect to /presente here - user must explicitly start their journey
       }
 
       const { data: progressData } = await supabase
