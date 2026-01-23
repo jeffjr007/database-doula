@@ -74,31 +74,30 @@ const ActivatePlatform = () => {
     setLoading(true);
 
     try {
-      const { data: inviteCode, error: fetchError } = await supabase
-        .from("invite_codes")
-        .select("*")
-        .eq("code", code.trim().toUpperCase())
-        .single();
+      // Use secure Edge Function to validate code (no PII exposure)
+      const { data: validationResult, error: validationError } = await supabase.functions.invoke(
+        'validate-invite-code',
+        { body: { code: code.trim().toUpperCase() } }
+      );
 
-      if (fetchError || !inviteCode) {
-        setError("Código inválido. Verifique e tente novamente.");
+      if (validationError) {
+        setError("Erro ao validar código. Tente novamente.");
         setLoading(false);
         return;
       }
 
-      if (inviteCode.used) {
-        setError("Este código já foi utilizado.");
+      if (!validationResult.valid) {
+        const reasonMessages: Record<string, string> = {
+          not_found: "Código inválido. Verifique e tente novamente.",
+          already_used: "Este código já foi utilizado.",
+          expired: "Este código expirou.",
+        };
+        setError(reasonMessages[validationResult.reason] || validationResult.error || "Código inválido.");
         setLoading(false);
         return;
       }
 
-      if (inviteCode.expires_at && new Date(inviteCode.expires_at) < new Date()) {
-        setError("Este código expirou.");
-        setLoading(false);
-        return;
-      }
-
-      // Mark code as used
+      // Mark code as used (using the codeId returned from validation)
       const { error: updateCodeError } = await supabase
         .from("invite_codes")
         .update({
@@ -106,7 +105,7 @@ const ActivatePlatform = () => {
           used_at: new Date().toISOString(),
           used_by: user.id,
         })
-        .eq("id", inviteCode.id);
+        .eq("id", validationResult.codeId);
 
       if (updateCodeError) throw updateCodeError;
 
