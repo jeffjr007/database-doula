@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 interface Experience {
   empresa: string;
@@ -17,9 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { experiencias } = await req.json() as { experiencias: Experience[] };
     
-    console.log("Formatting experiences for Gupy:", experiencias.length);
+    console.log("Formatting experiences for user:", user.id, "count:", experiencias.length);
 
     if (!experiencias || experiencias.length === 0) {
       return new Response(

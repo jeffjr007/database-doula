@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 interface ConquistaInput {
   tipo: string;
@@ -22,9 +18,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { titulos_linkedin, experiencias, conquistas } = await req.json();
 
-    console.log('Generating achievement descriptions...');
+    console.log('Generating achievement descriptions for user:', user.id);
     console.log('Títulos:', titulos_linkedin);
     console.log('Experiências:', experiencias?.length || 0);
     console.log('Conquistas:', conquistas?.length || 0);

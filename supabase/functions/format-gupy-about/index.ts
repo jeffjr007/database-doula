@@ -1,10 +1,6 @@
 import "https://deno.land/x/xhr@0.3.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -13,6 +9,12 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { sobre } = await req.json();
 
     if (!sobre || typeof sobre !== 'string') {
@@ -21,6 +23,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("Formatting Gupy about for user:", user.id);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {

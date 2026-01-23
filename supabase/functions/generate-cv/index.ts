@@ -1,10 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 const systemPrompt = `Você é um especialista PREMIUM em criação de currículos personalizados estratégicos para o mercado brasileiro, seguindo o Método Perfil Glorioso.
 
@@ -66,6 +62,13 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
+    console.log("Generate CV request from user:", user.id);
     const { experiences, jobDescription, educacao } = await req.json();
 
     if (!experiences || String(experiences).trim().length < 50) {

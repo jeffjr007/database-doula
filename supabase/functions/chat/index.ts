@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,6 +8,12 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { messages, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
@@ -20,7 +22,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Chat request received with", messages?.length || 0, "messages, context:", context);
+    console.log("Chat request from user:", user.id, "messages:", messages?.length || 0, "context:", context);
 
     // Build system prompt based on context
     let systemPrompt = `Você é a IA Mentora da plataforma Perfil Glorioso, especializada em desenvolvimento de carreira, criação de CVs profissionais e preparação para processos seletivos.

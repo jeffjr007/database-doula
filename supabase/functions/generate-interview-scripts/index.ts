@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 interface Experience {
   company: string;
@@ -17,9 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { keywords, experiences, linkedinAbout, companyName, jobDescription } = await req.json();
 
-    console.log("Generating interview scripts...");
+    console.log("Generating interview scripts for user:", user.id);
     console.log("Keywords count:", keywords?.length || 0);
     console.log("Experiences length:", experiences?.length || 0);
     console.log("Target company:", companyName);

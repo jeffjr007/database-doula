@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,9 +8,15 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const { user, error: authError } = await validateAuth(req);
+    if (authError || !user) {
+      return unauthorizedResponse(authError || "Não autorizado");
+    }
+
     const { jobDescription, linkedinAbout, experiences } = await req.json();
 
-    console.log("Analyzing job keywords...");
+    console.log("Analyzing job keywords for user:", user.id);
     console.log("Job description length:", jobDescription?.length || 0);
     console.log("LinkedIn about length:", linkedinAbout?.length || 0);
     console.log("Experiences length:", experiences?.length || 0);
