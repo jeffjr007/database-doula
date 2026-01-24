@@ -57,7 +57,8 @@ export const StepConversationIntro = ({
       if (phaseRef.current === "idle") {
         phaseRef.current = "typing";
         setShowTyping(true);
-        timerRef.current = window.setTimeout(() => step(), 650);
+        // Slower typing indicator (1.2s)
+        timerRef.current = window.setTimeout(() => step(), 1200);
         return;
       }
 
@@ -66,10 +67,11 @@ export const StepConversationIntro = ({
       setShowTyping(false);
       visibleCountRef.current = visibleCountRef.current + 1;
       setVisibleCount(visibleCountRef.current);
+      // Longer pause between messages (800ms)
       timerRef.current = window.setTimeout(() => {
         phaseRef.current = "idle";
         step();
-      }, 250);
+      }, 800);
     };
 
     // small delay before starting
@@ -90,18 +92,18 @@ export const StepConversationIntro = ({
       </div>
 
       {/* Messages Container */}
-      <div className="w-full max-w-lg space-y-3 min-h-[180px]">
+      <div className="w-full max-w-2xl space-y-4 min-h-[240px]">
         {messages.slice(0, visibleCount).map((message, idx) => (
           <div
             key={`${idx}-${message.text.slice(0, 16)}`}
-            className={`p-4 rounded-2xl animate-fade-in ${
+            className={`px-6 py-5 rounded-2xl animate-fade-in ${
               message.highlight
                 ? "bg-primary/10 border border-primary/20"
                 : "bg-secondary/50"
             }`}
           >
             <p
-              className={`text-sm leading-relaxed ${
+              className={`text-base leading-relaxed ${
                 message.highlight
                   ? "text-foreground font-medium"
                   : "text-muted-foreground"
