@@ -41,6 +41,7 @@ import { InterviewScriptBuilder, KeywordScript } from "./InterviewScriptBuilder"
 import { AboutMeGenerator } from "./AboutMeGenerator";
 import { HelpCircle } from 'lucide-react';
 import { Stage4Introduction } from "./Stage4Introduction";
+import { StepConversationIntro } from "./StepConversationIntro";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -69,6 +70,21 @@ const STEPS = [
 
 const STAGE4_STARTED_KEY = 'stage4_started';
 
+// Messages for "Sobre Você" intro
+const ABOUT_ME_INTRO_MESSAGES = [
+  { text: "Agora vamos preparar você para uma das perguntas mais comuns em entrevistas...", highlight: false },
+  { text: "\"Me fale sobre você\" — parece simples, mas é onde muitos candidatos tropeçam.", highlight: true },
+  { text: "Vou te ajudar a criar um roteiro natural que conecta quem você é com o que a empresa busca. Nada de respostas decoradas!", highlight: false },
+];
+
+// Messages for "Palavras-Chave" intro
+const KEYWORDS_INTRO_MESSAGES = [
+  { text: "Ótimo! Agora vamos preparar você para outra pergunta clássica das entrevistas...", highlight: false },
+  { text: "\"Me fale sobre suas experiências\" — aqui é onde você mostra que sabe fazer acontecer.", highlight: true },
+  { text: "Vamos montar roteiros usando a estrutura: O QUE fez + COMO fez + RESULTADO. Simples e poderosa!", highlight: false },
+  { text: "Primeiro, preciso identificar as palavras-chave da vaga para conectar suas experiências com o que a empresa busca.", highlight: false },
+];
+
 export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const hasStartedBefore = sessionStorage.getItem(STAGE4_STARTED_KEY) === 'true';
   
@@ -78,6 +94,8 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [savedScripts, setSavedScripts] = useState<KeywordScript[]>([]);
+  const [showAboutMeIntro, setShowAboutMeIntro] = useState(true);
+  const [showKeywordsIntro, setShowKeywordsIntro] = useState(true);
   const [data, setData] = useState<StepData>({
     companyName: "",
     companyLinkedin: "",
@@ -311,9 +329,11 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 1:
         return (
           <motion.div
+            key="step-1"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <div className="text-center space-y-2">
@@ -354,9 +374,11 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 2:
         return (
           <motion.div
+            key="step-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <div className="text-center space-y-2">
@@ -393,9 +415,11 @@ Exemplo:
       case 3:
         return (
           <motion.div
+            key="step-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <div className="text-center space-y-2">
@@ -432,9 +456,11 @@ Exemplo:
       case 4:
         return (
           <motion.div
+            key="step-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <div className="text-center space-y-2">
@@ -476,121 +502,162 @@ Exemplo:
       case 5:
         return (
           <motion.div
+            key="step-5"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <AboutMeGenerator
-              onComplete={async (script) => {
-                const newData = { ...data, aboutMeScript: script };
-                setData(newData);
-                await saveProgress(newData);
-                setCurrentStep(6);
-              }}
-            />
+            <AnimatePresence mode="wait">
+              {showAboutMeIntro && !data.aboutMeScript ? (
+                <StepConversationIntro
+                  key="about-me-intro"
+                  messages={ABOUT_ME_INTRO_MESSAGES}
+                  buttonText="Começar"
+                  onContinue={() => setShowAboutMeIntro(false)}
+                />
+              ) : (
+                <motion.div
+                  key="about-me-form"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AboutMeGenerator
+                    onComplete={async (script) => {
+                      const newData = { ...data, aboutMeScript: script };
+                      setData(newData);
+                      await saveProgress(newData);
+                      setShowKeywordsIntro(true);
+                      setCurrentStep(6);
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         );
 
       case 6:
         return (
           <motion.div
+            key="step-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Análise de Palavras-Chave</h2>
-              <p className="text-muted-foreground">
-                Escolha como você quer extrair as palavras-chave da vaga
-              </p>
-            </div>
-
-            <div className="max-w-2xl mx-auto grid gap-4">
-              <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30 hover:border-primary/50 transition-all cursor-pointer group"
-                onClick={analyzeKeywords}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                    {isAnalyzing ? (
-                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                    ) : (
-                      <Sparkles className="w-6 h-6 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display font-semibold text-lg mb-1">
-                      Análise Automática com IA
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Nossa IA vai analisar a vaga e seu perfil para extrair as palavras-chave mais relevantes.
+            <AnimatePresence mode="wait">
+              {showKeywordsIntro && data.keywords.length === 0 ? (
+                <StepConversationIntro
+                  key="keywords-intro"
+                  messages={KEYWORDS_INTRO_MESSAGES}
+                  buttonText="Analisar Palavras-Chave"
+                  onContinue={() => setShowKeywordsIntro(false)}
+                />
+              ) : (
+                <motion.div
+                  key="keywords-content"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="text-center space-y-2">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                      <Sparkles className="w-8 h-8 text-primary" />
+                    </div>
+                    <h2 className="font-display text-2xl font-bold">Análise de Palavras-Chave</h2>
+                    <p className="text-muted-foreground">
+                      Escolha como você quer extrair as palavras-chave da vaga
                     </p>
-                    {isAnalyzing && (
-                      <p className="text-sm text-primary mt-2 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Analisando seus dados...
-                      </p>
-                    )}
                   </div>
-                </div>
-              </Card>
 
-              <Card className="p-6 bg-secondary/50 border-border hover:border-muted-foreground/50 transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                    <Copy className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display font-semibold text-lg mb-1">
-                      Usar ChatGPT / Claude
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Prefere usar seu próprio ChatGPT ou Claude? Copie o prompt pronto:
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyPrompt}
-                      className="gap-2"
+                  <div className="max-w-2xl mx-auto grid gap-4">
+                    <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30 hover:border-primary/50 transition-all cursor-pointer group"
+                      onClick={analyzeKeywords}
                     >
-                      {copied ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Copiado!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Copiar Prompt
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                          {isAnalyzing ? (
+                            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                          ) : (
+                            <Sparkles className="w-6 h-6 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-display font-semibold text-lg mb-1">
+                            Análise Automática com IA
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Nossa IA vai analisar a vaga e seu perfil para extrair as palavras-chave mais relevantes.
+                          </p>
+                          {isAnalyzing && (
+                            <p className="text-sm text-primary mt-2 flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Analisando seus dados...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
 
-              <Card className="p-6 bg-secondary/30 border-dashed border-2 border-muted">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                      <Target className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-display font-semibold text-lg mb-1">
-                        Cole as palavras-chave manualmente
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Se você usou o ChatGPT/Claude, cole o resultado aqui (uma palavra/frase por linha):
-                      </p>
-                    </div>
-                  </div>
+                    <Card className="p-6 bg-secondary/50 border-border hover:border-muted-foreground/50 transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                          <Copy className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-display font-semibold text-lg mb-1">
+                            Usar ChatGPT / Claude
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Prefere usar seu próprio ChatGPT ou Claude? Copie o prompt pronto:
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={copyPrompt}
+                            className="gap-2"
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Copiado!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                Copiar Prompt
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
 
-                  <Textarea
-                    placeholder="Cole as palavras-chave aqui, uma por linha...
+                    <Card className="p-6 bg-secondary/30 border-dashed border-2 border-muted">
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                            <Target className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-display font-semibold text-lg mb-1">
+                              Cole as palavras-chave manualmente
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Se você usou o ChatGPT/Claude, cole o resultado aqui (uma palavra/frase por linha):
+                            </p>
+                          </div>
+                        </div>
+
+                        <Textarea
+                          placeholder="Cole as palavras-chave aqui, uma por linha...
 
 Exemplo:
 gestão de projetos
@@ -598,39 +665,44 @@ metodologias ágeis
 liderança de equipes
 Python
 análise de dados"
-                    className="min-h-[150px]"
-                    onChange={(e) => {
-                      const keywords = e.target.value
-                        .split('\n')
-                        .map(k => k.trim())
-                        .filter(k => k.length > 0);
-                      updateData('keywords', keywords);
-                    }}
-                    value={data.keywords.join('\n')}
-                  />
+                          className="min-h-[150px]"
+                          onChange={(e) => {
+                            const keywords = e.target.value
+                              .split('\n')
+                              .map(k => k.trim())
+                              .filter(k => k.length > 0);
+                            updateData('keywords', keywords);
+                          }}
+                          value={data.keywords.join('\n')}
+                        />
 
-                  {data.keywords.length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">
-                        {data.keywords.length} palavras-chave detectadas
-                      </p>
-                      <Button onClick={() => setCurrentStep(7)} className="gap-2">
-                        Continuar <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
+                        {data.keywords.length > 0 && (
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              {data.keywords.length} palavras-chave detectadas
+                            </p>
+                            <Button onClick={() => setCurrentStep(7)} className="gap-2">
+                              Continuar <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         );
 
       case 7:
         return (
           <motion.div
+            key="step-7"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <InterviewScriptBuilder
@@ -665,14 +737,16 @@ análise de dados"
       case 8:
         return (
           <motion.div
+            key="step-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6"
           >
             <div className="text-center space-y-2 mb-8">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-                <Check className="w-8 h-8 text-emerald-500" />
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-accent-foreground" />
               </div>
               <h2 className="font-display text-2xl font-bold">Seus Roteiros Prontos!</h2>
               <p className="text-muted-foreground">
