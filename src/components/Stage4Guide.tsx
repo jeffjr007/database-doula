@@ -393,12 +393,48 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
     }
   };
 
+  // Check if a step has been completed (data saved/validated)
+  const isStepCompleted = (stepId: number): boolean => {
+    switch (stepId) {
+      case 1: return data.companyName.trim().length > 0;
+      case 2: return data.jobDescription.trim().length > 0;
+      case 3: return data.linkedinAbout.trim().length > 0;
+      case 4: return data.experiences.trim().length > 0;
+      case 5: return !!data.aboutMeScript;
+      case 6: return data.keywords.length > 0;
+      case 7: return savedScripts.length > 0;
+      case 8: return true; // Simulator doesn't block
+      case 9: return true;
+      default: return false;
+    }
+  };
+
   // Safe navigation that saves progress before moving
+  // Allows going BACK to any visited step, but FORWARD only if current step is completed
   const navigateToStep = async (targetStep: number) => {
-    hasUserNavigatedRef.current = true;
-    // Save current data before navigating
-    await saveProgress(data);
-    setCurrentStep(targetStep);
+    // Going backward or to same step: always allowed
+    if (targetStep <= currentStep) {
+      hasUserNavigatedRef.current = true;
+      await saveProgress(data);
+      setCurrentStep(targetStep);
+      return;
+    }
+
+    // Going forward: only if current step is completed AND target is the next one
+    // OR if target step was already visited (allowing re-visit of completed steps)
+    const canGoForward = isStepCompleted(currentStep) && (targetStep === currentStep + 1 || visitedSteps.includes(targetStep));
+    
+    if (canGoForward) {
+      hasUserNavigatedRef.current = true;
+      await saveProgress(data);
+      setCurrentStep(targetStep);
+    } else {
+      toast({
+        title: "Complete o passo atual",
+        description: "Preencha os dados obrigatórios antes de avançar.",
+        variant: "destructive",
+      });
+    }
   };
 
   const nextStep = async () => {
@@ -1078,14 +1114,24 @@ Exemplo:
         <div className="flex items-center justify-center gap-2 min-w-max">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
-            const isCompleted = visitedSteps.includes(step.id) || currentStep > step.id;
+            // A step is "completed" if it was visited AND its data is valid, or if we're past it
+            const wasVisited = visitedSteps.includes(step.id);
+            const isPast = currentStep > step.id;
+            const hasValidData = isStepCompleted(step.id);
+            const isCompleted = (wasVisited && hasValidData) || isPast;
+            
+            // Can click: going backward (any previous step), or forward only to next completed/visited step
+            const canNavigate = step.id < currentStep || 
+                               (step.id === currentStep) || 
+                               (step.id === currentStep + 1 && canProceed()) ||
+                               (wasVisited && hasValidData);
             const Icon = step.icon;
 
             return (
               <div key={step.id} className="flex items-center">
                 <button
-                  onClick={() => (isCompleted || isActive) && navigateToStep(step.id)}
-                  disabled={!isCompleted && !isActive}
+                  onClick={() => canNavigate && navigateToStep(step.id)}
+                  disabled={!canNavigate}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${
                     isActive
                       ? 'bg-primary/10 text-primary'
