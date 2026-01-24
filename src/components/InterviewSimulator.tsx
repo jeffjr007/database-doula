@@ -218,8 +218,14 @@ export const InterviewSimulator = ({
     }
   };
 
-  const isQuestionPhase = phase === 'question1' || phase === 'question2' || phase === 'recording1' || phase === 'recording2';
-  const showAboutScript = phase === 'question1' || phase === 'recording1';
+  // Keep the support material visible from the very beginning (intro included)
+  const isQuestionPhase =
+    phase === 'intro' ||
+    phase === 'question1' ||
+    phase === 'question2' ||
+    phase === 'recording1' ||
+    phase === 'recording2';
+  const showAboutScript = phase === 'intro' || phase === 'question1' || phase === 'recording1';
   const showExperienceScript = phase === 'question2' || phase === 'recording2';
 
   return (
@@ -343,7 +349,7 @@ export const InterviewSimulator = ({
             />
           )}
 
-          {/* Script Reference Section */}
+            {/* Script Reference Section */}
           <AnimatePresence mode="wait">
             {isQuestionPhase && (
               <motion.div
@@ -364,14 +370,25 @@ export const InterviewSimulator = ({
 
                 <div className="bg-secondary/30 border border-border/50 rounded-xl p-5">
                   {showAboutScript ? (
-                    <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                      {aboutMeScript}
-                    </p>
-                  ) : (
+                    aboutMeScript?.trim() ? (
+                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                        {aboutMeScript}
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Seu roteiro de <span className="font-medium text-foreground">“Sobre você”</span> ainda não está carregado.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Volte ao step <span className="font-medium">Sobre Você</span> para gerar/salvar o roteiro e retorne aqui.
+                        </p>
+                      </div>
+                    )
+                  ) : experienceScripts?.length ? (
                     <div className="space-y-5">
                       {experienceScripts.map((script, idx) => (
-                        <motion.div 
-                          key={idx}
+                        <motion.div
+                          key={`${script.keyword}-${idx}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.1 }}
@@ -390,6 +407,15 @@ export const InterviewSimulator = ({
                           </p>
                         </motion.div>
                       ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Seus roteiros de <span className="font-medium text-foreground">experiências</span> ainda não estão carregados.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Volte ao step <span className="font-medium">Roteiro</span>, gere e salve os roteiros, e retorne ao Simulador.
+                      </p>
                     </div>
                   )}
                 </div>

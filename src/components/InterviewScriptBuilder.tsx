@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,8 @@ interface InterviewScriptBuilderProps {
   linkedinAbout: string;
   experiences: string;
   onComplete: (scripts: KeywordScript[]) => void | Promise<void>;
+  initialScripts?: KeywordScript[];
+  onScriptsChange?: (scripts: KeywordScript[]) => void;
 }
 
 const mentorMessages = [
@@ -69,20 +71,47 @@ export const InterviewScriptBuilder = ({
   jobDescription,
   linkedinAbout,
   experiences: userExperiences,
-  onComplete
+  onComplete,
+  initialScripts,
+  onScriptsChange,
 }: InterviewScriptBuilderProps) => {
   const [experiences, setExperiences] = useState<Experience[]>([
     { id: '1', company: '', role: '', selectedKeywords: [] }
   ]);
   const [expandedExp, setExpandedExp] = useState<string | null>('1');
-  const [conversationStep, setConversationStep] = useState(0);
-  const [showBuilder, setShowBuilder] = useState(false);
+  const hasInitialScripts = (initialScripts?.length ?? 0) > 0;
+  const [conversationStep, setConversationStep] = useState(hasInitialScripts ? mentorMessages.length : 0);
+  const [showBuilder, setShowBuilder] = useState(hasInitialScripts);
   const [isGeneratingScripts, setIsGeneratingScripts] = useState(false);
-  const [generatedScripts, setGeneratedScripts] = useState<KeywordScript[]>([]);
+  const [generatedScripts, setGeneratedScripts] = useState<KeywordScript[]>(initialScripts || []);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [careerIntro, setCareerIntro] = useState<CareerIntro | null>(null);
   const [isLoadingIntro, setIsLoadingIntro] = useState(false);
+
+  const persistTimerRef = useRef<number | null>(null);
+
+  // Keep local state in sync when parent rehydrates scripts
+  useEffect(() => {
+    if (initialScripts && initialScripts.length > 0) {
+      setGeneratedScripts(initialScripts);
+      setConversationStep(mentorMessages.length);
+      setShowBuilder(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(initialScripts || [])]);
+
+  // Persist scripts upward (debounced) so navigation won't make it "disappear"
+  useEffect(() => {
+    if (!onScriptsChange) return;
+    if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = window.setTimeout(() => {
+      onScriptsChange(generatedScripts);
+    }, 250);
+    return () => {
+      if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
+    };
+  }, [generatedScripts, onScriptsChange]);
 
   // Load career intro when component mounts
   useEffect(() => {
@@ -110,6 +139,7 @@ export const InterviewScriptBuilder = ({
   }, [linkedinAbout]);
 
   useEffect(() => {
+    if (hasInitialScripts) return;
     if (conversationStep < mentorMessages.length) {
       const timer = setTimeout(() => {
         setConversationStep(prev => prev + 1);
@@ -119,7 +149,7 @@ export const InterviewScriptBuilder = ({
       const timer = setTimeout(() => setShowBuilder(true), 500);
       return () => clearTimeout(timer);
     }
-  }, [conversationStep, showBuilder]);
+  }, [conversationStep, showBuilder, hasInitialScripts]);
 
   const addExperience = () => {
     if (experiences.length < 5) {

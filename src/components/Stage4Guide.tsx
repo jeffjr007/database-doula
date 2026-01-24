@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +75,8 @@ const STEPS = [
 
 const STAGE4_STARTED_KEY = 'stage4_started';
 const STAGE4_VISITED_STEPS_KEY = 'stage4_visited_steps';
+const STAGE4_DATA_CACHE_KEY = 'stage4_data_cache_v1';
+const STAGE4_SCRIPTS_CACHE_KEY = 'stage4_scripts_cache_v1';
 
 // Helper to get visited steps from sessionStorage
 const getVisitedSteps = (): number[] => {
@@ -138,6 +140,52 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const hasInitializedRef = useRef(false);
+  const hasUserNavigatedRef = useRef(false);
+
+  const mergeStepData = (db: StepData, local: StepData): StepData => {
+    const pick = (a: string, b: string) => (a?.trim()?.length ? a : b);
+    return {
+      companyName: pick(local.companyName, db.companyName),
+      companyLinkedin: pick(local.companyLinkedin, db.companyLinkedin),
+      jobDescription: pick(local.jobDescription, db.jobDescription),
+      linkedinAbout: pick(local.linkedinAbout, db.linkedinAbout),
+      experiences: pick(local.experiences, db.experiences),
+      keywords: (local.keywords?.length ? local.keywords : db.keywords) || [],
+      aboutMeScript: local.aboutMeScript?.trim() ? local.aboutMeScript : db.aboutMeScript,
+    };
+  };
+
+  const persistLocalCache = (newData: StepData, scripts: KeywordScript[]) => {
+    try {
+      sessionStorage.setItem(STAGE4_DATA_CACHE_KEY, JSON.stringify(newData));
+      sessionStorage.setItem(STAGE4_SCRIPTS_CACHE_KEY, JSON.stringify(scripts));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Hydrate from local cache immediately (prevents "data disappears" during fast navigation)
+  useEffect(() => {
+    try {
+      const cachedDataRaw = sessionStorage.getItem(STAGE4_DATA_CACHE_KEY);
+      const cachedScriptsRaw = sessionStorage.getItem(STAGE4_SCRIPTS_CACHE_KEY);
+      if (cachedDataRaw) {
+        const cached = JSON.parse(cachedDataRaw) as StepData;
+        setData(prev => mergeStepData(prev, cached));
+        setShowIntroduction(false);
+      }
+      if (cachedScriptsRaw) {
+        const cachedScripts = JSON.parse(cachedScriptsRaw) as KeywordScript[];
+        if (Array.isArray(cachedScripts) && cachedScripts.length > 0) {
+          setSavedScripts(cachedScripts);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Load saved progress
   useEffect(() => {
     const loadProgress = async () => {
@@ -162,21 +210,24 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
 
         if (progress?.data_content) {
           const savedData = progress.data_content as unknown as StepData;
-          setData(savedData);
+          setData((prev) => mergeStepData(savedData, prev));
           
           // Hide introduction if user has saved progress
           setShowIntroduction(false);
           sessionStorage.setItem(STAGE4_STARTED_KEY, 'true');
 
-          if (isStageCompleted) {
-            setCurrentStep(1);
-          } else {
-            if (savedData.keywords.length > 0) setCurrentStep(7);
-            else if (savedData.aboutMeScript) setCurrentStep(6);
-            else if (savedData.experiences) setCurrentStep(5);
-            else if (savedData.linkedinAbout) setCurrentStep(4);
-            else if (savedData.jobDescription) setCurrentStep(3);
-            else if (savedData.companyName) setCurrentStep(2);
+          // Only decide initial step once, and never override user's navigation
+          if (!hasInitializedRef.current && !hasUserNavigatedRef.current) {
+            if (isStageCompleted) {
+              setCurrentStep(1);
+            } else {
+              if (savedData.keywords.length > 0) setCurrentStep(7);
+              else if (savedData.aboutMeScript) setCurrentStep(6);
+              else if (savedData.experiences) setCurrentStep(5);
+              else if (savedData.linkedinAbout) setCurrentStep(4);
+              else if (savedData.jobDescription) setCurrentStep(3);
+              else if (savedData.companyName) setCurrentStep(2);
+            }
           }
         }
 
@@ -191,10 +242,17 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
           const scripts = (expData.data_content as any).scripts as KeywordScript[];
           if (scripts && scripts.length > 0) {
             setSavedScripts(scripts);
+            try {
+              sessionStorage.setItem(STAGE4_SCRIPTS_CACHE_KEY, JSON.stringify(scripts));
+            } catch {
+              // ignore
+            }
           }
         }
+        hasInitializedRef.current = true;
       } catch (error) {
         // No saved data, start fresh
+        hasInitializedRef.current = true;
       }
     };
 
@@ -221,6 +279,9 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const saveProgress = async (newData: StepData) => {
     if (!user?.id) return;
 
+    // Always keep a local cache (fast, resilient)
+    persistLocalCache(newData, savedScripts);
+
     try {
       await supabase.from('collected_data').upsert({
         user_id: user.id,
@@ -239,6 +300,29 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
     const newData = { ...data, [field]: value };
     setData(newData);
     saveProgress(newData);
+  };
+
+  const persistScripts = async (scripts: KeywordScript[]) => {
+    setSavedScripts(scripts);
+    try {
+      sessionStorage.setItem(STAGE4_SCRIPTS_CACHE_KEY, JSON.stringify(scripts));
+    } catch {
+      // ignore
+    }
+    if (user?.id) {
+      try {
+        await supabase.from('collected_data').upsert({
+          user_id: user.id,
+          data_type: 'stage4_interview_experiences',
+          stage_number: 4,
+          data_content: { scripts } as any,
+        }, {
+          onConflict: 'user_id,data_type',
+        });
+      } catch (error) {
+        console.error('Error saving scripts:', error);
+      }
+    }
   };
 
   const analyzeKeywords = async () => {
@@ -311,6 +395,7 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
 
   // Safe navigation that saves progress before moving
   const navigateToStep = async (targetStep: number) => {
+    hasUserNavigatedRef.current = true;
     // Save current data before navigating
     await saveProgress(data);
     setCurrentStep(targetStep);
@@ -318,6 +403,7 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
 
   const nextStep = async () => {
     if (currentStep < 9 && canProceed()) {
+      hasUserNavigatedRef.current = true;
       await saveProgress(data);
       setCurrentStep(prev => prev + 1);
     }
@@ -325,6 +411,7 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
 
   const prevStep = async () => {
     if (currentStep > 1) {
+      hasUserNavigatedRef.current = true;
       await saveProgress(data);
       setCurrentStep(prev => prev - 1);
     }
@@ -367,6 +454,8 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       // Clear sessionStorage for stage 4
       sessionStorage.removeItem(STAGE4_STARTED_KEY);
       sessionStorage.removeItem(STAGE4_VISITED_STEPS_KEY);
+      sessionStorage.removeItem(STAGE4_DATA_CACHE_KEY);
+      sessionStorage.removeItem(STAGE4_SCRIPTS_CACHE_KEY);
 
       toast({
         title: "Etapas reiniciadas!",
@@ -762,23 +851,13 @@ Exemplo:
               jobDescription={data.jobDescription}
               linkedinAbout={data.linkedinAbout}
               experiences={data.experiences}
+              initialScripts={savedScripts}
+              onScriptsChange={(scripts) => {
+                // Persist continuously to avoid loss when navigating away
+                void persistScripts(scripts);
+              }}
               onComplete={async (scripts) => {
-                if (user?.id) {
-                  try {
-                    await supabase.from('collected_data').upsert({
-                      user_id: user.id,
-                      data_type: 'stage4_interview_experiences',
-                      stage_number: 4,
-                      data_content: { scripts } as any,
-                    }, {
-                      onConflict: 'user_id,data_type',
-                    });
-                  } catch (error) {
-                    console.error('Error saving progress:', error);
-                  }
-                }
-
-                setSavedScripts(scripts);
+                await persistScripts(scripts);
                 setCurrentStep(8);
               }}
             />
@@ -999,13 +1078,13 @@ Exemplo:
         <div className="flex items-center justify-center gap-2 min-w-max">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
-            const isCompleted = currentStep > step.id;
+            const isCompleted = visitedSteps.includes(step.id) || currentStep > step.id;
             const Icon = step.icon;
 
             return (
               <div key={step.id} className="flex items-center">
                 <button
-                  onClick={() => isCompleted && navigateToStep(step.id)}
+                  onClick={() => (isCompleted || isActive) && navigateToStep(step.id)}
                   disabled={!isCompleted && !isActive}
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${
                     isActive
