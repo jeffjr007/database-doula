@@ -292,12 +292,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
           learning_path: string | null
+          linkedin_url: string | null
+          location: string | null
           phone: string | null
           platform_activated: boolean
           stage2_completed: boolean | null
@@ -307,12 +310,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           learning_path?: string | null
+          linkedin_url?: string | null
+          location?: string | null
           phone?: string | null
           platform_activated?: boolean
           stage2_completed?: boolean | null
@@ -322,12 +328,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           learning_path?: string | null
+          linkedin_url?: string | null
+          location?: string | null
           phone?: string | null
           platform_activated?: boolean
           stage2_completed?: boolean | null
