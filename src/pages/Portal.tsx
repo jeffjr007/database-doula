@@ -137,30 +137,77 @@ const Portal = () => {
   
   // Effective admin status: either current check or sticky (once admin, always admin in session)
   const effectiveIsAdmin = isAdmin || isAdminSticky;
+  
+  // Cache keys for instant loading
+  const CACHE_KEY_USER = 'portal_user_cache';
+  
+  // Try to load cached user data immediately for instant display
+  const getCachedUserData = () => {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY_USER);
+      if (cached) {
+        const data = JSON.parse(cached);
+        // Only use cache if it's for the current user
+        if (data.userId === user?.id) {
+          return data;
+        }
+      }
+    } catch {
+      // Ignore cache errors
+    }
+    return null;
+  };
+  
+  const cachedData = user?.id ? getCachedUserData() : null;
+  
   const [progress, setProgress] = useState<StageProgress[]>([]);
-  const [userName, setUserName] = useState<string | null>(null);
+  // Initialize userName from cache for instant display
+  const [userName, setUserName] = useState<string | null>(cachedData?.userName || null);
   const [isDataReady, setIsDataReady] = useState(false);
   const [linkedinDiagnostic, setLinkedinDiagnostic] = useState<LinkedInDiagnostic | null>(null);
   const [opportunityFunnel, setOpportunityFunnel] = useState<OpportunityFunnel | null>(null);
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
-  const [platformActivated, setPlatformActivated] = useState<boolean | null>(null);
+  const [platformActivated, setPlatformActivated] = useState<boolean | null>(cachedData?.platformActivated ?? null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
     open: false,
     type: 'linkedin-cv',
     targetPath: '',
   });
-  const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false);
-  const [stage2Completed, setStage2Completed] = useState<boolean>(false);
+  const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(cachedData?.stage2Unlocked ?? false);
+  const [stage2Completed, setStage2Completed] = useState<boolean>(cachedData?.stage2Completed ?? false);
   const [showStage3Modal, setShowStage3Modal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [hasLearningPath, setHasLearningPath] = useState(false);
+  const [hasLearningPath, setHasLearningPath] = useState(cachedData?.hasLearningPath ?? false);
   const [currentPhrase] = useState(() =>
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
+  
+  // If we have cached data for this user, show content immediately
+  const hasCachedData = !!cachedData;
 
   // Removed artificial delay timers - content now shows when data is ready
+
+  // Save user data to cache for instant loading on next visit
+  const saveToCache = (data: {
+    userName: string | null;
+    platformActivated: boolean;
+    stage2Unlocked: boolean;
+    stage2Completed: boolean;
+    hasLearningPath: boolean;
+  }) => {
+    if (!user?.id) return;
+    try {
+      sessionStorage.setItem(CACHE_KEY_USER, JSON.stringify({
+        userId: user.id,
+        ...data,
+        timestamp: Date.now()
+      }));
+    } catch {
+      // Ignore cache errors
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -178,53 +225,13 @@ const Portal = () => {
         setPlatformActivated(true);
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, platform_activated, stage2_unlocked, stage2_completed, learning_path')
-        .eq('user_id', user.id)
-        .single();
-
-      // If profile fetch fails, don't redirect - just show loading or error
-      if (profileError) {
-        console.error('[Portal] Error fetching profile:', profileError);
-        // For admin, just continue - they don't need activation
-        if (effectiveIsAdmin) {
-          // Admin can continue even without profile
-          setIsDataReady(true);
-        } else {
-          // Non-admin with profile error: mark as ready to show error state
-          setIsDataReady(true);
-          return;
-        }
-      }
-
-      if (profile) {
-        setStage2Unlocked(profile.stage2_unlocked ?? false);
-        setStage2Completed(profile.stage2_completed ?? false);
-        setHasLearningPath(!!profile.learning_path);
-        
-        if (profile.full_name) {
-          setUserName(profile.full_name.split(' ')[0]);
-        }
-      }
-
-      // ADMIN NEVER gets redirected to /ativar or /presente
-      if (!effectiveIsAdmin) {
-        const activated = profile?.platform_activated ?? false;
-        setPlatformActivated(activated);
-
-        if (!activated) {
-          console.log('[Portal] Non-admin not activated, redirecting to /ativar');
-          window.location.href = '/ativar';
-          return;
-        }
-
-        // NOTE: Gift redirect is handled by ActivatePlatform after user clicks "Começar Jornada"
-        // Do NOT auto-redirect to /presente here - user must explicitly start their journey
-      }
-
-      // Fetch remaining data in parallel for speed
-      const [progressResult, diagnosticResult, funnelResult, cvsResult] = await Promise.all([
+      // Fetch profile and remaining data in parallel for maximum speed
+      const [profileResult, progressResult, diagnosticResult, funnelResult, cvsResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, platform_activated, stage2_unlocked, stage2_completed, learning_path')
+          .eq('user_id', user.id)
+          .single(),
         supabase
           .from('mentoring_progress')
           .select('stage_number, completed, current_step')
@@ -246,6 +253,64 @@ const Portal = () => {
           .select('id, name, cv_data')
           .eq('user_id', user.id)
       ]);
+
+      const profile = profileResult.data;
+      const profileError = profileResult.error;
+
+      // If profile fetch fails, don't redirect - just show loading or error
+      if (profileError) {
+        console.error('[Portal] Error fetching profile:', profileError);
+        // For admin, just continue - they don't need activation
+        if (effectiveIsAdmin) {
+          // Admin can continue even without profile
+          setIsDataReady(true);
+        } else {
+          // Non-admin with profile error: mark as ready to show error state
+          setIsDataReady(true);
+          return;
+        }
+      }
+
+      let extractedUserName: string | null = null;
+
+      if (profile) {
+        const s2Unlocked = profile.stage2_unlocked ?? false;
+        const s2Completed = profile.stage2_completed ?? false;
+        const hasPath = !!profile.learning_path;
+        
+        setStage2Unlocked(s2Unlocked);
+        setStage2Completed(s2Completed);
+        setHasLearningPath(hasPath);
+        
+        if (profile.full_name) {
+          extractedUserName = profile.full_name.split(' ')[0];
+          setUserName(extractedUserName);
+        }
+
+        // Cache the user data for instant loading next time
+        saveToCache({
+          userName: extractedUserName,
+          platformActivated: profile.platform_activated ?? false,
+          stage2Unlocked: s2Unlocked,
+          stage2Completed: s2Completed,
+          hasLearningPath: hasPath
+        });
+      }
+
+      // ADMIN NEVER gets redirected to /ativar or /presente
+      if (!effectiveIsAdmin) {
+        const activated = profile?.platform_activated ?? false;
+        setPlatformActivated(activated);
+
+        if (!activated) {
+          console.log('[Portal] Non-admin not activated, redirecting to /ativar');
+          window.location.href = '/ativar';
+          return;
+        }
+
+        // NOTE: Gift redirect is handled by ActivatePlatform after user clicks "Começar Jornada"
+        // Do NOT auto-redirect to /presente here - user must explicitly start their journey
+      }
 
       if (progressResult.data) {
         setProgress(progressResult.data);
@@ -397,6 +462,42 @@ const Portal = () => {
     { icon: Instagram, label: 'Instagram', onClick: () => window.open('https://www.instagram.com/oduarteeoficial/', '_blank'), external: true },
     { icon: Linkedin, label: 'LinkedIn', onClick: () => window.open('https://www.linkedin.com/in/oduarteoficial/', '_blank'), external: true },
   ];
+
+  // Show content immediately if we have cached data, otherwise wait for fresh data
+  const showContent = isDataReady || hasCachedData;
+
+  // Elegant loading screen while waiting for data (only shown on first visit without cache)
+  if (!showContent && user?.id) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div 
+          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <img src={logoAD} alt="AD" className="w-16 h-16 rounded-xl" />
+          <div className="flex items-center gap-2">
+            <motion.div 
+              className="w-2 h-2 rounded-full bg-primary"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
+            />
+            <motion.div 
+              className="w-2 h-2 rounded-full bg-primary"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
+            />
+            <motion.div 
+              className="w-2 h-2 rounded-full bg-primary"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
+            />
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
