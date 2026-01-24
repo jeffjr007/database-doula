@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useDevUser } from "@/hooks/useDevUser";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -299,12 +298,7 @@ const Portal = () => {
     return 'not_started';
   };
 
-  const { freeNavigation } = useDevUser();
-
   const isStageBlocked = (stageNumber: number) => {
-    // Dev users can access any stage freely
-    if (freeNavigation) return false;
-    
     if (stageNumber === 1) {
       return linkedinDiagnostic?.status !== 'published';
     }

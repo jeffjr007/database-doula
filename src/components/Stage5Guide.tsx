@@ -35,7 +35,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useDevUser } from "@/hooks/useDevUser";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -140,23 +139,22 @@ const benefitsCards = [
 ];
 
 export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
-  const { user } = useAuth();
-  const { bypassValidation, skipAnimations } = useDevUser();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [stage4Scripts, setStage4Scripts] = useState<KeywordScript[]>([]);
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
-  const [visibleMessages, setVisibleMessages] = useState(skipAnimations ? mentorMessages.length : 0);
-  const [showBenefits, setShowBenefits] = useState(skipAnimations);
+  const [visibleMessages, setVisibleMessages] = useState(0);
+  const [showBenefits, setShowBenefits] = useState(false);
   const [messagesExiting, setMessagesExiting] = useState(false);
 
   const [data, setData] = useState<Stage5Data>({
     intensifiedScripts: [],
     completed: false
   });
+
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Animate conversation messages
   useEffect(() => {
@@ -299,13 +297,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   };
 
   const canProceed = () => {
-    // Dev users can always proceed
-    if (bypassValidation) return true;
-    
     switch (currentStep) {
       case 1:
-        // Dev users skip animation wait
-        return skipAnimations || visibleMessages >= mentorMessages.length;
+        return visibleMessages >= mentorMessages.length;
       case 2:
         return data.intensifiedScripts.some(s => s.intensifiedHow?.trim());
       default:
