@@ -11,8 +11,8 @@ interface StageWarningModalProps {
 
 const warningContent = {
   'linkedin-cv': {
-    title: 'LinkedIn Ajustado?',
-    description: 'É fundamental que seu LinkedIn esteja 100% ajustado antes de prosseguir.',
+    title: 'LinkedIn Pronto?',
+    description: 'Para utilizar as estratégias da Gupy de forma eficaz, seu LinkedIn precisa estar completo.',
     confirmText: 'Entendi, continuar',
   },
   'linkedin-gupy': {
