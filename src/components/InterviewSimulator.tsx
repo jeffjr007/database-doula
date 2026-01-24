@@ -7,7 +7,6 @@ import {
   Loader2, 
   User, 
   MessageSquare,
-  CheckCircle2,
   Sparkles,
   ArrowRight,
   FileText,
@@ -17,6 +16,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { PerformanceAnalysisCard, PerformanceAnalysisFallback } from "./PerformanceAnalysisCard";
+
+interface PerformanceFeedback {
+  introduction: string;
+  strengths: string[];
+  improvements: string[];
+  practicalTip: string;
+  closing: string;
+}
 
 interface KeywordScript {
   keyword: string;
@@ -49,7 +57,7 @@ export const InterviewSimulator = ({
   const [isRecording, setIsRecording] = useState(false);
   const [transcript1, setTranscript1] = useState('');
   const [transcript2, setTranscript2] = useState('');
-  const [feedback, setFeedback] = useState<string>('');
+  const [feedback, setFeedback] = useState<PerformanceFeedback | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<string>('');
   const [showTyping, setShowTyping] = useState(false);
@@ -182,18 +190,28 @@ export const InterviewSimulator = ({
 
       if (error) throw error;
 
-      setFeedback(data.feedback || 'Parabéns por completar o simulador! Continue praticando seus roteiros.');
+      setFeedback(data.feedback || {
+        introduction: "Parabéns por completar a simulação!",
+        strengths: ["Você praticou as duas perguntas mais importantes de uma entrevista"],
+        improvements: ["Continue praticando para ganhar mais naturalidade"],
+        practicalTip: "Grave-se mais vezes para acompanhar sua evolução.",
+        closing: "Cada prática te aproxima do sucesso!"
+      });
       setPhase('feedback');
     } catch (error) {
       console.error('Error analyzing performance:', error);
-      setFeedback(
-        "Parabéns por completar a simulação! Você praticou as duas perguntas mais importantes de uma entrevista.\n\n" +
-        "**Dicas gerais:**\n" +
-        "• Mantenha contato visual (mesmo com a câmera)\n" +
-        "• Fale com calma e clareza\n" +
-        "• Use exemplos concretos das suas experiências\n" +
-        "• Pratique mais vezes até se sentir confiante"
-      );
+      setFeedback({
+        introduction: "Parabéns por completar a simulação! Você praticou as duas perguntas mais importantes de uma entrevista.",
+        strengths: [
+          "Você tomou a iniciativa de praticar, isso é fundamental"
+        ],
+        improvements: [
+          "Mantenha contato visual (mesmo com a câmera)",
+          "Fale com calma e clareza, usando exemplos concretos das suas experiências"
+        ],
+        practicalTip: "Pratique mais vezes até se sentir confiante.",
+        closing: "Continue praticando! Cada simulação te deixa mais preparado."
+      });
       setPhase('feedback');
     } finally {
       setIsAnalyzing(false);
@@ -295,7 +313,7 @@ export const InterviewSimulator = ({
                   className="flex justify-end"
                 >
                   <div className="bg-primary/10 border border-primary/20 text-primary rounded-2xl rounded-tr-sm px-4 py-2.5 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs">✓</span>
                     <span className="text-sm font-medium">Sobre você ✓</span>
                   </div>
                 </motion.div>
@@ -308,7 +326,7 @@ export const InterviewSimulator = ({
                   className="flex justify-end"
                 >
                   <div className="bg-primary/10 border border-primary/20 text-primary rounded-2xl rounded-tr-sm px-4 py-2.5 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs">✓</span>
                     <span className="text-sm font-medium">Experiências ✓</span>
                   </div>
                 </motion.div>
@@ -454,13 +472,15 @@ export const InterviewSimulator = ({
                 className="space-y-5"
               >
                 <div className="p-5 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/10 rounded-xl border border-primary/30">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-5">
                     <Sparkles className="w-5 h-5 text-primary" />
                     <h3 className="font-semibold text-primary">Análise de Desempenho</h3>
                   </div>
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-                    {feedback}
-                  </div>
+                  {feedback ? (
+                    <PerformanceAnalysisCard feedback={feedback} />
+                  ) : (
+                    <PerformanceAnalysisFallback text="Parabéns por completar a simulação!" />
+                  )}
                 </div>
 
                 <Button onClick={onComplete} size="lg" className="w-full gap-2">

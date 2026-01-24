@@ -10,6 +10,14 @@ interface PerformanceInput {
   hasAudio2: boolean;
 }
 
+interface StructuredFeedback {
+  introduction: string;
+  strengths: string[];
+  improvements: string[];
+  practicalTip: string;
+  closing: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -56,50 +64,59 @@ Sua análise deve ser PRECISA e focar em:
 - Impacto: As conquistas e resultados foram mencionados?
 - Naturalidade: Soou decorado ou genuíno?
 
-## FEEDBACK ESTRUTURADO
-1. **O que você fez muito bem** (2-3 pontos específicos)
-2. **Oportunidades de melhoria** (2-3 pontos específicos com exemplos do que foi dito)
-3. **Dica prática** (1 ação concreta para a próxima prática)
+IMPORTANTE: Você DEVE responder EXCLUSIVAMENTE em formato JSON válido, sem markdown, sem texto adicional.
 
-Mantenha o feedback construtivo, específico e motivador. Use exemplos diretos do que a pessoa falou.
-Limite: máximo 300 palavras.`;
+O formato de resposta DEVE ser:
+{
+  "introduction": "Uma ou duas frases introdutórias acolhedoras e personalizadas",
+  "strengths": ["Ponto forte 1 específico", "Ponto forte 2 específico", "Ponto forte 3 opcional"],
+  "improvements": ["Melhoria 1 com exemplo concreto", "Melhoria 2 com exemplo concreto"],
+  "practicalTip": "Uma dica prática e acionável para a próxima prática",
+  "closing": "Uma frase motivacional de encerramento"
+}
+
+Regras:
+- Cada item de strengths e improvements deve ser uma frase completa e específica
+- Use exemplos diretos do que a pessoa falou quando possível
+- Mantenha o tom construtivo e motivador
+- strengths: 2-3 itens máximo
+- improvements: 2-3 itens máximo
+- NÃO use markdown (**, ##, etc.) dentro dos textos
+- Responda APENAS o JSON, sem explicações adicionais`;
 
     let userPrompt: string;
 
     if (hasRealTranscription) {
-      userPrompt = `## ROTEIRO PREPARADO - "Fale sobre você":
+      userPrompt = `ROTEIRO PREPARADO - "Fale sobre você":
 ${aboutMeScript || "(Não disponível)"}
 
-## O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre você":
+O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre você":
 ${spokenAboutMe || "(Candidato não gravou ou transcrição não disponível)"}
 
 ---
 
-## ROTEIROS PREPARADOS - "Fale sobre suas experiências":
+ROTEIROS PREPARADOS - "Fale sobre suas experiências":
 ${experienceScripts || "(Não disponível)"}
 
-## O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre suas experiências":
+O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre suas experiências":
 ${spokenExperiences || "(Candidato não gravou ou transcrição não disponível)"}
 
----
-
-Por favor, forneça uma análise CIRÚRGICA comparando o que foi planejado com o que foi realmente dito. Seja específico e use exemplos diretos das falas.`;
+Forneça sua análise CIRÚRGICA comparando o que foi planejado com o que foi realmente dito. Responda APENAS em JSON.`;
     } else {
-      // Fallback for cases without transcription
       userPrompt = `O candidato praticou mas a transcrição de voz não está disponível.
 
-## ROTEIROS QUE O CANDIDATO PREPAROU:
+ROTEIROS QUE O CANDIDATO PREPAROU:
 
-**"Fale sobre você":**
+"Fale sobre você":
 ${aboutMeScript}
 
-**"Fale sobre suas experiências":**
+"Fale sobre suas experiências":
 ${experienceScripts}
 
 Gravou "Sobre você": ${hasAudio1 ? 'Sim' : 'Não'}
 Gravou "Experiências": ${hasAudio2 ? 'Sim' : 'Não'}
 
-Forneça um feedback encorajador baseado na qualidade dos roteiros preparados e dicas gerais para a prática de entrevistas.`;
+Forneça um feedback encorajador baseado na qualidade dos roteiros preparados e dicas gerais para a prática de entrevistas. Responda APENAS em JSON.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -109,12 +126,11 @@ Forneça um feedback encorajador baseado na qualidade dos roteiros preparados e 
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-5-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.7,
         max_tokens: 800,
       }),
     });
@@ -134,22 +150,75 @@ Forneça um feedback encorajador baseado na qualidade dos roteiros preparados e 
     }
 
     const data = await response.json();
-    const feedback = data.choices?.[0]?.message?.content || "Parabéns por completar a simulação!";
+    const rawContent = data.choices?.[0]?.message?.content || "";
+    
+    console.log("Raw AI response:", rawContent);
+
+    // Try to parse as JSON
+    let structuredFeedback: StructuredFeedback;
+    try {
+      // Remove any potential markdown code blocks
+      const cleanedContent = rawContent
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      structuredFeedback = JSON.parse(cleanedContent);
+      
+      // Validate structure
+      if (!structuredFeedback.introduction || !Array.isArray(structuredFeedback.strengths) || !Array.isArray(structuredFeedback.improvements)) {
+        throw new Error("Invalid structure");
+      }
+    } catch (parseError) {
+      console.error("Failed to parse JSON, using fallback:", parseError);
+      // Return a fallback structured response
+      structuredFeedback = {
+        introduction: "Parabéns por completar a simulação de entrevista!",
+        strengths: [
+          "Você demonstrou comprometimento ao praticar seus roteiros",
+          "Seus roteiros estão bem estruturados com informações relevantes"
+        ],
+        improvements: [
+          "Continue praticando para ganhar mais naturalidade na fala",
+          "Tente adicionar mais pausas estratégicas para dar ênfase aos pontos importantes"
+        ],
+        practicalTip: "Grave-se novamente e compare com esta gravação para acompanhar sua evolução.",
+        closing: "Continue praticando! Cada simulação te deixa mais preparado para a entrevista real."
+      };
+    }
 
     return new Response(
-      JSON.stringify({ feedback }),
+      JSON.stringify({ 
+        feedback: structuredFeedback,
+        isStructured: true 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: unknown) {
     console.error("Error in analyze-interview-performance:", error);
     const errorMessage = error instanceof Error ? error.message : "Erro ao analisar desempenho";
+    
+    // Return fallback structured response on error
+    const fallbackFeedback: StructuredFeedback = {
+      introduction: "Parabéns por completar a simulação!",
+      strengths: [
+        "Você tomou a iniciativa de praticar, isso é fundamental"
+      ],
+      improvements: [
+        "Continue praticando para aperfeiçoar sua apresentação"
+      ],
+      practicalTip: "Tente novamente a simulação para ganhar mais confiança.",
+      closing: "Cada prática te aproxima do sucesso na entrevista real!"
+    };
+    
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        feedback: "Parabéns por completar a simulação! Continue praticando seus roteiros para ganhar mais confiança."
+        feedback: fallbackFeedback,
+        isStructured: true
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
