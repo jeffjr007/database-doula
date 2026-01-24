@@ -596,129 +596,100 @@ Exemplo:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="space-y-6"
+            className="space-y-8"
           >
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-primary" />
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-primary" />
               </div>
               <h2 className="font-display text-2xl font-bold">Análise de Palavras-Chave</h2>
-              <p className="text-muted-foreground">
-                Escolha como você quer extrair as palavras-chave da vaga
+              <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                A IA vai identificar as competências mais importantes da vaga
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto grid gap-4">
-              <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30 hover:border-primary/50 transition-all cursor-pointer group"
-                onClick={analyzeKeywords}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                    {isAnalyzing ? (
-                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                    ) : (
-                      <Sparkles className="w-6 h-6 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display font-semibold text-lg mb-1">
-                      Análise Automática com IA
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Nossa IA vai analisar a vaga e seu perfil para extrair as palavras-chave mais relevantes.
-                    </p>
-                    {isAnalyzing && (
-                      <p className="text-sm text-primary mt-2 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Analisando seus dados...
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-secondary/50 border-border hover:border-muted-foreground/50 transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                    <Copy className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display font-semibold text-lg mb-1">
-                      Usar ChatGPT / Claude
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Prefere usar seu próprio ChatGPT ou Claude? Copie o prompt pronto:
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyPrompt}
-                      className="gap-2"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Copiado!
-                        </>
+            <div className="max-w-xl mx-auto">
+              {data.keywords.length === 0 ? (
+                <Card 
+                  className={`p-8 border-border/50 transition-all ${
+                    isAnalyzing 
+                      ? 'bg-secondary/30' 
+                      : 'bg-secondary/20 hover:bg-secondary/30 cursor-pointer hover:border-primary/30'
+                  }`}
+                  onClick={!isAnalyzing ? analyzeKeywords : undefined}
+                >
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors ${
+                      isAnalyzing ? 'bg-primary/20' : 'bg-primary/10'
+                    }`}>
+                      {isAnalyzing ? (
+                        <Loader2 className="w-7 h-7 text-primary animate-spin" />
                       ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Copiar Prompt
-                        </>
+                        <Sparkles className="w-7 h-7 text-primary" />
                       )}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-secondary/30 border-dashed border-2 border-muted">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                      <Target className="w-6 h-6 text-muted-foreground" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-display font-semibold text-lg mb-1">
-                        Cole as palavras-chave manualmente
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-lg">
+                        {isAnalyzing ? 'Analisando...' : 'Iniciar Análise com IA'}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Se você usou o ChatGPT/Claude, cole o resultado aqui (uma palavra/frase por linha):
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        {isAnalyzing 
+                          ? 'Extraindo palavras-chave da vaga e do seu perfil'
+                          : 'Clique para extrair automaticamente as palavras-chave mais relevantes da vaga'
+                        }
                       </p>
                     </div>
                   </div>
-
-                  <Textarea
-                    placeholder="Cole as palavras-chave aqui, uma por linha...
-
-Exemplo:
-gestão de projetos
-metodologias ágeis
-liderança de equipes
-Python
-análise de dados"
-                    className="min-h-[150px]"
-                    onChange={(e) => {
-                      const keywords = e.target.value
-                        .split('\n')
-                        .map(k => k.trim())
-                        .filter(k => k.length > 0);
-                      updateData('keywords', keywords);
-                    }}
-                    value={data.keywords.join('\n')}
-                  />
-
-                  {data.keywords.length > 0 && (
+                </Card>
+              ) : (
+                <Card className="p-6 bg-secondary/20 border-border/50">
+                  <div className="space-y-5">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">
-                        {data.keywords.length} palavras-chave detectadas
-                      </p>
-                      <Button onClick={() => setCurrentStep(7)} className="gap-2">
-                        Continuar <ArrowRight className="w-4 h-4" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Check className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Palavras-chave encontradas</h3>
+                          <p className="text-xs text-muted-foreground">{data.keywords.length} competências identificadas</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={analyzeKeywords}
+                        disabled={isAnalyzing}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          'Reanalisar'
+                        )}
                       </Button>
                     </div>
-                  )}
-                </div>
-              </Card>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {data.keywords.map((keyword, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg border border-primary/20"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-2">
+                      <Button onClick={() => setCurrentStep(7)} className="w-full gap-2">
+                        Continuar para Roteiros
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
           </motion.div>
         );
