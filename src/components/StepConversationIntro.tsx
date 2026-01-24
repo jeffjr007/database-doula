@@ -24,6 +24,7 @@ export const StepConversationIntro = ({
   const [visibleCount, setVisibleCount] = useState(0);
   const [showTyping, setShowTyping] = useState(false);
   const [showButton, setShowButton] = useState(false);
+  const [buttonVisible, setButtonVisible] = useState(false);
 
   const timerRef = useRef<number | null>(null);
   const visibleCountRef = useRef(0);
@@ -35,6 +36,7 @@ export const StepConversationIntro = ({
     setVisibleCount(0);
     setShowTyping(false);
     setShowButton(false);
+    setButtonVisible(false);
     phaseRef.current = "idle";
 
     const clearTimer = () => {
@@ -49,7 +51,12 @@ export const StepConversationIntro = ({
 
       if (visibleCountRef.current >= messages.length) {
         setShowTyping(false);
-        setShowButton(true);
+        // Wait 1 second before showing button
+        timerRef.current = window.setTimeout(() => {
+          setShowButton(true);
+          // Small delay for animation trigger
+          window.setTimeout(() => setButtonVisible(true), 50);
+        }, 1000);
         phaseRef.current = "idle";
         return;
       }
@@ -106,7 +113,7 @@ export const StepConversationIntro = ({
               className={`text-base leading-relaxed ${
                 message.highlight
                   ? "text-foreground font-medium"
-                  : "text-muted-foreground"
+                  : "text-foreground/80"
               }`}
             >
               {message.text}
@@ -133,9 +140,15 @@ export const StepConversationIntro = ({
         )}
       </div>
 
-      {/* Continue Button */}
+      {/* Continue Button with slide-up animation */}
       {showButton && (
-        <div className="mt-6 animate-enter">
+        <div 
+          className={`mt-8 transition-all duration-500 ease-out ${
+            buttonVisible 
+              ? "opacity-100 translate-y-0" 
+              : "opacity-0 translate-y-4"
+          }`}
+        >
           <Button
             onClick={onContinue}
             variant="ghost"
