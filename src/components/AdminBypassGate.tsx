@@ -27,12 +27,9 @@ const AdminBypassGate = ({ children, redirectTo = '/' }: AdminBypassGateProps) =
   }, [authLoading, adminLoading, isAdmin, isAdminSticky, redirectTo]);
 
   // Show nothing while loading or if admin (will redirect)
+  // Child pages handle their own loading states
   if (authLoading || adminLoading || isAdmin || isAdminSticky) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return null;
   }
 
   // Not admin - render children
