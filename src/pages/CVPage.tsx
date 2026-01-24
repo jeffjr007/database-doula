@@ -363,10 +363,7 @@ const CVPage = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <motion.nav 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <nav 
         className="flex items-center justify-between py-4 px-4 md:px-6 print:hidden"
       >
         <div className="flex items-center gap-4">
@@ -412,7 +409,7 @@ const CVPage = () => {
             </Button>
           )}
         </div>
-      </motion.nav>
+      </nav>
 
       <div className="relative z-10 container max-w-4xl py-6 px-3 md:px-4 print:py-0 print:max-w-full">
         <AnimatePresence mode="wait">
