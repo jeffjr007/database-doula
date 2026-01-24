@@ -12,12 +12,12 @@ interface StageWarningModalProps {
 const warningContent = {
   'linkedin-cv': {
     title: 'LinkedIn Pronto?',
-    description: 'Para utilizar as estratégias da Gupy de forma eficaz, seu LinkedIn precisa estar completo.',
+    description: 'Para prosseguir, é importante que seu LinkedIn esteja completamente ajustado.',
     confirmText: 'Entendi, continuar',
   },
   'linkedin-gupy': {
     title: 'LinkedIn Pronto?',
-    description: 'Para utilizar as estratégias da Gupy de forma eficaz, seu LinkedIn precisa estar completo.',
+    description: 'Para prosseguir, é importante que seu LinkedIn esteja completamente ajustado.',
     confirmText: 'Entendi, continuar',
   },
 };
