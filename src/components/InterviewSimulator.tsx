@@ -36,6 +36,8 @@ interface InterviewSimulatorProps {
   aboutMeScript: string;
   experienceScripts: KeywordScript[];
   onComplete: () => void;
+  savedFeedback?: PerformanceFeedback | null;
+  onFeedbackGenerated?: (feedback: PerformanceFeedback) => void;
 }
 
 type SimulatorPhase = 
@@ -48,18 +50,45 @@ type SimulatorPhase =
   | 'analyzing'
   | 'feedback';
 
+const SIMULATOR_FEEDBACK_KEY = 'stage4_simulator_feedback';
+
 export const InterviewSimulator = ({ 
   aboutMeScript, 
   experienceScripts, 
-  onComplete 
+  onComplete,
+  savedFeedback,
+  onFeedbackGenerated,
 }: InterviewSimulatorProps) => {
-  const [phase, setPhase] = useState<SimulatorPhase>('intro');
+  // Check for saved feedback on mount
+  const getInitialState = (): { phase: SimulatorPhase; feedback: PerformanceFeedback | null } => {
+    // First check prop
+    if (savedFeedback) {
+      return { phase: 'feedback', feedback: savedFeedback };
+    }
+    // Then check sessionStorage
+    try {
+      const cached = sessionStorage.getItem(SIMULATOR_FEEDBACK_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached) as PerformanceFeedback;
+        if (parsed && parsed.introduction) {
+          return { phase: 'feedback', feedback: parsed };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { phase: 'intro', feedback: null };
+  };
+
+  const initialState = getInitialState();
+  
+  const [phase, setPhase] = useState<SimulatorPhase>(initialState.phase);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript1, setTranscript1] = useState('');
   const [transcript2, setTranscript2] = useState('');
-  const [feedback, setFeedback] = useState<PerformanceFeedback | null>(null);
+  const [feedback, setFeedback] = useState<PerformanceFeedback | null>(initialState.feedback);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState<string>('');
+  const [currentMessage, setCurrentMessage] = useState<string>(initialState.phase === 'feedback' ? '' : '');
   const [showTyping, setShowTyping] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   
@@ -114,9 +143,11 @@ export const InterviewSimulator = ({
   };
 
   useEffect(() => {
-    if (phase === 'intro') {
+    // Only start intro if we're not showing saved feedback
+    if (phase === 'intro' && !feedback) {
       startIntro();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Show speech recognition errors
@@ -190,17 +221,26 @@ export const InterviewSimulator = ({
 
       if (error) throw error;
 
-      setFeedback(data.feedback || {
+      const resultFeedback = data.feedback || {
         introduction: "Parabéns por completar a simulação!",
         strengths: ["Você praticou as duas perguntas mais importantes de uma entrevista"],
         improvements: ["Continue praticando para ganhar mais naturalidade"],
         practicalTip: "Grave-se mais vezes para acompanhar sua evolução.",
         closing: "Cada prática te aproxima do sucesso!"
-      });
+      };
+      setFeedback(resultFeedback);
       setPhase('feedback');
+      
+      // Persist to sessionStorage and notify parent
+      try {
+        sessionStorage.setItem(SIMULATOR_FEEDBACK_KEY, JSON.stringify(resultFeedback));
+      } catch {
+        // ignore
+      }
+      onFeedbackGenerated?.(resultFeedback);
     } catch (error) {
       console.error('Error analyzing performance:', error);
-      setFeedback({
+      const fallbackFeedback = {
         introduction: "Parabéns por completar a simulação! Você praticou as duas perguntas mais importantes de uma entrevista.",
         strengths: [
           "Você tomou a iniciativa de praticar, isso é fundamental"
@@ -211,8 +251,17 @@ export const InterviewSimulator = ({
         ],
         practicalTip: "Pratique mais vezes até se sentir confiante.",
         closing: "Continue praticando! Cada simulação te deixa mais preparado."
-      });
+      };
+      setFeedback(fallbackFeedback);
       setPhase('feedback');
+      
+      // Persist fallback too
+      try {
+        sessionStorage.setItem(SIMULATOR_FEEDBACK_KEY, JSON.stringify(fallbackFeedback));
+      } catch {
+        // ignore
+      }
+      onFeedbackGenerated?.(fallbackFeedback);
     } finally {
       setIsAnalyzing(false);
     }
