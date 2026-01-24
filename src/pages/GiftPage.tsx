@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft, GraduationCap } from 'lucide-react';
+import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft, GraduationCap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import logoAD from '@/assets/logo-ad.png';
@@ -89,6 +89,8 @@ const GiftPage = () => {
   const [learningPath, setLearningPath] = useState<string | null>(null);
   const [formattedPath, setFormattedPath] = useState<FormattedPath | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isFromActivation, setIsFromActivation] = useState(false);
+  const [isPathReady, setIsPathReady] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -111,6 +113,9 @@ const GiftPage = () => {
     
     // When user comes from activation flow, ALWAYS show animation
     const fromActivation = navState?.fromActivation === true;
+    
+    // Store the context for button logic
+    setIsFromActivation(fromActivation);
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -136,6 +141,7 @@ const GiftPage = () => {
         localStorage.setItem(seenKey, 'true');
         // Load everything first, then show the reveal step
         await loadFormattedPathSync(profile.learning_path);
+        setIsPathReady(true);
         setIsInitializing(false);
         setStep('reveal');
         return;
@@ -280,13 +286,14 @@ const GiftPage = () => {
     setIsInitializing(true);
     if (learningPath && user) {
       await loadFormattedPathSync(learningPath);
+      setIsPathReady(true);
       localStorage.setItem(`gift_seen_${user.id}`, 'true');
     }
     setIsInitializing(false);
     setStep('reveal');
   };
 
-  const handleBack = () => {
+  const handleGoToPortal = () => {
     navigate('/');
   };
 
@@ -302,13 +309,21 @@ const GiftPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header - only show back button for returning users, hide for first-time activation */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={handleBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Voltar ao Portal</span>
-          </button>
+          {!isFromActivation ? (
+            <button 
+              onClick={handleGoToPortal} 
+              disabled={step === 'reveal' && !isPathReady}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Voltar ao Portal</span>
+            </button>
+          ) : (
+            <div /> 
+          )}
           <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
         </div>
       </header>
@@ -588,13 +603,26 @@ const GiftPage = () => {
                   className="flex justify-center pt-8"
                 >
                   <Button
-                    variant="outline"
+                    variant={isFromActivation ? "default" : "outline"}
                     size="lg"
-                    onClick={handleBack}
-                    className="rounded-xl"
+                    onClick={handleGoToPortal}
+                    disabled={!isPathReady}
+                    className={isFromActivation 
+                      ? "rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground shadow-lg shadow-primary/30" 
+                      : "rounded-xl"
+                    }
                   >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Voltar ao Portal
+                    {isFromActivation ? (
+                      <>
+                        Ir para o Portal
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    ) : (
+                      <>
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Voltar ao Portal
+                      </>
+                    )}
                   </Button>
                 </motion.div>
               </motion.div>
