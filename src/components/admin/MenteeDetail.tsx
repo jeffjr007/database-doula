@@ -128,13 +128,12 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('mentee-files')
-        .getPublicUrl(fileName);
+      // Store the file path (not public URL) for signed URL generation
+      const filePath = fileName;
 
       const updateData = type === 'pdf' 
-        ? { pdf_url: publicUrl, title: diagnosticTitle, notes: diagnosticNotes }
-        : { word_url: publicUrl, title: diagnosticTitle, notes: diagnosticNotes };
+        ? { pdf_url: filePath, title: diagnosticTitle, notes: diagnosticNotes }
+        : { word_url: filePath, title: diagnosticTitle, notes: diagnosticNotes };
 
       // Create or update diagnostic
       if (diagnostic) {
@@ -186,13 +185,12 @@ export const MenteeDetail = ({ menteeId, menteeName, onBack }: MenteeDetailProps
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('mentee-files')
-        .getPublicUrl(fileName);
+      // Store the file path (not public URL) for signed URL generation
+      const filePath = fileName;
 
       const updateData = type === 'pdf'
-        ? { pdf_url: publicUrl, title: funnelTitle, notes: funnelNotes }
-        : { word_url: publicUrl, title: funnelTitle, notes: funnelNotes };
+        ? { pdf_url: filePath, title: funnelTitle, notes: funnelNotes }
+        : { word_url: filePath, title: funnelTitle, notes: funnelNotes };
 
       // Create or update funnel
       if (funnel) {
@@ -666,12 +664,10 @@ https://educacao-executiva.fgv.br/cursos/gratuitos"
               </label>
 
               {diagnostic?.pdf_url && (
-                <Button variant="outline" asChild>
-                  <a href={diagnostic.pdf_url} target="_blank" rel="noopener noreferrer">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver PDF
-                  </a>
-                </Button>
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  PDF anexado
+                </span>
               )}
             </div>
           </div>
@@ -697,12 +693,10 @@ https://educacao-executiva.fgv.br/cursos/gratuitos"
               </label>
 
               {diagnostic?.word_url && (
-                <Button variant="outline" asChild>
-                  <a href={diagnostic.word_url} target="_blank" rel="noopener noreferrer">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver Word
-                  </a>
-                </Button>
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Word anexado
+                </span>
               )}
             </div>
           </div>
@@ -791,12 +785,10 @@ https://educacao-executiva.fgv.br/cursos/gratuitos"
               </label>
 
               {funnel?.pdf_url && (
-                <Button variant="outline" asChild>
-                  <a href={funnel.pdf_url} target="_blank" rel="noopener noreferrer">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver PDF
-                  </a>
-                </Button>
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  PDF anexado
+                </span>
               )}
             </div>
           </div>
@@ -822,12 +814,10 @@ https://educacao-executiva.fgv.br/cursos/gratuitos"
               </label>
 
               {funnel?.word_url && (
-                <Button variant="outline" asChild>
-                  <a href={funnel.word_url} target="_blank" rel="noopener noreferrer">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver Word
-                  </a>
-                </Button>
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Word anexado
+                </span>
               )}
             </div>
           </div>

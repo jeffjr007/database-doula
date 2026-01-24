@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSignedUrl } from '@/hooks/useSignedUrl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Target, FileText, ChevronRight, ExternalLink, FileDown, Sparkles, ArrowRight, CheckCircle2, Linkedin, RefreshCw, Zap } from 'lucide-react';
+import { ArrowLeft, Target, FileText, ChevronRight, FileDown, Sparkles, ArrowRight, CheckCircle2, Linkedin, RefreshCw, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
 import mentorPhoto from '@/assets/mentor-photo.png';
@@ -69,6 +70,7 @@ const STAGE_3_SEEN_KEY = 'stage3_animation_seen';
 const Stage3Page = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { downloadFile, loading: downloadLoading } = useSignedUrl();
   const [funnel, setFunnel] = useState<Funnel | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -339,20 +341,19 @@ const Stage3Page = () => {
                     </h2>
                   </motion.div>
 
-                  {/* PDF Preview */}
-                  {funnel.pdf_url && (
+                  {/* Secure Download Area - No iframe preview */}
+                  {(funnel.pdf_url || funnel.word_url) && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      <Card className="overflow-hidden border-border/50 bg-secondary/20">
-                        <div className="aspect-[4/3] w-full bg-muted/20">
-                          <iframe
-                            src={`${funnel.pdf_url}#toolbar=0&navpanes=0`}
-                            className="w-full h-full"
-                            title="Funil de Oportunidades"
-                          />
+                      <Card className="p-6 bg-secondary/20 border-border/50">
+                        <div className="text-center mb-4">
+                          <Target className="w-12 h-12 text-accent mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">
+                            Seu funil de oportunidades está pronto para download
+                          </p>
                         </div>
                       </Card>
                     </motion.div>
@@ -371,41 +372,25 @@ const Stage3Page = () => {
                         {funnel.pdf_url && (
                           <Button
                             className="gap-2"
-                            asChild
+                            onClick={() => downloadFile(funnel.pdf_url, `${funnel.title}.pdf`)}
+                            disabled={downloadLoading}
                           >
-                            <a href={funnel.pdf_url} download target="_blank" rel="noopener noreferrer">
-                              <FileDown className="w-4 h-4" />
-                              Baixar PDF
-                            </a>
+                            <FileDown className="w-4 h-4" />
+                            {downloadLoading ? 'Carregando...' : 'Baixar PDF'}
                           </Button>
                         )}
                         {funnel.word_url && (
                           <Button
                             variant="outline"
                             className="gap-2 border-accent/50 hover:bg-accent/10"
-                            asChild
+                            onClick={() => downloadFile(funnel.word_url, `${funnel.title}.docx`)}
+                            disabled={downloadLoading}
                           >
-                            <a href={funnel.word_url} download target="_blank" rel="noopener noreferrer">
-                              <FileText className="w-4 h-4" />
-                              Baixar Word (Editável)
-                            </a>
+                            <FileText className="w-4 h-4" />
+                            {downloadLoading ? 'Carregando...' : 'Baixar Word (Editável)'}
                           </Button>
                         )}
                       </div>
-                      
-                      {/* Secondary actions */}
-                      {funnel.pdf_url && (
-                        <Button
-                          variant="ghost"
-                          className="gap-2 w-full text-muted-foreground"
-                          asChild
-                        >
-                          <a href={funnel.pdf_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="w-4 h-4" />
-                            Abrir PDF em nova aba
-                          </a>
-                        </Button>
-                      )}
                     </motion.div>
                   )}
 
