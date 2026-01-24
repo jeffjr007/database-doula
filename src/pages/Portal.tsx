@@ -772,89 +772,64 @@ const Portal = () => {
 
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
-            {/* Header Section - Always shows with slow animation to mask data loading */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              className="mb-8"
-            >
-              <motion.div 
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-              >
-                <Crown className="w-4 h-4 text-primary" />
-                <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
-              </motion.div>
+            <AnimatePresence>
+              {isDataReady && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="mb-8"
+                >
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
+                    <Crown className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
+                  </div>
 
-              {/* Greeting - Shows placeholder shimmer until userName is loaded */}
-              <div className="min-h-[3.5rem] lg:min-h-[4rem] xl:min-h-[5rem] mb-4">
-                {user && userName ? (
-                  <motion.h1 
-                    className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                  >
-                    Olá, <span className="text-gradient">{userName}</span>
-                  </motion.h1>
-                ) : user ? (
-                  <motion.div 
-                    className="h-10 lg:h-12 xl:h-14 w-48 lg:w-64 rounded-lg bg-gradient-to-r from-muted/40 via-muted/60 to-muted/40 animate-pulse"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  />
-                ) : null}
-              </div>
+                  {user && userName && (
+                    <motion.h1 
+                      className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      Olá, <span className="text-gradient">{userName}</span>
+                    </motion.h1>
+                  )}
 
-              <motion.p 
-                className="text-lg text-muted-foreground max-w-xl"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
-              >
-                {currentPhrase}
-              </motion.p>
-            </motion.div>
+                  <p className="text-lg text-muted-foreground max-w-xl">
+                    {currentPhrase}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Stages Section - Appears with staggered animation synced with data loading */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7, ease: "easeOut" }}
-            >
-              <motion.h2 
-                className="text-xl font-display font-bold text-foreground mb-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.8, ease: "easeOut" }}
-              >
-                Suas Etapas
-              </motion.h2>
+            <AnimatePresence>
+              {isDataReady && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                >
+                  <h2 className="text-xl font-display font-bold text-foreground mb-6">
+                    Suas Etapas
+                  </h2>
 
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {stages.map((stage, index) => {
-                  const status = getStageStatus(stage.number);
-                  const blocked = isStageBlocked(stage.number);
-                  const Icon = stage.icon;
-                  const isCompleted = status === 'completed';
+                  <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    {stages.map((stage, index) => {
+                      const status = getStageStatus(stage.number);
+                      const blocked = isStageBlocked(stage.number);
+                      const Icon = stage.icon;
+                      const isCompleted = status === 'completed';
 
-                  return (
-                    <motion.button
-                      key={stage.number}
-                      onClick={() => handleStageClick(stage)}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ 
-                        duration: 0.5, 
-                        delay: 0.9 + (index * 0.08),
-                        ease: "easeOut"
-                      }}
-                      whileHover={!blocked ? { scale: 1.01 } : {}}
-                      whileTap={!blocked ? { scale: 0.99 } : {}}
+                      return (
+                        <motion.button
+                          key={stage.number}
+                          onClick={() => handleStageClick(stage)}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                          whileHover={!blocked ? { scale: 1.01 } : {}}
+                          whileTap={!blocked ? { scale: 0.99 } : {}}
                           className={`
                             group/card relative p-4 rounded-xl text-left
                             bg-card/60 backdrop-blur-sm border border-border/50
@@ -913,7 +888,7 @@ const Portal = () => {
                     className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1.5, duration: 0.5 }}
+                    transition={{ delay: 0.5 }}
                   >
                     <p className="text-sm text-muted-foreground italic text-center">
                       "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
@@ -925,7 +900,7 @@ const Portal = () => {
                     className="mt-6 grid grid-cols-3 gap-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.6, duration: 0.5 }}
+                    transition={{ delay: 0.6, duration: 0.4 }}
                   >
                     <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
                       <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
@@ -945,6 +920,8 @@ const Portal = () => {
                     </div>
                   </motion.div>
                 </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
