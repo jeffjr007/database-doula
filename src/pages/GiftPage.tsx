@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import logoAD from '@/assets/logo-ad.png';
@@ -503,9 +503,10 @@ const GiftPage = () => {
                   <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2"
+                    className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2 flex items-center justify-center gap-3"
                   >
-                    🎁 Sua Trilha de Desenvolvimento
+                    <GraduationCap className="w-8 h-8 text-primary" />
+                    Sua Trilha de Desenvolvimento
                   </motion.h1>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
