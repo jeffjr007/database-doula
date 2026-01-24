@@ -1117,17 +1117,24 @@ Exemplo:
         <div className="flex items-center justify-center gap-2 min-w-max">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
-            // A step is "completed" if it was visited AND its data is valid, or if we're past it
-            const wasVisited = visitedSteps.includes(step.id);
+            // A step shows CHECKMARK only if user is PAST it in the current flow
+            // This ensures going back doesn't keep future steps marked as complete
             const isPast = currentStep > step.id;
             const hasValidData = isStepCompleted(step.id);
-            const isCompleted = (wasVisited && hasValidData) || isPast;
             
-            // Can click: going backward (any previous step), or forward only to next completed/visited step
+            // Show checkmark ONLY for steps we've passed (not just visited)
+            const showCheckmark = isPast && hasValidData;
+            
+            // Step is accessible (clickable) if:
+            // - It's a previous step (going back is always allowed)
+            // - It's the current step
+            // - It's the next step and current is completed
+            // - It was visited before with valid data (allows revisiting)
+            const wasVisited = visitedSteps.includes(step.id);
             const canNavigate = step.id < currentStep || 
                                (step.id === currentStep) || 
                                (step.id === currentStep + 1 && canProceed()) ||
-                               (wasVisited && hasValidData);
+                               (wasVisited && hasValidData && step.id < currentStep);
             const Icon = step.icon;
 
             return (
@@ -1138,19 +1145,21 @@ Exemplo:
                   className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${
                     isActive
                       ? 'bg-primary/10 text-primary'
-                      : isCompleted
+                      : showCheckmark
                       ? 'text-primary hover:bg-primary/5 cursor-pointer'
+                      : canNavigate
+                      ? 'text-muted-foreground hover:bg-muted/50 cursor-pointer'
                       : 'text-muted-foreground opacity-50'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                     isActive
                       ? 'bg-primary text-primary-foreground'
-                      : isCompleted
+                      : showCheckmark
                       ? 'bg-primary/20 text-primary'
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    {isCompleted ? (
+                    {showCheckmark ? (
                       <Check className="w-5 h-5" />
                     ) : (
                       <Icon className="w-5 h-5" />
