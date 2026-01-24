@@ -70,13 +70,14 @@ export const InterviewSimulator = ({
   savedFeedback,
   onFeedbackGenerated,
 }: InterviewSimulatorProps) => {
-  // Start pessimistically in intro, then promote to feedback if we find persisted results.
-  // This avoids a race where Stage4Guide hydrates savedFeedback AFTER this component mounts.
-  const [phase, setPhase] = useState<SimulatorPhase>('intro');
+  // Decide synchronously on first render: if we already have feedback, we MUST start in "feedback"
+  // so we never trigger Ana's intro timers.
+  const initialPersistedFeedback = savedFeedback ?? readCachedFeedback();
+  const [phase, setPhase] = useState<SimulatorPhase>(initialPersistedFeedback ? 'feedback' : 'intro');
   const [isRecording, setIsRecording] = useState(false);
   const [transcript1, setTranscript1] = useState('');
   const [transcript2, setTranscript2] = useState('');
-  const [feedback, setFeedback] = useState<PerformanceFeedback | null>(null);
+  const [feedback, setFeedback] = useState<PerformanceFeedback | null>(initialPersistedFeedback);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<string>('');
   const [showTyping, setShowTyping] = useState(false);
@@ -85,6 +86,8 @@ export const InterviewSimulator = ({
   const currentQuestionRef = useRef<1 | 2>(1);
   const introStartedRef = useRef(false);
   const cancelIntroRef = useRef(false);
+  const introTokenRef = useRef(0);
+  const timeoutsRef = useRef<number[]>([]);
   const { toast } = useToast();
 
   const {
@@ -108,25 +111,65 @@ export const InterviewSimulator = ({
     .map(s => `${s.keyword}: ${s.script}`)
     .join('\n\n');
 
-  const showMessage = (message: string, delay: number = 1500): Promise<void> => {
+  const clearIntroTimers = (resetUi: boolean) => {
+    cancelIntroRef.current = true;
+    introTokenRef.current += 1;
+    for (const id of timeoutsRef.current) {
+      window.clearTimeout(id);
+    }
+    timeoutsRef.current = [];
+    if (resetUi) {
+      setShowTyping(false);
+      setCurrentMessage('');
+    }
+  };
+
+  const cancelIntro = () => clearIntroTimers(true);
+
+  const sleep = (ms: number, token: number): Promise<void> => {
     return new Promise((resolve) => {
+      const id = window.setTimeout(() => {
+        // If intro was cancelled/restarted, ignore.
+        if (cancelIntroRef.current || introTokenRef.current !== token) return;
+        resolve();
+      }, ms);
+      timeoutsRef.current.push(id);
+    });
+  };
+
+  const showMessage = (message: string, delay: number = 1500, token?: number): Promise<void> => {
+    const t = token ?? introTokenRef.current;
+    return new Promise((resolve) => {
+      if (cancelIntroRef.current || introTokenRef.current !== t) return;
       setShowTyping(true);
-      setTimeout(() => {
+      const id = window.setTimeout(() => {
+        if (cancelIntroRef.current || introTokenRef.current !== t) return;
         setShowTyping(false);
         setCurrentMessage(message);
         resolve();
       }, delay);
+      timeoutsRef.current.push(id);
     });
   };
 
   const startIntro = async () => {
+    // Token-based guard so we never run stale async steps.
+    const token = introTokenRef.current;
     if (cancelIntroRef.current) return;
-    await showMessage("Olá! Meu nome é Ana e serei a recrutadora responsável por conversar com você hoje.", 2000);
-    if (cancelIntroRef.current) return;
-    await new Promise(r => setTimeout(r, 1500));
-    if (cancelIntroRef.current) return;
-    await showMessage("Vamos começar... Me fale sobre você.", 1800);
-    if (cancelIntroRef.current) return;
+
+    await showMessage(
+      "Olá! Meu nome é Ana e serei a recrutadora responsável por conversar com você hoje.",
+      2000,
+      token
+    );
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+
+    await sleep(1500, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+
+    await showMessage("Vamos começar... Me fale sobre você.", 1800, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+
     setPhase('question1');
   };
 
@@ -144,11 +187,9 @@ export const InterviewSimulator = ({
     if (!persisted) return;
 
     // If we already have feedback on screen, do nothing.
-    cancelIntroRef.current = true;
+    cancelIntro();
     setFeedback((prev) => prev ?? persisted);
     setPhase('feedback');
-    setShowTyping(false);
-    setCurrentMessage('');
   }, [savedFeedback]);
 
   // Start intro only when we're truly in "fresh run" mode.
@@ -157,10 +198,24 @@ export const InterviewSimulator = ({
     if (feedback) return;
     if (introStartedRef.current) return;
 
+    // Reset cancel flag + start a fresh token.
     cancelIntroRef.current = false;
+    introTokenRef.current += 1;
     introStartedRef.current = true;
     void startIntro();
   }, [phase, feedback]);
+
+  // Hard cleanup: if component unmounts or we switch to feedback, kill pending timers.
+  useEffect(() => {
+    if (phase === 'feedback') {
+      cancelIntro();
+    }
+    return () => {
+      // On unmount, avoid setState; just kill timers/async.
+      clearIntroTimers(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Show speech recognition errors
   useEffect(() => {
