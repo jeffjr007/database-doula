@@ -317,7 +317,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <label className="text-sm md:text-xs text-muted-foreground">Nacionalidade</label>
+            <label className="flex items-center h-4 text-sm md:text-xs text-muted-foreground">Nacionalidade</label>
             <Input
               value={formData.nacionalidade}
               onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
