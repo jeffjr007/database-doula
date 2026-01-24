@@ -24,17 +24,6 @@ interface FormattedPath {
   modules: Module[];
 }
 
-// Simple hash function for comparing content
-const hashContent = (content: string): string => {
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-};
-
 // Extract platform/company name from course URL
 const getPlatformFromUrl = (url: string): { name: string; color: string } => {
   const lowerUrl = url.toLowerCase();
@@ -86,7 +75,6 @@ const GiftPage = () => {
   const { user, loading: authLoading } = useAuth();
   
   const [step, setStep] = useState<'loading' | 'intro' | 'explanation' | 'reveal'>('loading');
-  const [learningPath, setLearningPath] = useState<string | null>(null);
   const [formattedPath, setFormattedPath] = useState<FormattedPath | null>(null);
   const [loadingPath, setLoadingPath] = useState(false);
 
@@ -119,8 +107,6 @@ const GiftPage = () => {
       .single();
 
     if (profile?.learning_path) {
-      setLearningPath(profile.learning_path);
-      
       const seenKey = `gift_seen_${user.id}`;
       const seen = localStorage.getItem(seenKey);
 
@@ -134,14 +120,14 @@ const GiftPage = () => {
       if (directFromSidebar) {
         localStorage.setItem(seenKey, 'true');
         setStep('reveal');
-        loadFormattedPath(profile.learning_path);
+        loadFormattedPath();
         return;
       }
 
       // Normal flow: show animation only on the first time.
       if (seen) {
         setStep('reveal');
-        loadFormattedPath(profile.learning_path);
+        loadFormattedPath();
       } else {
         setStep('intro');
       }
@@ -151,130 +137,37 @@ const GiftPage = () => {
     }
   };
 
-  const loadFormattedPath = async (rawContent: string) => {
+  const loadFormattedPath = async () => {
     if (!user) return;
     
     setLoadingPath(true);
-    const currentHash = hashContent(rawContent);
 
     try {
-      // First, check if we have a saved formatted path in the database
+      // Load pre-formatted path from database (formatted by admin on save)
       const { data: savedPath } = await supabase
         .from('learning_paths')
-        .select('formatted_data, raw_hash')
+        .select('formatted_data')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // If we have a saved path and the hash matches, use it
-      if (savedPath && savedPath.raw_hash === currentHash) {
-        console.log('[GiftPage] Using cached formatted path from database');
+      if (savedPath?.formatted_data) {
+        console.log('[GiftPage] Loading pre-formatted path from database');
         const formatted = savedPath.formatted_data as unknown as FormattedPath;
         if (formatted?.modules && formatted.modules.length > 0) {
           setFormattedPath(formatted);
-          setLoadingPath(false);
-          return;
+        } else {
+          console.warn('[GiftPage] Formatted data exists but has no modules');
         }
+      } else {
+        console.warn('[GiftPage] No pre-formatted path found - admin needs to save the learning path');
       }
-
-      // Otherwise, format via AI and save
-      console.log('[GiftPage] Formatting via AI and saving to database');
-      await formatAndSaveLearningPath(rawContent, currentHash);
     } catch (error) {
       console.error('Error loading formatted path:', error);
-      // Fallback to AI formatting
-      await formatAndSaveLearningPath(rawContent, currentHash);
-    }
-  };
-
-  const formatAndSaveLearningPath = async (content: string, contentHash: string) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase.functions.invoke('format-learning-path', {
-        body: { rawContent: content }
-      });
-
-      if (error) throw error;
-
-      if (data?.formattedPath) {
-        const formatted = data.formattedPath as FormattedPath;
-        setFormattedPath(formatted);
-
-        // Save to database
-        const { error: upsertError } = await supabase
-          .from('learning_paths')
-          .upsert({
-            user_id: user.id,
-            raw_hash: contentHash,
-            formatted_data: formatted as any
-          }, {
-            onConflict: 'user_id'
-          });
-
-        if (upsertError) {
-          console.error('Error saving formatted path:', upsertError);
-        } else {
-          console.log('[GiftPage] Formatted path saved to database');
-        }
-      }
-    } catch (error) {
-      console.error('Error formatting learning path:', error);
-      // Fallback: try to parse manually
-      const fallback = parseManually(content);
-      setFormattedPath(fallback);
-      
-      // Still try to save the fallback
-      try {
-        await supabase
-          .from('learning_paths')
-          .upsert({
-            user_id: user.id,
-            raw_hash: contentHash,
-            formatted_data: fallback as any
-          }, {
-            onConflict: 'user_id'
-          });
-      } catch (saveError) {
-        console.error('Error saving fallback path:', saveError);
-      }
     } finally {
       setLoadingPath(false);
     }
   };
 
-  const parseManually = (content: string): FormattedPath => {
-    const modules: Module[] = [];
-    const moduleRegex = /🔹\s*MÓDULO\s*\d+\s*[–-]\s*([^\n]+)/gi;
-    const sections = content.split(moduleRegex);
-    
-    for (let i = 1; i < sections.length; i += 2) {
-      const title = sections[i]?.trim() || `Módulo ${Math.ceil(i/2)}`;
-      const sectionContent = sections[i + 1] || '';
-      
-      const focusMatch = sectionContent.match(/Foco:\s*([^\n]+)/i);
-      const focus = focusMatch?.[1]?.trim() || '';
-      
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const nameRegex = /([^\n]+)\s*\n\s*https?:\/\/[^\s]+/g;
-      
-      const courses: Course[] = [];
-      let match;
-      
-      while ((match = nameRegex.exec(sectionContent)) !== null) {
-        const name = match[1].replace(/^[–-]\s*/, '').trim();
-        const urlMatch = match[0].match(urlRegex);
-        if (urlMatch && name) {
-          courses.push({ name, url: urlMatch[0] });
-        }
-      }
-      
-      if (title) {
-        modules.push({ title, focus, courses });
-      }
-    }
-    
-    return { modules };
-  };
 
   const handleOpenGift = () => {
     setStep('explanation');
@@ -282,12 +175,10 @@ const GiftPage = () => {
 
   const handleContinue = () => {
     setStep('reveal');
-    if (learningPath) {
-      loadFormattedPath(learningPath);
-      // Mark as seen
-      if (user) {
-        localStorage.setItem(`gift_seen_${user.id}`, 'true');
-      }
+    loadFormattedPath();
+    // Mark as seen
+    if (user) {
+      localStorage.setItem(`gift_seen_${user.id}`, 'true');
     }
   };
 
