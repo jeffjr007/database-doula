@@ -19,7 +19,8 @@ import {
   Target,
   Lightbulb,
   MessageSquare,
-  RotateCcw
+  RotateCcw,
+  Mic
 } from "lucide-react";
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ import { AboutMeGenerator } from "./AboutMeGenerator";
 import { HelpCircle } from 'lucide-react';
 import { Stage4Introduction } from "./Stage4Introduction";
 import { StepConversationIntro } from "./StepConversationIntro";
+import { InterviewSimulator } from "./InterviewSimulator";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -65,7 +67,8 @@ const STEPS = [
   { id: 5, title: "Sobre Você", icon: MessageSquare, description: "Me fale sobre você" },
   { id: 6, title: "Palavras-Chave", icon: Target, description: "Análise da IA" },
   { id: 7, title: "Roteiro", icon: Sparkles, description: "Roteiros de experiências" },
-  { id: 8, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
+  { id: 8, title: "Simulador", icon: Mic, description: "Treine sua entrevista" },
+  { id: 9, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
 ];
 
 const STAGE4_STARTED_KEY = 'stage4_started';
@@ -258,12 +261,13 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 4: return data.experiences.trim().length > 0;
       case 5: return !!data.aboutMeScript;
       case 6: return data.keywords.length > 0;
+      case 7: return savedScripts.length > 0;
       default: return true;
     }
   };
 
   const nextStep = () => {
-    if (currentStep < 8 && canProceed()) {
+    if (currentStep < 9 && canProceed()) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -740,6 +744,24 @@ análise de dados"
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
+            <InterviewSimulator
+              aboutMeScript={data.aboutMeScript || ''}
+              experienceScripts={savedScripts}
+              onComplete={() => setCurrentStep(9)}
+            />
+          </motion.div>
+        );
+
+      case 9:
+        return (
+          <motion.div
+            key="step-9"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
             <div className="text-center space-y-2 mb-8">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
                 <Check className="w-8 h-8 text-accent-foreground" />
@@ -804,7 +826,7 @@ análise de dados"
                     await supabase.from('mentoring_progress').upsert({
                       user_id: user.id,
                       stage_number: stageNumber,
-                      current_step: 8,
+                      current_step: 9,
                       completed: true,
                       stage_data: {},
                     }, {
