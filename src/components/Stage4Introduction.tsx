@@ -10,22 +10,22 @@ interface Stage4IntroductionProps {
 
 const messages = [
   { 
-    text: "Chegou a hora de arrasar nas entrevistas!", 
+    text: "Vamos te preparar para as perguntas mais comuns das entrevistas!", 
     icon: Target,
     highlight: false 
   },
   { 
-    text: "Vou te ensinar um segredo: recrutadores buscam palavras-chave específicas. E a gente vai mapear todas elas.", 
+    text: "Você vai aprender a responder com confiança: 'Me fale sobre você', 'Fale sobre suas experiências' e muito mais.", 
     icon: Brain,
     highlight: true 
   },
   { 
-    text: "Depois, a IA vai criar roteiros personalizados conectando essas palavras com SUAS experiências reais.", 
+    text: "A IA vai criar roteiros personalizados para cada pergunta, usando SUAS histórias e conquistas reais.", 
     icon: Sparkles,
     highlight: true 
   },
   { 
-    text: "A estrutura mágica é: O QUE fez + COMO fez + RESULTADO. Simples assim!", 
+    text: "No final, você terá scripts prontos para estudar e arrasar na entrevista!", 
     icon: Lightbulb,
     highlight: true 
   },
