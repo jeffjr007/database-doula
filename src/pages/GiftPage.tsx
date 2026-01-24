@@ -88,7 +88,7 @@ const GiftPage = () => {
   const [step, setStep] = useState<'loading' | 'intro' | 'explanation' | 'reveal'>('loading');
   const [learningPath, setLearningPath] = useState<string | null>(null);
   const [formattedPath, setFormattedPath] = useState<FormattedPath | null>(null);
-  const [loadingPath, setLoadingPath] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -126,35 +126,34 @@ const GiftPage = () => {
 
       // If user came from activation (Começar Jornada), ALWAYS show intro animation
       if (fromActivation) {
+        setIsInitializing(false);
         setStep('intro');
         return;
       }
 
-      // If user came from sidebar, skip intro/explanation entirely.
-      if (directFromSidebar) {
+      // If user came from sidebar or already seen, load formatted path BEFORE transitioning
+      if (directFromSidebar || seen) {
         localStorage.setItem(seenKey, 'true');
+        // Load everything first, then show the reveal step
+        await loadFormattedPathSync(profile.learning_path);
+        setIsInitializing(false);
         setStep('reveal');
-        loadFormattedPath(profile.learning_path);
         return;
       }
 
-      // Normal flow: show animation only on the first time.
-      if (seen) {
-        setStep('reveal');
-        loadFormattedPath(profile.learning_path);
-      } else {
-        setStep('intro');
-      }
+      // First time user - show intro animation
+      setIsInitializing(false);
+      setStep('intro');
     } else {
       // No gift available, redirect back
       navigate('/');
     }
   };
 
-  const loadFormattedPath = async (rawContent: string) => {
+  // Synchronous version that waits for loading to complete before returning
+  const loadFormattedPathSync = async (rawContent: string) => {
     if (!user) return;
     
-    setLoadingPath(true);
     const currentHash = hashContent(rawContent);
 
     try {
@@ -171,7 +170,6 @@ const GiftPage = () => {
         const formatted = savedPath.formatted_data as unknown as FormattedPath;
         if (formatted?.modules && formatted.modules.length > 0) {
           setFormattedPath(formatted);
-          setLoadingPath(false);
           return;
         }
       }
@@ -237,8 +235,6 @@ const GiftPage = () => {
       } catch (saveError) {
         console.error('Error saving fallback path:', saveError);
       }
-    } finally {
-      setLoadingPath(false);
     }
   };
 
@@ -280,22 +276,21 @@ const GiftPage = () => {
     setStep('explanation');
   };
 
-  const handleContinue = () => {
-    setStep('reveal');
-    if (learningPath) {
-      loadFormattedPath(learningPath);
-      // Mark as seen
-      if (user) {
-        localStorage.setItem(`gift_seen_${user.id}`, 'true');
-      }
+  const handleContinue = async () => {
+    setIsInitializing(true);
+    if (learningPath && user) {
+      await loadFormattedPathSync(learningPath);
+      localStorage.setItem(`gift_seen_${user.id}`, 'true');
     }
+    setIsInitializing(false);
+    setStep('reveal');
   };
 
   const handleBack = () => {
     navigate('/');
   };
 
-  if (authLoading || step === 'loading') {
+  if (authLoading || isInitializing) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <div className="relative">
@@ -518,17 +513,7 @@ const GiftPage = () => {
                   </motion.p>
                 </div>
 
-                {loadingPath ? (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                      <Gift className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    </div>
-                    <p className="mt-6 text-muted-foreground animate-pulse">
-                      Carregando seu presente...
-                    </p>
-                  </div>
-                ) : formattedPath?.modules && formattedPath.modules.length > 0 ? (
+                {formattedPath?.modules && formattedPath.modules.length > 0 ? (
                   <div className="space-y-6">
                     {formattedPath.modules.map((module, moduleIndex) => (
                       <motion.div
