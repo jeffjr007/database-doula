@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { InterviewScriptBuilder, KeywordScript } from "./InterviewScriptBuilder";
+import { AboutMeGenerator } from "./AboutMeGenerator";
 import { HelpCircle } from 'lucide-react';
 import { Stage4Introduction } from "./Stage4Introduction";
 
@@ -52,6 +53,7 @@ interface StepData {
   linkedinAbout: string;
   experiences: string;
   keywords: string[];
+  aboutMeScript?: string;
 }
 
 const STEPS = [
@@ -61,7 +63,8 @@ const STEPS = [
   { id: 4, title: "Experiências", icon: Briefcase, description: "Suas experiências" },
   { id: 5, title: "Palavras-Chave", icon: Target, description: "Análise da IA" },
   { id: 6, title: "Roteiro", icon: Sparkles, description: "IA cria seu roteiro" },
-  { id: 7, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
+  { id: 7, title: "Sobre Você", icon: MessageSquare, description: "Me fale sobre você" },
+  { id: 8, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
 ];
 
 const STAGE4_STARTED_KEY = 'stage4_started';
@@ -235,12 +238,13 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 3: return data.linkedinAbout.trim().length > 0;
       case 4: return data.experiences.trim().length > 0;
       case 5: return data.keywords.length > 0;
+      case 7: return !!data.aboutMeScript;
       default: return true;
     }
   };
 
   const nextStep = () => {
-    if (currentStep < 6 && canProceed()) {
+    if (currentStep < 7 && canProceed()) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -646,9 +650,28 @@ análise de dados"
             exit={{ opacity: 0, y: -20 }}
             className="space-y-6"
           >
+            <AboutMeGenerator
+              onComplete={async (script) => {
+                const newData = { ...data, aboutMeScript: script };
+                setData(newData);
+                await saveProgress(newData);
+                setCurrentStep(8);
+              }}
+            />
+          </motion.div>
+        );
+
+      case 8:
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
             <div className="text-center space-y-2 mb-8">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-4">
-                <Check className="w-8 h-8 text-green-500" />
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-emerald-500" />
               </div>
               <h2 className="font-display text-2xl font-bold">Seus Roteiros Prontos!</h2>
               <p className="text-muted-foreground">
@@ -656,7 +679,28 @@ análise de dados"
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto space-y-4">
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Roteiro "Me fale sobre você" */}
+              {data.aboutMeScript && (
+                <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">"Me fale sobre você"</h3>
+                        <p className="text-sm text-muted-foreground">Resposta pessoal</p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-background rounded-lg text-sm whitespace-pre-wrap border border-border">
+                      "{data.aboutMeScript}"
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Roteiros de palavras-chave */}
               {savedScripts.map((script, index) => (
                 <Card key={script.keyword} className="p-4 bg-secondary/30">
                   <div className="space-y-3">
@@ -689,7 +733,7 @@ análise de dados"
                     await supabase.from('mentoring_progress').upsert({
                       user_id: user.id,
                       stage_number: stageNumber,
-                      current_step: 7,
+                      current_step: 8,
                       completed: true,
                       stage_data: {},
                     }, {
@@ -709,10 +753,10 @@ análise de dados"
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCurrentStep(6)}
+                onClick={() => setCurrentStep(7)}
                 className="w-full"
               >
-                Voltar e Editar Roteiros
+                Voltar e Editar "Sobre Você"
               </Button>
             </div>
           </motion.div>
