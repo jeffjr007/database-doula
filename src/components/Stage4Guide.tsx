@@ -44,6 +44,8 @@ import { HelpCircle } from 'lucide-react';
 import { Stage4Introduction } from "./Stage4Introduction";
 import { StepConversationIntro } from "./StepConversationIntro";
 import { InterviewSimulator } from "./InterviewSimulator";
+import { SaveInterviewModal } from "./SaveInterviewModal";
+import { InterviewHistoryList } from "./InterviewHistoryList";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -99,6 +101,8 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const [savedScripts, setSavedScripts] = useState<KeywordScript[]>([]);
   const [showAboutMeIntro, setShowAboutMeIntro] = useState(true);
   const [showKeywordsIntro, setShowKeywordsIntro] = useState(true);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
   const [data, setData] = useState<StepData>({
     companyName: "",
     companyLinkedin: "",
@@ -356,6 +360,7 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
                   onChange={(e) => updateData('companyName', e.target.value)}
                   placeholder="Ex: Magazine Luiza, Nubank, Ambev..."
                   className="h-12 text-lg"
+                  disabled={isReviewMode}
                 />
               </div>
 
@@ -369,8 +374,31 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
                   onChange={(e) => updateData('companyLinkedin', e.target.value)}
                   placeholder="https://linkedin.com/company/..."
                   className="h-12"
+                  disabled={isReviewMode}
                 />
               </div>
+            </div>
+
+            {/* Interview History Section */}
+            <div className="max-w-md mx-auto pt-6">
+              <InterviewHistoryList
+                onLoadInterview={(loadedData) => {
+                  setData({
+                    companyName: loadedData.companyName || "",
+                    companyLinkedin: loadedData.companyLinkedin || "",
+                    jobDescription: loadedData.jobDescription || "",
+                    linkedinAbout: loadedData.linkedinAbout || "",
+                    experiences: loadedData.experiences || "",
+                    keywords: loadedData.keywords || [],
+                    aboutMeScript: loadedData.aboutMeScript,
+                  });
+                  if (loadedData.savedScripts) {
+                    setSavedScripts(loadedData.savedScripts);
+                  }
+                  setIsReviewMode(true);
+                  setCurrentStep(9);
+                }}
+              />
             </div>
           </motion.div>
         );
@@ -820,37 +848,44 @@ análise de dados"
             </div>
 
             <div className="max-w-2xl mx-auto pt-4 flex flex-col gap-3">
-              <Button
-                onClick={async () => {
-                  if (user?.id) {
-                    await supabase.from('mentoring_progress').upsert({
-                      user_id: user.id,
-                      stage_number: stageNumber,
-                      current_step: 9,
-                      completed: true,
-                      stage_data: {},
-                    }, {
-                      onConflict: 'user_id,stage_number',
+              {isReviewMode ? (
+                <Button
+                  onClick={() => {
+                    setIsReviewMode(false);
+                    setData({
+                      companyName: "",
+                      companyLinkedin: "",
+                      jobDescription: "",
+                      linkedinAbout: "",
+                      experiences: "",
+                      keywords: [],
                     });
-                  }
-                  toast({
-                    title: "Parabéns! 🎉",
-                    description: "Etapa 4 concluída. Agora avance para a Etapa 5!",
-                  });
-                  navigate('/');
-                }}
-                className="gap-2 w-full"
-              >
-                <Check className="w-4 h-4" />
-                Finalizar Etapa 4
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(5)}
-                className="w-full"
-              >
-                Voltar e Editar "Sobre Você"
-              </Button>
+                    setSavedScripts([]);
+                    setCurrentStep(1);
+                  }}
+                  className="gap-2 w-full"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar ao Início
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setShowSaveModal(true)}
+                    className="gap-2 w-full"
+                  >
+                    <Check className="w-4 h-4" />
+                    Finalizar Etapa 4
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(5)}
+                    className="w-full"
+                  >
+                    Voltar e Editar "Sobre Você"
+                  </Button>
+                </>
+              )}
             </div>
           </motion.div>
         );
@@ -1034,6 +1069,33 @@ análise de dados"
       {(currentStep < 5 || (currentStep === 6 && data.keywords.length === 0)) && (
         <div className="h-20" />
       )}
+
+      {/* Save Interview Modal */}
+      <SaveInterviewModal
+        open={showSaveModal}
+        onOpenChange={setShowSaveModal}
+        data={data}
+        savedScripts={savedScripts}
+        onSaveComplete={async () => {
+          if (user?.id) {
+            await supabase.from('mentoring_progress').upsert({
+              user_id: user.id,
+              stage_number: stageNumber,
+              current_step: 9,
+              completed: true,
+              stage_data: {},
+            }, {
+              onConflict: 'user_id,stage_number',
+            });
+          }
+          setShowSaveModal(false);
+          toast({
+            title: "Parabéns! 🎉",
+            description: "Etapa 4 concluída. Agora avance para a Etapa 5!",
+          });
+          navigate('/');
+        }}
+      />
     </div>
   );
 };

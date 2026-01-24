@@ -74,6 +74,39 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_history: {
+        Row: {
+          company_name: string
+          created_at: string
+          data_content: Json
+          id: string
+          job_title: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          data_content: Json
+          id?: string
+          job_title?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          data_content?: Json
+          id?: string
+          job_title?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invite_codes: {
         Row: {
           code: string
