@@ -144,7 +144,7 @@ const GiftPage = () => {
     setLoadingPath(true);
 
     try {
-      // Load pre-formatted path from database (formatted by admin on save)
+      // First try to load pre-formatted path from database
       const { data: savedPath } = await supabase
         .from('learning_paths')
         .select('formatted_data')
@@ -156,11 +156,52 @@ const GiftPage = () => {
         const formatted = savedPath.formatted_data as unknown as FormattedPath;
         if (formatted?.modules && formatted.modules.length > 0) {
           setFormattedPath(formatted);
-        } else {
-          console.warn('[GiftPage] Formatted data exists but has no modules');
+          return;
         }
-      } else {
-        console.warn('[GiftPage] No pre-formatted path found - admin needs to save the learning path');
+      }
+
+      // Fallback: If no pre-formatted data, try to format in real-time
+      console.log('[GiftPage] No pre-formatted path found, trying real-time formatting...');
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('learning_path')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profile?.learning_path) {
+        // Call edge function to format
+        const { data, error } = await supabase.functions.invoke('format-learning-path', {
+          body: { rawContent: profile.learning_path }
+        });
+
+        if (!error && data?.formattedPath) {
+          const formatted = data.formattedPath as FormattedPath;
+          if (formatted?.modules && formatted.modules.length > 0) {
+            setFormattedPath(formatted);
+            
+            // Save to database for future instant loading
+            const hashContent = (content: string): string => {
+              let hash = 0;
+              for (let i = 0; i < content.length; i++) {
+                const char = content.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+              }
+              return hash.toString(36);
+            };
+            
+            await supabase
+              .from('learning_paths')
+              .upsert([{
+                user_id: user.id,
+                raw_hash: hashContent(profile.learning_path),
+                formatted_data: JSON.parse(JSON.stringify(formatted))
+              }], { onConflict: 'user_id' });
+          }
+        } else {
+          console.error('[GiftPage] Error formatting path:', error);
+        }
       }
     } catch (error) {
       console.error('Error loading formatted path:', error);
