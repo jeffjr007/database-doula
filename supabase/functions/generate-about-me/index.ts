@@ -38,31 +38,25 @@ OBJETIVO:
 Criar uma resposta pessoal e autêntica que demonstre disciplina, foco e características que recrutadores valorizam, conectando hobbies e metas pessoais a benefícios profissionais.
 
 ESTILO DE ESCRITA:
-- Natural, humano e direto
-- Evite termos formais ou robóticos
-- Soe como uma conversa fluida
-- Use primeira pessoa
-- O candidato deve se apresentar com confiança
+Escreva de forma natural, humana e direta, como uma conversa fluida. Evite termos formais ou robóticos. Use sempre a primeira pessoa e transmita confiança na apresentação.
 
-ESTRUTURA DA RESPOSTA:
-1. Apresentação básica (nome, idade, localização)
-2. Situação pessoal (estado civil, moradia)
-3. Hobbies conectados a disciplina/foco (mostrar como beneficiam o trabalho)
-4. Metas pessoais conectadas a crescimento profissional
-5. Fechamento natural que demonstre dedicação
+ESTRUTURA DA RESPOSTA (em parágrafos fluidos):
+Primeiro parágrafo: Apresentação básica com nome, idade e localização, seguida da situação pessoal como estado civil e moradia.
+Segundo parágrafo: Hobbies e interesses pessoais conectados naturalmente a características profissionais como disciplina e foco.
+Terceiro parágrafo: Metas pessoais que demonstrem crescimento e ambição, conectadas ao desenvolvimento profissional.
+Quarto parágrafo: Fechamento natural que demonstre dedicação e entusiasmo.
 
-GATILHOS MENTAIS A USAR:
-- Disciplina: rotina, consistência, compromisso
-- Foco: organização, priorização, objetivos claros
-- Resiliência: superação, persistência, adaptabilidade
-- Vontade de aprender: curiosidade, desenvolvimento contínuo
+GATILHOS MENTAIS A INCORPORAR:
+Discipline através de rotina e consistência. Foco através de organização e objetivos claros. Resiliência através de superação e adaptabilidade. Vontade de aprender através de curiosidade e desenvolvimento contínuo.
 
-REGRAS:
-1. Conecte CADA hobby/meta a um benefício profissional de forma natural
-2. NÃO use bullet points - escreva em parágrafos fluidos
-3. Mantenha entre 100-150 palavras
-4. Use linguagem conversacional, como se estivesse realmente falando
-5. Mostre que hábitos pessoais refletem postura profissional`;
+REGRAS OBRIGATÓRIAS:
+Conecte cada hobby e meta a um benefício profissional de forma natural e sutil.
+NUNCA use travessões, listas com traços, bullet points ou qualquer tipo de marcadores.
+Escreva EXCLUSIVAMENTE em parágrafos bem definidos e separados.
+Mantenha entre 100 e 150 palavras no total.
+Use linguagem conversacional como se estivesse realmente falando com o entrevistador.
+Mostre que hábitos pessoais refletem postura profissional.
+O texto deve fluir naturalmente de um parágrafo para outro.`;
 
     const userPrompt = `Crie um roteiro de "Me fale sobre você" com estas informações:
 
