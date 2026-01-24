@@ -121,22 +121,33 @@
   }
 
   html {
-    overflow-y: scroll; /* Always show scrollbar to prevent layout shift */
+    /* Reserve space for scrollbar to prevent layout shift */
+    scrollbar-gutter: stable;
   }
 
-  /* Prevent modal-induced layout shift */
-  html[style*="overflow: hidden"],
-  html[data-scroll-locked] {
-    overflow-y: scroll !important;
-    padding-right: 0 !important;
-  }
-
-  body[style*="overflow: hidden"],
-  body[data-scroll-locked],
-  body[style*="pointer-events: none"] {
-    overflow: visible !important;
+  /* 
+   * CRITICAL: Prevent Radix UI Dialog from injecting styles that cause layout shift.
+   * Radix adds padding-right and overflow:hidden to body when modals open.
+   * These rules override ALL injected styles to keep layout stable.
+   */
+  html, body {
     padding-right: 0 !important;
     margin-right: 0 !important;
+  }
+
+  /* Override any inline styles Radix might inject */
+  body[style] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Target Radix scroll lock attributes */
+  [data-radix-scroll-body-locked],
+  [data-scroll-locked] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    overflow: visible !important;
   }
 
   body {
