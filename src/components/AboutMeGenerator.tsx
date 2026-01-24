@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   User,
@@ -16,6 +15,8 @@ import {
   RefreshCw,
   MessageSquare,
   Lightbulb,
+  Pencil,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showForm, setShowForm] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   const updateField = (field: keyof AboutMeData, value: string) => {
@@ -87,6 +89,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
       if (response?.script) {
         setGeneratedScript(response.script);
         setShowForm(false);
+        setIsEditing(false);
         toast({
           title: "Roteiro gerado! ✨",
           description: "Revise e personalize conforme necessário.",
@@ -133,18 +136,22 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
     onComplete(generatedScript);
   };
 
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Minimalista */}
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <MessageSquare className="w-8 h-8 text-primary" />
+        <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+          <MessageSquare className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="font-display text-2xl font-bold">
+        <h2 className="font-display text-xl font-semibold">
           "Me fale sobre você"
         </h2>
-        <p className="text-muted-foreground max-w-lg mx-auto">
-          Crie uma resposta autêntica que conecte seus hobbies e metas pessoais a características profissionais valorizadas por recrutadores.
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          Conecte seus hábitos pessoais a características profissionais valorizadas.
         </p>
       </div>
 
@@ -155,29 +162,23 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="max-w-2xl mx-auto space-y-6"
+            className="max-w-xl mx-auto space-y-5"
           >
-            {/* Dica */}
-            <Card className="p-4 bg-primary/5 border-primary/20">
-              <div className="flex items-start gap-3">
-                <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-foreground mb-1">O segredo dessa resposta:</p>
-                  <p className="text-muted-foreground">
-                    Mostre que seus hábitos pessoais (esportes, leitura, hobbies) refletem disciplina e foco — 
-                    qualidades que você leva para o trabalho.
-                  </p>
-                </div>
-              </div>
-            </Card>
+            {/* Dica Minimalista */}
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Mostre que seus hábitos pessoais refletem disciplina e foco — qualidades que você leva para o trabalho.
+              </p>
+            </div>
 
-            {/* Formulário */}
+            {/* Formulário Minimalista */}
             <div className="grid gap-4">
               {/* Nome e Idade */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="nome" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                    <User className="w-3.5 h-3.5" />
                     Nome Completo
                   </Label>
                   <Input
@@ -185,25 +186,25 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                     value={data.nome}
                     onChange={(e) => updateField('nome', e.target.value)}
                     placeholder="Ex: Lucas Silva"
-                    className="h-12"
+                    className="h-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="idade">Idade</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="idade" className="text-xs text-muted-foreground">Idade</Label>
                   <Input
                     id="idade"
                     value={data.idade}
                     onChange={(e) => updateField('idade', e.target.value)}
                     placeholder="Ex: 22 anos"
-                    className="h-12"
+                    className="h-10"
                   />
                 </div>
               </div>
 
               {/* Localização */}
-              <div className="space-y-2">
-                <Label htmlFor="localizacao" className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <Label htmlFor="localizacao" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="w-3.5 h-3.5" />
                   Localização
                 </Label>
                 <Input
@@ -211,14 +212,14 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                   value={data.localizacao}
                   onChange={(e) => updateField('localizacao', e.target.value)}
                   placeholder="Ex: Santo André, SP"
-                  className="h-12"
+                  className="h-10"
                 />
               </div>
 
               {/* Estado Civil */}
-              <div className="space-y-2">
-                <Label htmlFor="estadoCivil" className="flex items-center gap-2">
-                  <Heart className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <Label htmlFor="estadoCivil" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <Heart className="w-3.5 h-3.5" />
                   Estado Civil / Filhos
                 </Label>
                 <Input
@@ -226,44 +227,38 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                   value={data.estadoCivil}
                   onChange={(e) => updateField('estadoCivil', e.target.value)}
                   placeholder="Ex: Solteiro, sem filhos, moro com meus pais"
-                  className="h-12"
+                  className="h-10"
                 />
               </div>
 
               {/* Hobbies */}
-              <div className="space-y-2">
-                <Label htmlFor="hobbies" className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <Label htmlFor="hobbies" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <Sparkles className="w-3.5 h-3.5" />
                   Hobbies / Atividades
                 </Label>
                 <Textarea
                   id="hobbies"
                   value={data.hobbies}
                   onChange={(e) => updateField('hobbies', e.target.value)}
-                  placeholder="Ex: Academia 5x por semana, corrida aos finais de semana, tocar violão..."
-                  className="min-h-[80px]"
+                  placeholder="Ex: Academia 5x por semana, corrida, tocar violão..."
+                  className="min-h-[70px] resize-none"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Atividades que mostram disciplina, foco ou desenvolvimento pessoal
-                </p>
               </div>
 
               {/* Metas */}
-              <div className="space-y-2">
-                <Label htmlFor="metas" className="flex items-center gap-2">
-                  <Target className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <Label htmlFor="metas" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <Target className="w-3.5 h-3.5" />
                   Metas Pessoais
                 </Label>
                 <Textarea
                   id="metas"
                   value={data.metas}
                   onChange={(e) => updateField('metas', e.target.value)}
-                  placeholder="Ex: Ler 1 livro de finanças por mês, aprender inglês, fazer MBA..."
-                  className="min-h-[80px]"
+                  placeholder="Ex: Ler 1 livro por mês, aprender inglês..."
+                  className="min-h-[70px] resize-none"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Objetivos que demonstram vontade de crescer e aprender
-                </p>
               </div>
             </div>
 
@@ -271,18 +266,17 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
             <Button
               onClick={generateScript}
               disabled={!isFormValid() || isGenerating}
-              className="w-full h-12 gap-2"
-              size="lg"
+              className="w-full h-11 gap-2"
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Gerando seu roteiro...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Gerando...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
-                  Gerar Roteiro com IA
+                  <Sparkles className="w-4 h-4" />
+                  Gerar Roteiro
                 </>
               )}
             </Button>
@@ -293,79 +287,97 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="max-w-2xl mx-auto space-y-6"
+            className="max-w-xl mx-auto space-y-4"
           >
-            {/* Resultado */}
-            <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <MessageSquare className="w-4 h-4 text-primary" />
-                    </div>
-                    <span className="font-medium">Seu Roteiro</span>
-                  </div>
+            {/* Resultado Minimalista */}
+            <div className="space-y-3">
+              {/* Header com ações */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Seu Roteiro</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleEditMode}
+                    className="h-8 w-8 p-0"
+                    title={isEditing ? "Sair do modo edição" : "Editar roteiro"}
+                  >
+                    {isEditing ? (
+                      <X className="w-4 h-4" />
+                    ) : (
+                      <Pencil className="w-4 h-4" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={copyToClipboard}
-                    className="gap-2"
+                    className="h-8 w-8 p-0"
+                    title="Copiar roteiro"
                   >
                     {copied ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        Copiado!
-                      </>
+                      <Check className="w-4 h-4 text-primary" />
                     ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        Copiar
-                      </>
+                      <Copy className="w-4 h-4" />
                     )}
                   </Button>
                 </div>
+              </div>
 
+              {/* Campo de texto */}
+              <div className="relative">
                 <Textarea
                   value={generatedScript}
                   onChange={(e) => setGeneratedScript(e.target.value)}
-                  className="min-h-[200px] text-base bg-background/50 border-border"
+                  readOnly={!isEditing}
+                  className={`min-h-[280px] text-sm leading-relaxed resize-none transition-colors ${
+                    isEditing 
+                      ? "bg-background border-primary/50 focus:border-primary" 
+                      : "bg-muted/30 border-transparent cursor-default"
+                  }`}
                 />
-
-                <p className="text-xs text-muted-foreground text-center">
-                  ✏️ Você pode editar o texto acima para personalizar ainda mais
-                </p>
+                {isEditing && (
+                  <div className="absolute bottom-2 right-2">
+                    <span className="text-[10px] text-muted-foreground bg-background/80 px-1.5 py-0.5 rounded">
+                      Modo edição
+                    </span>
+                  </div>
+                )}
               </div>
-            </Card>
+            </div>
 
-            {/* Ações */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Ações Minimalistas */}
+            <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowForm(true)}
-                className="gap-2 flex-1"
+                className="gap-1.5 flex-1"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-3.5 h-3.5" />
                 Editar Dados
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={generateScript}
                 disabled={isGenerating}
-                className="gap-2 flex-1"
+                className="gap-1.5 flex-1"
               >
                 {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5" />
                 )}
-                Gerar Novamente
+                Regenerar
               </Button>
               <Button
+                size="sm"
                 onClick={handleComplete}
-                className="gap-2 flex-1"
+                className="gap-1.5 flex-1"
               >
-                <Check className="w-4 h-4" />
-                Salvar e Continuar
+                <Check className="w-3.5 h-3.5" />
+                Continuar
               </Button>
             </div>
           </motion.div>
