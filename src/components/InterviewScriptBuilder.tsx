@@ -17,7 +17,8 @@ import {
   Loader2,
   Edit3,
   Save,
-  X
+  X,
+  User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +38,14 @@ interface Experience {
   company: string;
   role: string;
   selectedKeywords: string[];
+}
+
+interface CareerIntro {
+  careerStartAge: string | null;
+  education: string | null;
+  yearsOfExperience: string | null;
+  mainField: string | null;
+  introText: string | null;
 }
 
 interface InterviewScriptBuilderProps {
@@ -72,6 +81,33 @@ export const InterviewScriptBuilder = ({
   const [generatedScripts, setGeneratedScripts] = useState<KeywordScript[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [careerIntro, setCareerIntro] = useState<CareerIntro | null>(null);
+  const [isLoadingIntro, setIsLoadingIntro] = useState(false);
+
+  // Load career intro when component mounts
+  useEffect(() => {
+    const loadCareerIntro = async () => {
+      if (!linkedinAbout || linkedinAbout.trim().length < 50) return;
+      
+      setIsLoadingIntro(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-career-intro', {
+          body: { linkedinAbout }
+        });
+        
+        if (error) throw error;
+        if (data?.introText) {
+          setCareerIntro(data);
+        }
+      } catch (error) {
+        console.error("Error loading career intro:", error);
+      } finally {
+        setIsLoadingIntro(false);
+      }
+    };
+
+    loadCareerIntro();
+  }, [linkedinAbout]);
 
   useEffect(() => {
     if (conversationStep < mentorMessages.length) {
@@ -546,6 +582,50 @@ export const InterviewScriptBuilder = ({
                     </Button>
                   </div>
                 </Card>
+
+                {/* Career Introduction Block */}
+                {(careerIntro?.introText || isLoadingIntro) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Card className="p-6 bg-secondary/20 border-border/50">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-sm">Sua Introdução</h4>
+                            <p className="text-xs text-muted-foreground">Comece sua apresentação assim</p>
+                          </div>
+                        </div>
+                        
+                        {isLoadingIntro ? (
+                          <div className="flex items-center gap-2 py-4">
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Gerando introdução...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="pl-12">
+                              <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
+                                {careerIntro?.introText}
+                              </p>
+                            </div>
+                            
+                            <div className="pl-12 pt-2">
+                              <p className="text-xs text-muted-foreground/70 italic">
+                                Após essa introdução, comece a falar sobre suas experiências usando os roteiros abaixo.
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
 
                 {/* Scripts List */}
                 <div className="space-y-3">
