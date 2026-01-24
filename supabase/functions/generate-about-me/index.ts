@@ -87,7 +87,6 @@ Gere uma resposta natural e fluida que conecte os hobbies e metas a característ
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.7,
       }),
     });
 
