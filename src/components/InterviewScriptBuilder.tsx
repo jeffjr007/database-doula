@@ -27,6 +27,8 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 export interface KeywordScript {
   keyword: string;
   experience: string;
+  company: string;
+  role: string;
   script: string;
 }
 
@@ -179,14 +181,19 @@ export const InterviewScriptBuilder = ({
       if (error) throw error;
 
       if (result?.scripts && result.scripts.length > 0) {
-        const formattedScripts: KeywordScript[] = result.scripts.map((s: any) => ({
-          keyword: s.keyword,
-          experience: s.experience || keywordsToGenerate.find(k => k.keyword === s.keyword)?.company || '',
-          script: s.script
-        }));
+        const formattedScripts: KeywordScript[] = result.scripts.map((s: any) => {
+          const mapping = keywordsToGenerate.find(k => k.keyword.toLowerCase() === s.keyword?.toLowerCase());
+          return {
+            keyword: s.keyword,
+            experience: s.experience || `${mapping?.role} — ${mapping?.company}` || '',
+            company: s.company || mapping?.company || '',
+            role: s.role || mapping?.role || '',
+            script: s.script
+          };
+        });
         
         setGeneratedScripts(formattedScripts);
-        toast.success(`${result.scripts.length} roteiros gerados com sucesso!`);
+        toast.success(`${formattedScripts.length} roteiros gerados com sucesso!`);
       } else {
         throw new Error("Nenhum roteiro foi gerado");
       }
