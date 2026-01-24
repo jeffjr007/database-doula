@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface AboutMeData {
   nome: string;
@@ -37,6 +38,8 @@ interface AboutMeGeneratorProps {
 }
 
 export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorProps) => {
+  const { personalData, isLoading: isLoadingProfile } = useUserProfile();
+  
   const [data, setData] = useState<AboutMeData>(initialData || {
     nome: "",
     idade: "",
@@ -51,6 +54,18 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
   const [showForm, setShowForm] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+
+  // Auto-fill personal data from profile (only if no initialData)
+  useEffect(() => {
+    if (!initialData && !isLoadingProfile && personalData) {
+      setData(prev => ({
+        ...prev,
+        nome: prev.nome || personalData.fullName,
+        idade: prev.idade || personalData.age,
+        localizacao: prev.localizacao || personalData.location,
+      }));
+    }
+  }, [personalData, isLoadingProfile, initialData]);
 
   const updateField = (field: keyof AboutMeData, value: string) => {
     setData(prev => ({ ...prev, [field]: value }));

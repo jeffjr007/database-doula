@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export interface CVFormData {
   nome: string;
@@ -32,6 +33,8 @@ interface CVFormProps {
 }
 
 export function CVForm({ onGenerate, isLoading }: CVFormProps) {
+  const { personalData, isLoading: isLoadingProfile } = useUserProfile();
+  
   const [formData, setFormData] = useState<CVFormData>({
     nome: "",
     cargos: "",
@@ -47,6 +50,19 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
   const [extractionDone, setExtractionDone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Auto-fill personal data from profile
+  useEffect(() => {
+    if (!isLoadingProfile && personalData) {
+      setFormData(prev => ({
+        ...prev,
+        nome: prev.nome || personalData.fullName,
+        telefone: prev.telefone || personalData.phone,
+        email: prev.email || personalData.email,
+        linkedin: prev.linkedin || personalData.linkedinUrl,
+      }));
+    }
+  }, [personalData, isLoadingProfile]);
 
   const resetPdfInput = () => {
     setPdfFile(null);

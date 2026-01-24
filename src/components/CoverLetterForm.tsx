@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { CoverLetterFormData } from "@/types/cover-letter";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface CoverLetterFormProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface CoverLetterFormProps {
 
 export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: CoverLetterFormProps) {
   const { toast } = useToast();
+  const { personalData, isLoading: isLoadingProfile } = useUserProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [extractingCV, setExtractingCV] = useState(false);
   const [formData, setFormData] = useState<CoverLetterFormData>({
@@ -34,6 +36,18 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
     cargosInteresse: "",
     cvAnalysis: "",
   });
+
+  // Auto-fill personal data from profile
+  useEffect(() => {
+    if (!isLoadingProfile && personalData) {
+      setFormData(prev => ({
+        ...prev,
+        nome: prev.nome || personalData.fullName,
+        idade: prev.idade || personalData.age,
+        localizacao: prev.localizacao || personalData.location,
+      }));
+    }
+  }, [personalData, isLoadingProfile]);
 
   const handleChange = (field: keyof CoverLetterFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

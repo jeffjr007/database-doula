@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText, MapPin, Calendar, Linkedin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoAD from "@/assets/logo-ad.png";
 
@@ -17,6 +17,9 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [age, setAge] = useState('');
+  const [location, setLocation] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -128,6 +131,9 @@ const Auth = () => {
             data: {
               full_name: fullName,
               phone: phone,
+              age: age,
+              location: location,
+              linkedin_url: linkedinUrl,
               email_notifications: emailNotifications,
             },
           },
@@ -230,7 +236,7 @@ const Auth = () => {
                     transition={{ duration: 0.2 }}
                     className="space-y-4 overflow-hidden"
                   >
-                    {/* Name and Phone in a row on desktop, stacked on mobile */}
+                    {/* Row 1: Name and Phone */}
                     <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
                       <div className="space-y-2 md:space-y-1.5">
                         <Label htmlFor="name" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
@@ -263,6 +269,55 @@ const Auth = () => {
                           className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
                         />
                       </div>
+                    </div>
+
+                    {/* Row 2: Age and Location */}
+                    <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2 md:space-y-1.5">
+                        <Label htmlFor="age" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
+                          <Calendar className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
+                          Idade
+                        </Label>
+                        <Input
+                          id="age"
+                          type="text"
+                          placeholder="Ex: 28 anos"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-2 md:space-y-1.5">
+                        <Label htmlFor="location" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
+                          <MapPin className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
+                          Localização
+                        </Label>
+                        <Input
+                          id="location"
+                          type="text"
+                          placeholder="São Paulo, SP"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 3: LinkedIn */}
+                    <div className="space-y-2 md:space-y-1.5">
+                      <Label htmlFor="linkedin" className="text-foreground/70 flex items-center gap-2 text-sm md:text-xs">
+                        <Linkedin className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
+                        LinkedIn (opcional)
+                      </Label>
+                      <Input
+                        id="linkedin"
+                        type="text"
+                        placeholder="linkedin.com/in/seuperfil"
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        className="mobile-input md:h-11 md:min-h-0 md:text-sm md:rounded-xl"
+                      />
                     </div>
                   </motion.div>
                 )}

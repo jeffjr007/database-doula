@@ -29,6 +29,9 @@ import {
   Globe,
   FileText,
   MessageSquare,
+  MapPin,
+  Calendar,
+  Linkedin,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -58,6 +61,9 @@ const SettingsPage = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [age, setAge] = useState("");
+  const [location, setLocation] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
 
   // Notification preferences (local state for now)
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -85,7 +91,7 @@ const SettingsPage = () => {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, avatar_url")
+        .select("full_name, phone, avatar_url, age, location, linkedin_url")
         .eq("user_id", user.id)
         .single();
 
@@ -93,6 +99,9 @@ const SettingsPage = () => {
         setFullName(data.full_name || "");
         setPhone(data.phone || "");
         setAvatarUrl(data.avatar_url || "");
+        setAge(data.age || "");
+        setLocation(data.location || "");
+        setLinkedinUrl(data.linkedin_url || "");
       }
       setLoading(false);
     };
@@ -123,9 +132,15 @@ const SettingsPage = () => {
       .update({
         full_name: fullName,
         phone: phone,
+        age: age,
+        location: location,
+        linkedin_url: linkedinUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", user.id);
+
+    // Invalidate cache so forms refresh
+    sessionStorage.removeItem('user_personal_data_cache');
 
     if (error) {
       toast({
@@ -301,6 +316,46 @@ const SettingsPage = () => {
                   placeholder="(00) 00000-0000"
                   className="h-12 bg-card/50 border-border/50 rounded-xl focus:border-primary/50"
                 />
+              </div>
+
+              {/* Age and Location Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> Idade
+                  </Label>
+                  <Input
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="Ex: 28 anos"
+                    className="h-12 bg-card/50 border-border/50 rounded-xl focus:border-primary/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Localização
+                  </Label>
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="São Paulo, SP"
+                    className="h-12 bg-card/50 border-border/50 rounded-xl focus:border-primary/50"
+                  />
+                </div>
+              </div>
+
+              {/* LinkedIn */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Linkedin className="w-4 h-4" /> LinkedIn
+                </Label>
+                <Input
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="linkedin.com/in/seuperfil"
+                  className="h-12 bg-card/50 border-border/50 rounded-xl focus:border-primary/50"
+                />
+                <p className="text-xs text-muted-foreground">Será preenchido automaticamente nos formulários de CV e cartas</p>
               </div>
 
               <Button

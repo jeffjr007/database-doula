@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ATSCVData, IdiomaItem } from "@/types/ats-cv";
 import { motion } from "framer-motion";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface ATSCVFormProps {
   onGenerate: (data: ATSCVData) => void;
@@ -39,6 +40,8 @@ interface FormData {
 }
 
 export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
+  const { personalData, isLoading: isLoadingProfile } = useUserProfile();
+  
   const [formData, setFormData] = useState<FormData>({
     nome: "",
     telefone: "",
@@ -53,6 +56,21 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Auto-fill personal data from profile
+  useEffect(() => {
+    if (!isLoadingProfile && personalData) {
+      setFormData(prev => ({
+        ...prev,
+        nome: prev.nome || personalData.fullName.toUpperCase(),
+        telefone: prev.telefone || personalData.phone,
+        localizacao: prev.localizacao || personalData.location,
+        email: prev.email || personalData.email,
+        linkedin: prev.linkedin || personalData.linkedinUrl,
+        idade: prev.idade || personalData.age,
+      }));
+    }
+  }, [personalData, isLoadingProfile]);
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
