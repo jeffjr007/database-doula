@@ -2,9 +2,14 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Preload mentor image immediately on app load
+// Preload critical images immediately on app load
 import mentorPhoto from "@/assets/mentor-photo.png";
-const preloadImage = new Image();
-preloadImage.src = mentorPhoto;
+import logoAd from "@/assets/logo-ad.png";
+
+const preloadMentor = new Image();
+preloadMentor.src = mentorPhoto;
+
+const preloadLogo = new Image();
+preloadLogo.src = logoAd;
 
 createRoot(document.getElementById("root")!).render(<App />);
