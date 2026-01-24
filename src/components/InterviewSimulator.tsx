@@ -10,11 +10,13 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowRight,
-  FileText
+  FileText,
+  AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 interface KeywordScript {
   keyword: string;
@@ -45,17 +47,33 @@ export const InterviewSimulator = ({
 }: InterviewSimulatorProps) => {
   const [phase, setPhase] = useState<SimulatorPhase>('intro');
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob1, setAudioBlob1] = useState<Blob | null>(null);
-  const [audioBlob2, setAudioBlob2] = useState<Blob | null>(null);
+  const [transcript1, setTranscript1] = useState('');
+  const [transcript2, setTranscript2] = useState('');
   const [feedback, setFeedback] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<string>('');
   const [showTyping, setShowTyping] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const currentQuestionRef = useRef<1 | 2>(1);
   const { toast } = useToast();
+
+  const {
+    transcript,
+    isListening,
+    error: speechError,
+    isSupported,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition({
+    language: 'pt-BR',
+    continuous: true,
+    interimResults: true,
+    onResult: (text) => {
+      setLiveTranscript(text);
+    },
+  });
 
   const combinedExperienceScript = experienceScripts
     .map(s => `${s.keyword}: ${s.script}`)
@@ -93,73 +111,72 @@ export const InterviewSimulator = ({
     }
   }, []);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      const questionNumber = phase === 'question1' || phase === 'recording1' ? 1 : 2;
-      currentQuestionRef.current = questionNumber;
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        
-        if (currentQuestionRef.current === 1) {
-          setAudioBlob1(audioBlob);
-          startTransition();
-        } else {
-          setAudioBlob2(audioBlob);
-          analyzePerformance();
-        }
-        
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      
-      if (phase === 'question1') {
-        setPhase('recording1');
-      } else if (phase === 'question2') {
-        setPhase('recording2');
-      }
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
+  // Show speech recognition errors
+  useEffect(() => {
+    if (speechError) {
       toast({
-        title: "Erro ao acessar microfone",
-        description: "Verifique se você permitiu o acesso ao microfone.",
+        title: "Erro no reconhecimento de voz",
+        description: speechError,
         variant: "destructive",
       });
+    }
+  }, [speechError, toast]);
+
+  const startRecording = async () => {
+    if (!isSupported) {
+      toast({
+        title: "Navegador não suportado",
+        description: "Seu navegador não suporta reconhecimento de voz. Tente usar o Chrome.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const questionNumber = phase === 'question1' || phase === 'recording1' ? 1 : 2;
+    currentQuestionRef.current = questionNumber;
+
+    resetTranscript();
+    setLiveTranscript('');
+    startListening();
+    setIsRecording(true);
+    
+    if (phase === 'question1') {
+      setPhase('recording1');
+    } else if (phase === 'question2') {
+      setPhase('recording2');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+    stopListening();
+    setIsRecording(false);
+
+    // Save the transcript
+    const finalText = transcript || liveTranscript;
+    
+    if (currentQuestionRef.current === 1) {
+      setTranscript1(finalText);
+      startTransition();
+    } else {
+      setTranscript2(finalText);
+      analyzePerformance(transcript1, finalText);
     }
   };
 
-  const analyzePerformance = async () => {
+  const analyzePerformance = async (t1: string, t2: string) => {
     setPhase('analyzing');
     setIsAnalyzing(true);
-    setCurrentMessage("Analisando seu desempenho...");
+    setCurrentMessage("Analisando seu desempenho com base nas suas respostas...");
     
     try {
       const { data, error } = await supabase.functions.invoke('analyze-interview-performance', {
         body: {
           aboutMeScript,
           experienceScripts: combinedExperienceScript,
-          hasAudio1: !!audioBlob1,
-          hasAudio2: !!audioBlob2,
+          spokenAboutMe: t1,
+          spokenExperiences: t2,
+          hasAudio1: !!t1,
+          hasAudio2: !!t2,
         },
       });
 
@@ -203,6 +220,23 @@ export const InterviewSimulator = ({
           Pratique suas respostas com a recrutadora virtual
         </p>
       </motion.div>
+
+      {/* Browser Support Warning */}
+      {!isSupported && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-amber-700 dark:text-amber-400">Navegador não suportado</p>
+            <p className="text-sm text-amber-600 dark:text-amber-500">
+              Para usar a transcrição de voz, utilize o Google Chrome ou Microsoft Edge.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Single Unified Card */}
       <motion.div
@@ -254,7 +288,7 @@ export const InterviewSimulator = ({
 
             {/* User response confirmation */}
             <AnimatePresence>
-              {audioBlob1 && (phase !== 'question1' && phase !== 'recording1' && phase !== 'intro') && (
+              {transcript1 && (phase !== 'question1' && phase !== 'recording1' && phase !== 'intro') && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -266,7 +300,7 @@ export const InterviewSimulator = ({
                   </div>
                 </motion.div>
               )}
-              {audioBlob2 && (phase === 'analyzing' || phase === 'feedback') && (
+              {transcript2 && (phase === 'analyzing' || phase === 'feedback') && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -342,6 +376,26 @@ export const InterviewSimulator = ({
                   )}
                 </div>
 
+                {/* Live Transcription Display */}
+                <AnimatePresence>
+                  {isRecording && liveTranscript && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="bg-primary/5 border border-primary/20 rounded-xl p-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        <span className="text-xs font-medium text-primary">Transcrição ao vivo</span>
+                      </div>
+                      <p className="text-sm text-foreground/80 italic">
+                        "{liveTranscript}"
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Recording Controls */}
                 <div className="pt-2">
                   {isRecording ? (
@@ -365,7 +419,7 @@ export const InterviewSimulator = ({
                       onClick={startRecording} 
                       size="lg"
                       className="w-full gap-2"
-                      disabled={showTyping}
+                      disabled={showTyping || !isSupported}
                     >
                       <Mic className="w-4 h-4" />
                       Gravar Resposta
@@ -384,7 +438,10 @@ export const InterviewSimulator = ({
                 className="py-8 text-center space-y-4"
               >
                 <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
-                <p className="text-muted-foreground">Analisando seu desempenho...</p>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Analisando seu desempenho...</p>
+                  <p className="text-xs text-muted-foreground/70">A IA está avaliando sua resposta falada</p>
+                </div>
               </motion.div>
             )}
 

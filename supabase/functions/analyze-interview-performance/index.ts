@@ -4,6 +4,8 @@ import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 interface PerformanceInput {
   aboutMeScript: string;
   experienceScripts: string;
+  spokenAboutMe: string;
+  spokenExperiences: string;
   hasAudio1: boolean;
   hasAudio2: boolean;
 }
@@ -17,40 +19,88 @@ serve(async (req) => {
     const authResult = await validateAuth(req);
     if (authResult instanceof Response) return authResult;
 
-    const { aboutMeScript, experienceScripts, hasAudio1, hasAudio2 } = await req.json() as PerformanceInput;
+    const { 
+      aboutMeScript, 
+      experienceScripts, 
+      spokenAboutMe, 
+      spokenExperiences,
+      hasAudio1, 
+      hasAudio2 
+    } = await req.json() as PerformanceInput;
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `Você é uma recrutadora experiente e mentora de carreira chamada Ana. Sua missão é dar um feedback construtivo e encorajador para candidatos que acabaram de praticar uma simulação de entrevista.
+    const hasRealTranscription = (spokenAboutMe && spokenAboutMe.trim().length > 10) || 
+                                  (spokenExperiences && spokenExperiences.trim().length > 10);
 
-Você deve:
-1. Ser amigável e motivadora, mas também honesta
-2. Destacar pontos positivos primeiro
-3. Dar dicas práticas de melhoria
-4. Usar linguagem simples e direta
-5. Manter o feedback conciso (máximo 200 palavras)
+    const systemPrompt = `Você é uma recrutadora experiente e mentora de carreira chamada Ana. Sua missão é dar um feedback CIRÚRGICO e ASSERTIVO para candidatos que acabaram de praticar uma simulação de entrevista.
 
-Estrutura do feedback:
-- Parabéns por praticar (breve)
-- Pontos fortes baseados nos roteiros que eles prepararam
-- 2-3 dicas práticas de melhoria para entrevistas reais
-- Encorajamento final`;
+Você recebeu:
+1. Os ROTEIROS que o candidato preparou (o que ele deveria falar)
+2. O que o candidato REALMENTE FALOU (transcrição de voz)
 
-    const userPrompt = `O candidato acabou de praticar duas perguntas de entrevista:
+Sua análise deve ser PRECISA e focar em:
 
-1. "Me fale sobre você" - Roteiro preparado:
+## ANÁLISE COMPARATIVA
+- Compare o que foi PLANEJADO vs o que foi REALMENTE DITO
+- Identifique pontos que foram esquecidos ou pulados
+- Destaque informações que foram adicionadas espontaneamente (bom sinal!)
+- Avalie se a estrutura e ordem das informações foi mantida
+
+## ANÁLISE DE COMUNICAÇÃO
+- Clareza: As frases foram completas? Houve hesitações?
+- Coerência: O raciocínio foi fácil de seguir?
+- Impacto: As conquistas e resultados foram mencionados?
+- Naturalidade: Soou decorado ou genuíno?
+
+## FEEDBACK ESTRUTURADO
+1. **O que você fez muito bem** (2-3 pontos específicos)
+2. **Oportunidades de melhoria** (2-3 pontos específicos com exemplos do que foi dito)
+3. **Dica prática** (1 ação concreta para a próxima prática)
+
+Mantenha o feedback construtivo, específico e motivador. Use exemplos diretos do que a pessoa falou.
+Limite: máximo 300 palavras.`;
+
+    let userPrompt: string;
+
+    if (hasRealTranscription) {
+      userPrompt = `## ROTEIRO PREPARADO - "Fale sobre você":
+${aboutMeScript || "(Não disponível)"}
+
+## O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre você":
+${spokenAboutMe || "(Candidato não gravou ou transcrição não disponível)"}
+
+---
+
+## ROTEIROS PREPARADOS - "Fale sobre suas experiências":
+${experienceScripts || "(Não disponível)"}
+
+## O QUE O CANDIDATO REALMENTE FALOU - "Fale sobre suas experiências":
+${spokenExperiences || "(Candidato não gravou ou transcrição não disponível)"}
+
+---
+
+Por favor, forneça uma análise CIRÚRGICA comparando o que foi planejado com o que foi realmente dito. Seja específico e use exemplos diretos das falas.`;
+    } else {
+      // Fallback for cases without transcription
+      userPrompt = `O candidato praticou mas a transcrição de voz não está disponível.
+
+## ROTEIROS QUE O CANDIDATO PREPAROU:
+
+**"Fale sobre você":**
 ${aboutMeScript}
 
-2. "Me fale sobre suas experiências" - Roteiros preparados:
+**"Fale sobre suas experiências":**
 ${experienceScripts}
 
-O candidato gravou áudio para a primeira pergunta: ${hasAudio1 ? 'Sim' : 'Não'}
-O candidato gravou áudio para a segunda pergunta: ${hasAudio2 ? 'Sim' : 'Não'}
+Gravou "Sobre você": ${hasAudio1 ? 'Sim' : 'Não'}
+Gravou "Experiências": ${hasAudio2 ? 'Sim' : 'Não'}
 
-Forneça um feedback construtivo e encorajador sobre a preparação deste candidato, baseando-se nos roteiros que ele criou. Destaque a qualidade da estrutura dos roteiros e dê dicas para a performance na entrevista real.`;
+Forneça um feedback encorajador baseado na qualidade dos roteiros preparados e dicas gerais para a prática de entrevistas.`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -59,13 +109,13 @@ Forneça um feedback construtivo e encorajador sobre a preparação deste candid
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 800,
       }),
     });
 
