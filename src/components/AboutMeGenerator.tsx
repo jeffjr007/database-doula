@@ -190,7 +190,10 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="idade" className="text-xs text-muted-foreground">Idade</Label>
+                  <Label htmlFor="idade" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                    <User className="w-3.5 h-3.5" />
+                    Idade
+                  </Label>
                   <Input
                     id="idade"
                     value={data.idade}
