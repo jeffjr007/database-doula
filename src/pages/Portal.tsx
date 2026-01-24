@@ -139,8 +139,7 @@ const Portal = () => {
   const effectiveIsAdmin = isAdmin || isAdminSticky;
   const [progress, setProgress] = useState<StageProgress[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
-  const [showTitle, setShowTitle] = useState(false);
-  const [showContent, setShowContent] = useState(false);
+  const [isDataReady, setIsDataReady] = useState(false);
   const [linkedinDiagnostic, setLinkedinDiagnostic] = useState<LinkedInDiagnostic | null>(null);
   const [opportunityFunnel, setOpportunityFunnel] = useState<OpportunityFunnel | null>(null);
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
@@ -161,20 +160,16 @@ const Portal = () => {
     impactPhrases[Math.floor(Math.random() * impactPhrases.length)]
   );
 
-  useEffect(() => {
-    // Sequência harmônica: sidebar/saudação → cards → progresso
-    const titleTimer = setTimeout(() => setShowTitle(true), 400);
-    const contentTimer = setTimeout(() => setShowContent(true), 900);
-
-    return () => {
-      clearTimeout(titleTimer);
-      clearTimeout(contentTimer);
-    };
-  }, []);
+  // Removed artificial delay timers - content now shows when data is ready
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.id) return;
+      // If no user, mark as ready immediately (guest view)
+      if (!user?.id) {
+        setIsDataReady(true);
+        return;
+      }
+      
       if (adminLoading) return;
 
       // ADMIN = PORTAL DIRETO, sem nenhuma verificação de ativação ou presente
@@ -195,8 +190,10 @@ const Portal = () => {
         // For admin, just continue - they don't need activation
         if (effectiveIsAdmin) {
           // Admin can continue even without profile
+          setIsDataReady(true);
         } else {
-          // Non-admin with profile error: don't redirect, show error state
+          // Non-admin with profile error: mark as ready to show error state
+          setIsDataReady(true);
           return;
         }
       }
@@ -205,10 +202,10 @@ const Portal = () => {
         setStage2Unlocked(profile.stage2_unlocked ?? false);
         setStage2Completed(profile.stage2_completed ?? false);
         setHasLearningPath(!!profile.learning_path);
-      }
-
-      if (profile?.full_name) {
-        setUserName(profile.full_name.split(' ')[0]);
+        
+        if (profile.full_name) {
+          setUserName(profile.full_name.split(' ')[0]);
+        }
       }
 
       // ADMIN NEVER gets redirected to /ativar or /presente
@@ -226,45 +223,48 @@ const Portal = () => {
         // Do NOT auto-redirect to /presente here - user must explicitly start their journey
       }
 
-      const { data: progressData } = await supabase
-        .from('mentoring_progress')
-        .select('stage_number, completed, current_step')
-        .eq('user_id', user.id);
+      // Fetch remaining data in parallel for speed
+      const [progressResult, diagnosticResult, funnelResult, cvsResult] = await Promise.all([
+        supabase
+          .from('mentoring_progress')
+          .select('stage_number, completed, current_step')
+          .eq('user_id', user.id),
+        supabase
+          .from('linkedin_diagnostics')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('status', 'published')
+          .maybeSingle(),
+        supabase
+          .from('opportunity_funnels')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('status', 'published')
+          .maybeSingle(),
+        supabase
+          .from('saved_cvs')
+          .select('id, name, cv_data')
+          .eq('user_id', user.id)
+      ]);
 
-      if (progressData) {
-        setProgress(progressData);
+      if (progressResult.data) {
+        setProgress(progressResult.data);
       }
 
-      const { data: diagnosticData } = await supabase
-        .from('linkedin_diagnostics')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'published')
-        .maybeSingle();
-
-      if (diagnosticData) {
-        setLinkedinDiagnostic(diagnosticData);
+      if (diagnosticResult.data) {
+        setLinkedinDiagnostic(diagnosticResult.data);
       }
 
-      const { data: funnelData } = await supabase
-        .from('opportunity_funnels')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'published')
-        .maybeSingle();
-
-      if (funnelData) {
-        setOpportunityFunnel(funnelData);
+      if (funnelResult.data) {
+        setOpportunityFunnel(funnelResult.data);
       }
 
-      const { data: cvsData } = await supabase
-        .from('saved_cvs')
-        .select('id, name, cv_data')
-        .eq('user_id', user.id);
-
-      if (cvsData) {
-        setSavedCVs(cvsData);
+      if (cvsResult.data) {
+        setSavedCVs(cvsResult.data);
       }
+
+      // All data loaded - show content
+      setIsDataReady(true);
     };
 
     fetchData();
@@ -672,11 +672,11 @@ const Portal = () => {
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
             <AnimatePresence>
-              {showTitle && (
+              {isDataReady && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+                  transition={{ duration: 0.4 }}
                   className="mb-8"
                 >
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
@@ -689,7 +689,7 @@ const Portal = () => {
                       className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4 }}
+                      transition={{ delay: 0.1 }}
                     >
                       Olá, <span className="text-gradient">{userName}</span>
                     </motion.h1>
@@ -703,11 +703,11 @@ const Portal = () => {
             </AnimatePresence>
 
             <AnimatePresence>
-              {showContent && (
+              {isDataReady && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
                 >
                   <h2 className="text-xl font-display font-bold text-foreground mb-6">
                     Suas Etapas
