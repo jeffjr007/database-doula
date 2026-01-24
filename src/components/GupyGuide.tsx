@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useDevUser } from "@/hooks/useDevUser";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -426,6 +427,7 @@ export const GupyGuide = () => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
+  const { autoSave } = useDevUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/hooks/useAuth';
+import { useDevUser } from '@/hooks/useDevUser';
 
 interface AdminBypassGateProps {
   children: React.ReactNode;
@@ -8,26 +9,30 @@ interface AdminBypassGateProps {
 }
 
 /**
- * Gate component that redirects admins away from user-specific flows.
- * Admins should NEVER see activation or gift pages - they go straight to Portal.
+ * Gate component that redirects admins and dev users away from user-specific flows.
+ * Admins and dev users should NEVER see activation or gift pages - they go straight to Portal.
  */
 const AdminBypassGate = ({ children, redirectTo = '/' }: AdminBypassGateProps) => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, isAdminSticky, loading: adminLoading } = useAdmin();
+  const { isDevUser, loading: devLoading } = useDevUser();
+
+  const shouldBypass = isAdmin || isAdminSticky || isDevUser;
+  const isLoading = authLoading || adminLoading || devLoading;
 
   useEffect(() => {
-    // Wait for both auth and admin status to be determined
-    if (authLoading || adminLoading) return;
+    // Wait for auth, admin, and dev status to be determined
+    if (isLoading) return;
 
-    // If user is admin (current or sticky), redirect immediately
-    if (isAdmin || isAdminSticky) {
-      console.log('[AdminBypassGate] Admin detected, redirecting to:', redirectTo);
+    // If user is admin or dev, redirect immediately
+    if (shouldBypass) {
+      console.log('[AdminBypassGate] Admin/Dev detected, redirecting to:', redirectTo);
       window.location.replace(redirectTo);
     }
-  }, [authLoading, adminLoading, isAdmin, isAdminSticky, redirectTo]);
+  }, [isLoading, shouldBypass, redirectTo]);
 
-  // Show nothing while loading or if admin (will redirect)
-  if (authLoading || adminLoading || isAdmin || isAdminSticky) {
+  // Show nothing while loading or if should bypass (will redirect)
+  if (isLoading || shouldBypass) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -35,7 +40,7 @@ const AdminBypassGate = ({ children, redirectTo = '/' }: AdminBypassGateProps) =
     );
   }
 
-  // Not admin - render children
+  // Not admin/dev - render children
   return <>{children}</>;
 };
 

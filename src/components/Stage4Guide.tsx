@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useDevUser } from "@/hooks/useDevUser";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -90,14 +91,15 @@ const KEYWORDS_INTRO_MESSAGES = [
 
 export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const hasStartedBefore = sessionStorage.getItem(STAGE4_STARTED_KEY) === 'true';
+  const { bypassValidation, skipAnimations } = useDevUser();
   
-  const [showIntroduction, setShowIntroduction] = useState(!hasStartedBefore);
+  const [showIntroduction, setShowIntroduction] = useState(!hasStartedBefore && !skipAnimations);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [savedScripts, setSavedScripts] = useState<KeywordScript[]>([]);
-  const [showAboutMeIntro, setShowAboutMeIntro] = useState(true);
+  const [showAboutMeIntro, setShowAboutMeIntro] = useState(!skipAnimations);
   const [showKeywordsIntro, setShowKeywordsIntro] = useState(true);
   const [data, setData] = useState<StepData>({
     companyName: "",
@@ -254,6 +256,9 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
   };
 
   const canProceed = () => {
+    // Dev users can always proceed - bypass all validation
+    if (bypassValidation) return true;
+    
     switch (currentStep) {
       case 1: return data.companyName.trim().length > 0;
       case 2: return data.jobDescription.trim().length > 0;
