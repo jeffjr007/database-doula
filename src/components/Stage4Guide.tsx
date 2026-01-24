@@ -73,14 +73,14 @@ const STAGE4_STARTED_KEY = 'stage4_started';
 // Messages for "Sobre Você" intro
 const ABOUT_ME_INTRO_MESSAGES = [
   { text: "Agora vamos preparar você para uma das perguntas mais comuns em entrevistas...", highlight: false },
-  { text: "\"Me fale sobre você\" — parece simples, mas é onde muitos candidatos tropeçam.", highlight: true },
+  { text: "\"Me fale sobre você\" parece simples, mas é onde muitos candidatos tropeçam.", highlight: true },
   { text: "Vou te ajudar a criar um roteiro natural que conecta quem você é com o que a empresa busca. Nada de respostas decoradas!", highlight: false },
 ];
 
 // Messages for "Palavras-Chave" intro
 const KEYWORDS_INTRO_MESSAGES = [
   { text: "Ótimo! Agora vamos preparar você para outra pergunta clássica das entrevistas...", highlight: false },
-  { text: "\"Me fale sobre suas experiências\" — aqui é onde você mostra que sabe fazer acontecer.", highlight: true },
+  { text: "\"Me fale sobre suas experiências\" é aqui que você mostra que sabe fazer acontecer.", highlight: true },
   { text: "Vamos montar roteiros usando a estrutura: O QUE fez + COMO fez + RESULTADO. Simples e poderosa!", highlight: false },
   { text: "Primeiro, preciso identificar as palavras-chave da vaga para conectar suas experiências com o que a empresa busca.", highlight: false },
 ];
