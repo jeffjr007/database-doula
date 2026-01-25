@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, FileText, Target, ChevronRight, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
+import { User, FileText, Target, ChevronRight, CheckCircle, Clock, AlertCircle, Trash2, UserX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +14,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 interface Mentee {
@@ -40,7 +46,9 @@ interface MenteeListProps {
 export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
   const [mentees, setMentees] = useState<Mentee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingMentee, setDeletingMentee] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMentees();
@@ -109,7 +117,8 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
   };
 
   const handleClearMenteeData = async (menteeUserId: string, menteeName: string) => {
-    setDeletingMentee(menteeUserId);
+    setActionLoading(menteeUserId);
+    setClearDialogOpen(null);
     try {
       // Delete data from all tables (same as delete-account but without deleting the user)
       await Promise.all([
@@ -143,7 +152,33 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
       console.error('Error clearing mentee data:', error);
       toast.error('Erro ao limpar dados do mentorado');
     } finally {
-      setDeletingMentee(null);
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteMentee = async (menteeUserId: string, menteeName: string) => {
+    setActionLoading(menteeUserId);
+    setDeleteDialogOpen(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-delete-mentee', {
+        body: { menteeUserId },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(`${menteeName} foi removido da plataforma.`);
+      fetchMentees();
+    } catch (error) {
+      console.error('Error deleting mentee:', error);
+      toast.error('Erro ao excluir mentorado');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -235,17 +270,42 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => e.stopPropagation()}
+                    disabled={actionLoading === mentee.user_id}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {actionLoading === mentee.user_id ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </Button>
-                </AlertDialogTrigger>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem 
+                    className="text-orange-500 focus:text-orange-500 cursor-pointer"
+                    onClick={() => setClearDialogOpen(mentee.user_id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Limpar dados
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={() => setDeleteDialogOpen(mentee.user_id)}
+                  >
+                    <UserX className="w-4 h-4 mr-2" />
+                    Excluir mentorado
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Clear Data Dialog */}
+              <AlertDialog open={clearDialogOpen === mentee.user_id} onOpenChange={(open) => !open && setClearDialogOpen(null)}>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Limpar dados do mentorado</AlertDialogTitle>
@@ -262,11 +322,36 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-destructive hover:bg-destructive/90"
+                      className="bg-warning hover:bg-warning/90 text-warning-foreground"
                       onClick={() => handleClearMenteeData(mentee.user_id, mentee.full_name || 'Sem nome')}
-                      disabled={deletingMentee === mentee.user_id}
                     >
-                      {deletingMentee === mentee.user_id ? 'Limpando...' : 'Limpar dados'}
+                      Limpar dados
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Delete User Dialog */}
+              <AlertDialog open={deleteDialogOpen === mentee.user_id} onOpenChange={(open) => !open && setDeleteDialogOpen(null)}>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-destructive">Excluir mentorado permanentemente</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <p>
+                        Você está prestes a excluir <strong>{mentee.full_name || 'Sem nome'}</strong> permanentemente.
+                      </p>
+                      <p className="text-sm text-destructive/80">
+                        ⚠️ Esta ação é irreversível! O usuário será removido da plataforma e não poderá mais fazer login.
+                      </p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={() => handleDeleteMentee(mentee.user_id, mentee.full_name || 'Sem nome')}
+                    >
+                      Excluir permanentemente
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
