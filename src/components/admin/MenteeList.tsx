@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, FileText, Target, ChevronRight, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { User, FileText, Target, ChevronRight, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface Mentee {
   id: string;
@@ -27,6 +40,7 @@ interface MenteeListProps {
 export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
   const [mentees, setMentees] = useState<Mentee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingMentee, setDeletingMentee] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMentees();
@@ -91,6 +105,45 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
       console.error('Error fetching mentees:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearMenteeData = async (menteeUserId: string, menteeName: string) => {
+    setDeletingMentee(menteeUserId);
+    try {
+      // Delete data from all tables (same as delete-account but without deleting the user)
+      await Promise.all([
+        supabase.from('chat_messages').delete().eq('user_id', menteeUserId),
+        supabase.from('collected_data').delete().eq('user_id', menteeUserId),
+        supabase.from('interview_history').delete().eq('user_id', menteeUserId),
+        supabase.from('learning_paths').delete().eq('user_id', menteeUserId),
+        supabase.from('linkedin_diagnostics').delete().eq('user_id', menteeUserId),
+        supabase.from('mentoring_progress').delete().eq('user_id', menteeUserId),
+        supabase.from('opportunity_funnels').delete().eq('user_id', menteeUserId),
+        supabase.from('saved_cover_letters').delete().eq('user_id', menteeUserId),
+        supabase.from('saved_cvs').delete().eq('user_id', menteeUserId),
+        supabase.from('support_tickets').delete().eq('user_id', menteeUserId),
+      ]);
+
+      // Reset profile flags but keep user info
+      await supabase
+        .from('profiles')
+        .update({
+          platform_activated: false,
+          stage2_completed: false,
+          stage2_unlocked: false,
+          stage3_unlocked: false,
+          learning_path: null,
+        })
+        .eq('user_id', menteeUserId);
+
+      toast.success(`Dados de ${menteeName} limpos com sucesso!`);
+      fetchMentees();
+    } catch (error) {
+      console.error('Error clearing mentee data:', error);
+      toast.error('Erro ao limpar dados do mentorado');
+    } finally {
+      setDeletingMentee(null);
     }
   };
 
@@ -161,11 +214,13 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
-          className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group"
-          onClick={() => onSelectMentee(mentee.user_id, mentee.full_name || 'Sem nome')}
+          className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div 
+              className="flex items-center gap-4 flex-1 cursor-pointer"
+              onClick={() => onSelectMentee(mentee.user_id, mentee.full_name || 'Sem nome')}
+            >
               <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-6 h-6 text-primary" />
               </div>
@@ -179,11 +234,56 @@ export const MenteeList = ({ onSelectMentee }: MenteeListProps) => {
               </div>
             </div>
 
-            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            <div className="flex items-center gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar dados do mentorado</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <p>
+                        Você está prestes a limpar todos os dados de <strong>{mentee.full_name || 'Sem nome'}</strong>.
+                      </p>
+                      <p className="text-sm">
+                        Isso irá excluir: progresso, CVs, cartas, entrevistas, diagnósticos e funis.
+                        O usuário continuará ativo e poderá recomeçar do zero.
+                      </p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={() => handleClearMenteeData(mentee.user_id, mentee.full_name || 'Sem nome')}
+                      disabled={deletingMentee === mentee.user_id}
+                    >
+                      {deletingMentee === mentee.user_id ? 'Limpando...' : 'Limpar dados'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              <ChevronRight 
+                className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all cursor-pointer" 
+                onClick={() => onSelectMentee(mentee.user_id, mentee.full_name || 'Sem nome')}
+              />
+            </div>
           </div>
 
           {/* Stage status indicators */}
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div 
+            className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 cursor-pointer"
+            onClick={() => onSelectMentee(mentee.user_id, mentee.full_name || 'Sem nome')}
+          >
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">E1:</span>
