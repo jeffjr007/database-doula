@@ -8,7 +8,8 @@ import { InviteCodeManager } from '@/components/admin/InviteCodeManager';
 import { MenteeList } from '@/components/admin/MenteeList';
 import { MenteeDetail } from '@/components/admin/MenteeDetail';
 import { TicketManager } from '@/components/admin/TicketManager';
-import { ArrowLeft, Users, Ticket, Shield, MessageSquare } from 'lucide-react';
+import { StageProgressTracker } from '@/components/admin/StageProgressTracker';
+import { ArrowLeft, Users, Ticket, Shield, MessageSquare, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import logoAd from '@/assets/logo-ad.png';
 
@@ -54,12 +55,19 @@ const Admin = () => {
           {selectedMentee ? (
             <MenteeDetail menteeId={selectedMentee.id} menteeName={selectedMentee.name} onBack={() => setSelectedMentee(null)} />
           ) : (
-            <Tabs defaultValue="mentees" className="space-y-6">
+            <Tabs defaultValue="progress" className="space-y-6">
               <TabsList className="bg-secondary/30 p-1">
+                <TabsTrigger value="progress" className="gap-2"><BarChart3 className="w-4 h-4" />Progresso</TabsTrigger>
                 <TabsTrigger value="mentees" className="gap-2"><Users className="w-4 h-4" />Mentorados</TabsTrigger>
                 <TabsTrigger value="tickets" className="gap-2"><MessageSquare className="w-4 h-4" />Tickets</TabsTrigger>
                 <TabsTrigger value="invites" className="gap-2"><Ticket className="w-4 h-4" />Convites</TabsTrigger>
               </TabsList>
+              <TabsContent value="progress">
+                <div className="space-y-4">
+                  <div><h2 className="text-2xl font-display font-bold text-foreground">Progresso das Etapas</h2><p className="text-muted-foreground text-sm">Visualize em qual etapa cada mentorado está atualmente.</p></div>
+                  <StageProgressTracker />
+                </div>
+              </TabsContent>
               <TabsContent value="mentees">
                 <div className="space-y-4">
                   <div><h2 className="text-2xl font-display font-bold text-foreground">Mentorados</h2><p className="text-muted-foreground text-sm">Gerencie os entregáveis e progresso de cada mentorado.</p></div>
