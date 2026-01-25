@@ -114,6 +114,7 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
 
   const hasInitializedRef = useRef(false);
   const hasUserNavigatedRef = useRef(false);
+  const popstateGuardArmedRef = useRef(false);
 
   // Check if there's unsaved progress (any data filled but not saved to history)
   const hasUnsavedProgress = useCallback(() => {
@@ -129,6 +130,37 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
     );
   }, [data, savedScripts, hasSavedToHistory]);
 
+  const clearStage4LocalCache = useCallback(() => {
+    try {
+      sessionStorage.removeItem(STAGE4_STARTED_KEY);
+      sessionStorage.removeItem(STAGE4_DATA_CACHE_KEY);
+      sessionStorage.removeItem(STAGE4_SCRIPTS_CACHE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const resetStage4Session = useCallback(async () => {
+    // IMPORTANT: This reset MUST NOT run for interviews already saved to history.
+    if (hasSavedToHistory || isReviewMode) return;
+
+    // Clear local cache immediately (prevents rehydration when coming back)
+    clearStage4LocalCache();
+
+    // Clear server-side progress so returning to /etapa/4 starts from scratch
+    if (user?.id) {
+      try {
+        await supabase
+          .from('collected_data')
+          .delete()
+          .eq('user_id', user.id)
+          .in('data_type', ['stage4_data', 'stage4_interview_experiences']);
+      } catch {
+        // ignore
+      }
+    }
+  }, [clearStage4LocalCache, hasSavedToHistory, isReviewMode, user?.id]);
+
   // Handle browser back/refresh with beforeunload
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -143,12 +175,65 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedProgress]);
 
+  // Intercept browser BACK (popstate) to show exit confirmation in SPA navigation.
+  // React Router's useBlocker requires a data router; this guard works with BrowserRouter.
+  useEffect(() => {
+    // Arm once to avoid pushing multiple times during re-renders.
+    if (!popstateGuardArmedRef.current) {
+      try {
+        window.history.pushState(null, "", window.location.href);
+      } catch {
+        // ignore
+      }
+      popstateGuardArmedRef.current = true;
+    }
+
+    const onPopState = () => {
+      if (!hasUnsavedProgress()) return;
+      // Cancel the back navigation by pushing current URL again
+      try {
+        window.history.pushState(null, "", window.location.href);
+      } catch {
+        // ignore
+      }
+      setShowExitConfirm(true);
+      setPendingNavigation(() => () => {
+        void resetStage4Session().finally(() => {
+          // Now allow leaving
+          window.history.back();
+        });
+      });
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [hasUnsavedProgress, resetStage4Session]);
+
+  // If the user leaves /etapa/4 without saving to history, wipe everything.
+  // This ensures coming back starts from scratch.
+  useEffect(() => {
+    return () => {
+      if (hasSavedToHistory || isReviewMode) return;
+      clearStage4LocalCache();
+      // Fire-and-forget remote cleanup
+      if (user?.id) {
+        void supabase
+          .from('collected_data')
+          .delete()
+          .eq('user_id', user.id)
+          .in('data_type', ['stage4_data', 'stage4_interview_experiences']);
+      }
+    };
+  }, [clearStage4LocalCache, hasSavedToHistory, isReviewMode, user?.id]);
+
   // Wrapper for navigate that checks for unsaved progress
   const safeNavigate = (path: string) => {
     if (hasUnsavedProgress()) {
       setShowExitConfirm(true);
       setPendingNavigation(() => () => {
-        window.location.href = path;
+        void resetStage4Session().finally(() => {
+          window.location.href = path;
+        });
       });
     } else {
       navigate(path);
@@ -1044,7 +1129,7 @@ Exemplo:
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/')}
+          onClick={() => safeNavigate('/')}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -1062,7 +1147,7 @@ Exemplo:
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/suporte')}
+            onClick={() => safeNavigate('/suporte')}
             className="text-muted-foreground hover:text-primary"
           >
             <HelpCircle className="w-5 h-5" />
