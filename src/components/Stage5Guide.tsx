@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,7 +22,10 @@ import {
   Rocket,
   Star,
   Crown,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  Clock,
+  FileText
 } from "lucide-react";
 import {
   AlertDialog,
@@ -41,9 +45,22 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import mentorPhoto from "@/assets/mentor-photo.png";
 import { KeywordScript } from "./InterviewScriptBuilder";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Stage5GuideProps {
   stageNumber: number;
+}
+
+interface InterviewHistory {
+  id: string;
+  name: string;
+  company_name: string;
+  created_at: string;
+  data_content: {
+    savedScripts?: KeywordScript[];
+    [key: string]: any;
+  };
 }
 
 interface IntensifiedScript {
@@ -54,14 +71,16 @@ interface IntensifiedScript {
 }
 
 interface Stage5Data {
+  selectedInterviewId: string | null;
   intensifiedScripts: IntensifiedScript[];
   completed: boolean;
 }
 
 const STEPS = [
-  { id: 1, title: "Introdução", icon: Users, description: "Por que gestores?" },
-  { id: 2, title: "Intensificar", icon: Zap, description: "O COMO" },
-  { id: 3, title: "Apresentação", icon: Presentation, description: "Template" },
+  { id: 1, title: "Escolher Entrevista", icon: FileText, description: "Selecionar roteiro" },
+  { id: 2, title: "Introdução", icon: Users, description: "Por que gestores?" },
+  { id: 3, title: "Intensificar", icon: Zap, description: "O COMO" },
+  { id: 4, title: "Apresentação", icon: Presentation, description: "Template" },
 ];
 
 const CANVA_TEMPLATE_URL = "https://www.canva.com/design/DAGwntg9Gqo/aSlyTmQIhVLEeUehTLn7hQ/edit";
@@ -141,13 +160,15 @@ const benefitsCards = [
 export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [stage4Scripts, setStage4Scripts] = useState<KeywordScript[]>([]);
+  const [interviews, setInterviews] = useState<InterviewHistory[]>([]);
+  const [selectedInterview, setSelectedInterview] = useState<InterviewHistory | null>(null);
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
   const [visibleMessages, setVisibleMessages] = useState(0);
   const [showBenefits, setShowBenefits] = useState(false);
   const [messagesExiting, setMessagesExiting] = useState(false);
 
   const [data, setData] = useState<Stage5Data>({
+    selectedInterviewId: null,
     intensifiedScripts: [],
     completed: false
   });
@@ -156,9 +177,78 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load saved interviews and existing progress
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) return;
+      setIsLoading(true);
+
+      try {
+        // Load interviews and stage 5 data in parallel
+        const [interviewsResult, stage5Result, progressResult] = await Promise.all([
+          supabase
+            .from('interview_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('collected_data')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('data_type', 'stage5_data')
+            .maybeSingle(),
+          supabase
+            .from('mentoring_progress')
+            .select('completed')
+            .eq('user_id', user.id)
+            .eq('stage_number', 5)
+            .maybeSingle()
+        ]);
+
+        const loadedInterviews = (interviewsResult.data || []) as InterviewHistory[];
+        setInterviews(loadedInterviews);
+
+        const isStageCompleted = progressResult.data?.completed;
+
+        if (stage5Result.data?.data_content) {
+          const raw = stage5Result.data.data_content as any;
+          const s5Data: Stage5Data = {
+            selectedInterviewId: raw?.selectedInterviewId || null,
+            intensifiedScripts: Array.isArray(raw?.intensifiedScripts) ? raw.intensifiedScripts : [],
+            completed: Boolean(raw?.completed),
+          };
+
+          setData(s5Data);
+
+          // If there's a selected interview, find it
+          if (s5Data.selectedInterviewId) {
+            const found = loadedInterviews.find(i => i.id === s5Data.selectedInterviewId);
+            if (found) {
+              setSelectedInterview(found);
+              // Determine which step to show
+              if (isStageCompleted) {
+                setCurrentStep(2); // Show intro
+              } else if (s5Data.intensifiedScripts.some(s => s?.intensifiedHow?.trim())) {
+                setCurrentStep(3); // Show intensify step
+              } else {
+                setCurrentStep(2); // Show intro
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
+
   // Animate conversation messages
   useEffect(() => {
-    if (currentStep === 1 && visibleMessages < mentorMessages.length && !messagesExiting) {
+    if (currentStep === 2 && visibleMessages < mentorMessages.length && !messagesExiting) {
       const nextMessage = mentorMessages[visibleMessages];
       const delay = visibleMessages === 0 ? 500 : (nextMessage.delay - (mentorMessages[visibleMessages - 1]?.delay || 0)) * 1000;
 
@@ -167,7 +257,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       }, delay);
 
       return () => clearTimeout(timer);
-    } else if (visibleMessages >= mentorMessages.length && !showBenefits && !messagesExiting) {
+    } else if (visibleMessages >= mentorMessages.length && !showBenefits && !messagesExiting && currentStep === 2) {
       const timer = setTimeout(() => {
         setMessagesExiting(true);
       }, 1500);
@@ -184,74 +274,11 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     }
   }, [messagesExiting, showBenefits]);
 
+  // Initialize intensified scripts when interview is selected
   useEffect(() => {
-    const loadData = async () => {
-      if (!user?.id) return;
-      setIsLoading(true);
-
-      try {
-        const { data: progressData } = await supabase
-          .from('mentoring_progress')
-          .select('completed')
-          .eq('user_id', user.id)
-          .eq('stage_number', 5)
-          .maybeSingle();
-
-        const isStageCompleted = progressData?.completed;
-
-        const { data: stage4Data } = await supabase
-          .from('collected_data')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('data_type', 'stage4_interview_experiences')
-          .maybeSingle();
-
-        let loadedScripts: KeywordScript[] = [];
-
-        if (stage4Data?.data_content) {
-          const scripts = (stage4Data.data_content as any).scripts as KeywordScript[];
-          loadedScripts = scripts || [];
-        }
-
-        setStage4Scripts(loadedScripts);
-
-        const { data: stage5 } = await supabase
-          .from('collected_data')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('data_type', 'stage5_data')
-          .maybeSingle();
-
-        if (stage5?.data_content) {
-          const raw = stage5.data_content as any;
-          const s5Data: Stage5Data = {
-            intensifiedScripts: Array.isArray(raw?.intensifiedScripts) ? raw.intensifiedScripts : [],
-            completed: Boolean(raw?.completed),
-          };
-
-          setData(s5Data);
-
-          if (isStageCompleted) {
-            setCurrentStep(1);
-          } else if (s5Data.intensifiedScripts.some(s => s?.intensifiedHow?.trim())) {
-            setCurrentStep(2);
-          }
-        } else if (loadedScripts.length > 0) {
-          setCurrentStep(1);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (stage4Scripts.length > 0 && data.intensifiedScripts.length === 0) {
-      const initialized: IntensifiedScript[] = stage4Scripts.map(script => ({
+    if (selectedInterview && data.intensifiedScripts.length === 0) {
+      const scripts = selectedInterview.data_content?.savedScripts || [];
+      const initialized: IntensifiedScript[] = scripts.map(script => ({
         keyword: script.keyword,
         originalScript: script.script,
         intensifiedHow: "",
@@ -259,7 +286,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       }));
       setData(prev => ({ ...prev, intensifiedScripts: initialized }));
     }
-  }, [stage4Scripts, data.intensifiedScripts.length]);
+  }, [selectedInterview, data.intensifiedScripts.length]);
 
   const scriptsByExperience = data.intensifiedScripts.reduce((acc, script) => {
     const expKey = script.experience || "Experiência não especificada";
@@ -287,6 +314,28 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     }
   };
 
+  const selectInterview = async (interview: InterviewHistory) => {
+    setSelectedInterview(interview);
+    
+    const scripts = interview.data_content?.savedScripts || [];
+    const initialized: IntensifiedScript[] = scripts.map(script => ({
+      keyword: script.keyword,
+      originalScript: script.script,
+      intensifiedHow: "",
+      experience: script.experience || ""
+    }));
+    
+    const newData: Stage5Data = {
+      selectedInterviewId: interview.id,
+      intensifiedScripts: initialized,
+      completed: false
+    };
+    
+    setData(newData);
+    await saveProgress(newData);
+    setCurrentStep(2);
+  };
+
   const updateScript = (keyword: string, value: string) => {
     const updated = data.intensifiedScripts.map(s =>
       s.keyword === keyword ? { ...s, intensifiedHow: value } : s
@@ -299,8 +348,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return visibleMessages >= mentorMessages.length;
+        return selectedInterview !== null;
       case 2:
+        return visibleMessages >= mentorMessages.length;
+      case 3:
         return data.intensifiedScripts.some(s => s.intensifiedHow?.trim());
       default:
         return true;
@@ -308,7 +359,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   };
 
   const nextStep = () => {
-    if (currentStep < 3 && canProceed()) {
+    if (currentStep < 4 && canProceed()) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -337,10 +388,20 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
       toast({
         title: "Etapa reiniciada!",
-        description: "Você pode intensificar um novo roteiro para outra entrevista.",
+        description: "Você pode escolher outra entrevista para intensificar.",
       });
 
-      navigate('/');
+      // Reset local state
+      setData({
+        selectedInterviewId: null,
+        intensifiedScripts: [],
+        completed: false
+      });
+      setSelectedInterview(null);
+      setCurrentStep(1);
+      setVisibleMessages(0);
+      setShowBenefits(false);
+      setMessagesExiting(false);
     } catch (error) {
       console.error('Error resetting stage:', error);
       toast({
@@ -359,7 +420,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       await supabase.from('mentoring_progress').upsert({
         user_id: user.id,
         stage_number: 5,
-        current_step: 3,
+        current_step: 4,
         completed: true,
         stage_data: {}
       }, {
@@ -382,7 +443,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     );
   }
 
-  if (stage4Scripts.length === 0 && !isLoading) {
+  if (interviews.length === 0) {
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="flex items-center gap-4 p-4 border-b border-border">
@@ -395,9 +456,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
         <div className="flex-1 flex items-center justify-center p-6">
           <Card className="p-6 max-w-md text-center border-destructive/50 bg-destructive/5">
             <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h2 className="font-display text-xl font-bold mb-2">Faltam seus roteiros da Etapa 4</h2>
+            <h2 className="font-display text-xl font-bold mb-2">Nenhuma entrevista salva</h2>
             <p className="text-muted-foreground mb-4">
-              Complete primeiro a Etapa 4 e finalize os roteiros para cada palavra-chave.
+              Complete primeiro a Etapa 4 e salve pelo menos uma entrevista para continuar.
             </p>
             <Button onClick={() => navigate('/etapa/4')} className="gap-2">
               Ir para Etapa 4 <ArrowRight className="w-4 h-4" />
@@ -411,6 +472,87 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="max-w-2xl mx-auto space-y-6"
+          >
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="font-display text-2xl font-bold">Escolha a Entrevista</h2>
+              <p className="text-muted-foreground">
+                Selecione qual entrevista você quer intensificar para impressionar o gestor.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {interviews.map((interview, index) => (
+                <motion.div
+                  key={interview.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card 
+                    className={`p-4 cursor-pointer transition-all hover:border-primary/50 ${
+                      selectedInterview?.id === interview.id 
+                        ? 'border-primary bg-primary/5' 
+                        : ''
+                    }`}
+                    onClick={() => setSelectedInterview(interview)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        selectedInterview?.id === interview.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-primary/10'
+                      }`}>
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium truncate">{interview.name}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{interview.company_name}</span>
+                          <span>•</span>
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            {format(new Date(interview.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                        {interview.data_content?.savedScripts && (
+                          <Badge variant="secondary" className="mt-1">
+                            {interview.data_content.savedScripts.length} roteiros
+                          </Badge>
+                        )}
+                      </div>
+                      {selectedInterview?.id === interview.id && (
+                        <Check className="w-5 h-5 text-primary" />
+                      )}
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            {selectedInterview && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center pt-4"
+              >
+                <Button onClick={() => selectInterview(selectedInterview)} size="lg" className="gap-2 px-8">
+                  Continuar com esta entrevista <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
+          </motion.div>
+        );
+
+      case 2:
         return (
           <motion.div
             initial={{ opacity: 0 }}
@@ -563,7 +705,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
           </motion.div>
         );
 
-      case 2:
+      case 3:
         return (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -585,6 +727,11 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               <p className="text-muted-foreground max-w-lg mx-auto">
                 Para cada roteiro, adicione mais detalhes técnicos: ferramentas, metodologias e métricas.
               </p>
+              {selectedInterview && (
+                <Badge variant="outline" className="mt-2">
+                  {selectedInterview.name} • {selectedInterview.company_name}
+                </Badge>
+              )}
             </motion.div>
 
             <motion.div
@@ -699,7 +846,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
           </motion.div>
         );
 
-      case 3:
+      case 4:
         return (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -811,27 +958,29 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
           </div>
         </div>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-              <RotateCcw className="w-4 h-4" />
-              <span className="hidden sm:inline">Reiniciar</span>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reiniciar Etapa 5?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Isso irá apagar os dados de intensificação desta etapa.
-                Você poderá criar um novo roteiro intensificado para outra entrevista com gestor.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={resetStage}>Reiniciar</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {currentStep > 1 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline">Reiniciar</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reiniciar Etapa 5?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso irá apagar os dados de intensificação desta etapa.
+                  Você poderá escolher outra entrevista para intensificar.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={resetStage}>Reiniciar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Progress Steps */}
@@ -885,26 +1034,23 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
         </AnimatePresence>
       </div>
 
-      {/* Footer Navigation - only for step 2 */}
-      {currentStep === 2 && (
-        <div className="p-4 border-t border-border flex justify-between">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Button>
-
-          <Button
-            onClick={nextStep}
-            disabled={!canProceed()}
-            className="gap-2"
-          >
-            Continuar
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+      {/* Footer Navigation - only for step 3 */}
+      {currentStep === 3 && (
+        <div className="p-4 border-t border-border bg-background">
+          <div className="flex justify-between max-w-2xl mx-auto">
+            <Button variant="outline" onClick={prevStep} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+            <Button 
+              onClick={nextStep} 
+              disabled={!canProceed()}
+              className="gap-2"
+            >
+              Próximo
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

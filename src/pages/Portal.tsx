@@ -57,6 +57,10 @@ interface SavedCV {
   cv_data: any;
 }
 
+interface SavedInterview {
+  id: string;
+}
+
 const stages = [
   {
     number: 1,
@@ -168,6 +172,7 @@ const Portal = () => {
   const [linkedinDiagnostic, setLinkedinDiagnostic] = useState<LinkedInDiagnostic | null>(null);
   const [opportunityFunnel, setOpportunityFunnel] = useState<OpportunityFunnel | null>(null);
   const [savedCVs, setSavedCVs] = useState<SavedCV[]>([]);
+  const [savedInterviews, setSavedInterviews] = useState<SavedInterview[]>([]);
   const [platformActivated, setPlatformActivated] = useState<boolean | null>(cachedData?.platformActivated ?? null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [warningModal, setWarningModal] = useState<{ open: boolean; type: 'linkedin-cv' | 'linkedin-gupy'; targetPath: string }>({
@@ -231,7 +236,7 @@ const Portal = () => {
       }
 
       // Fetch profile and remaining data in parallel for maximum speed
-      const [profileResult, progressResult, diagnosticResult, funnelResult, cvsResult] = await Promise.all([
+      const [profileResult, progressResult, diagnosticResult, funnelResult, cvsResult, interviewsResult] = await Promise.all([
         supabase
           .from('profiles')
           .select('full_name, platform_activated, stage2_unlocked, stage2_completed, learning_path')
@@ -256,6 +261,10 @@ const Portal = () => {
         supabase
           .from('saved_cvs')
           .select('id, name, cv_data')
+          .eq('user_id', user.id),
+        supabase
+          .from('interview_history')
+          .select('id')
           .eq('user_id', user.id)
       ]);
 
@@ -345,6 +354,10 @@ const Portal = () => {
         setSavedCVs(cvsResult.data);
       }
 
+      if (interviewsResult.data) {
+        setSavedInterviews(interviewsResult.data);
+      }
+
       // Identity is considered resolved once we have a stable name (or confirmed it's unavailable)
       setIsIdentityReady(true);
 
@@ -412,8 +425,8 @@ const Portal = () => {
     }
 
     if (stageNumber === 5) {
-      const stage4Status = getStageStatus(4);
-      return stage4Status !== 'completed';
+      // Stage 5 is unlocked when user has at least one saved interview
+      return savedInterviews.length === 0;
     }
 
     return false;
