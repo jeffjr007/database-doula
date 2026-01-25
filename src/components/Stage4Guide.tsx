@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBlocker } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { InterviewScriptBuilder, KeywordScript } from "./InterviewScriptBuilder";
 import { AboutMeGenerator } from "./AboutMeGenerator";
@@ -35,6 +35,7 @@ import { InterviewSimulator } from "./InterviewSimulator";
 import { SaveInterviewModal } from "./SaveInterviewModal";
 import { InterviewHistoryList } from "./InterviewHistoryList";
 import { MentorAvatar } from "./MentorAvatar";
+import { Stage4ExitConfirmModal } from "./Stage4ExitConfirmModal";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -94,7 +95,10 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const [showAboutMeIntro, setShowAboutMeIntro] = useState(true);
   const [showKeywordsIntro, setShowKeywordsIntro] = useState(true);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
+  const [hasSavedToHistory, setHasSavedToHistory] = useState(false);
   const [data, setData] = useState<StepData>({
     companyName: "",
     companyLinkedin: "",
@@ -110,6 +114,34 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
 
   const hasInitializedRef = useRef(false);
   const hasUserNavigatedRef = useRef(false);
+
+  // Check if there's unsaved progress (any data filled but not saved to history)
+  const hasUnsavedProgress = useCallback(() => {
+    if (hasSavedToHistory) return false;
+    return (
+      data.companyName.trim().length > 0 ||
+      data.jobDescription.trim().length > 0 ||
+      data.linkedinAbout.trim().length > 0 ||
+      data.experiences.trim().length > 0 ||
+      data.keywords.length > 0 ||
+      savedScripts.length > 0 ||
+      !!data.aboutMeScript
+    );
+  }, [data, savedScripts, hasSavedToHistory]);
+
+  // Block navigation when there's unsaved progress
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      hasUnsavedProgress() && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Handle blocker state changes
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setShowExitConfirm(true);
+      setPendingNavigation(() => () => blocker.proceed());
+    }
+  }, [blocker.state]);
 
   const mergeStepData = (db: StepData, local: StepData): StepData => {
     const pick = (a: string, b: string) => (a?.trim()?.length ? a : b);
@@ -1162,12 +1194,32 @@ Exemplo:
               onConflict: 'user_id,stage_number',
             });
           }
+          setHasSavedToHistory(true);
           setShowSaveModal(false);
           toast({
             title: "Parabéns! 🎉",
             description: "Etapa 4 concluída. Agora avance para a Etapa 5!",
           });
           navigate('/');
+        }}
+      />
+
+      {/* Exit Confirmation Modal */}
+      <Stage4ExitConfirmModal
+        open={showExitConfirm}
+        onConfirm={() => {
+          setShowExitConfirm(false);
+          if (pendingNavigation) {
+            pendingNavigation();
+            setPendingNavigation(null);
+          }
+        }}
+        onCancel={() => {
+          setShowExitConfirm(false);
+          setPendingNavigation(null);
+          if (blocker.state === "blocked") {
+            blocker.reset();
+          }
         }}
       />
     </div>
