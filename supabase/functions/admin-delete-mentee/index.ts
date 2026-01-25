@@ -107,15 +107,20 @@ serve(async (req) => {
       }
     }
 
-    // Finally, delete the user from auth
+    // Finally, delete the user from auth (if they still exist)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(menteeUserId);
 
     if (deleteError) {
-      console.error("Error deleting user:", deleteError);
-      return new Response(
-        JSON.stringify({ error: "Failed to delete user account" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // If user not found in auth, it's okay - they may have been deleted already
+      if (deleteError.message?.includes("User not found") || deleteError.status === 404) {
+        console.log(`User ${menteeUserId} not found in auth (already deleted or never existed)`);
+      } else {
+        console.error("Error deleting user:", deleteError);
+        return new Response(
+          JSON.stringify({ error: "Failed to delete user account" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     console.log(`Mentee ${menteeUserId} deleted successfully by admin ${adminUser.id}`);
