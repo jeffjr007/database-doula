@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Upload, FileText, Sparkles, Loader2, Info, Lock } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Sparkles, Loader2, Info, Lock, X, CheckCircle2 } from "lucide-react";
 import { CoverLetterFormData } from "@/types/cover-letter";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,8 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
   const { personalData, isLoading: isLoadingProfile } = useUserProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [extractingCV, setExtractingCV] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [formData, setFormData] = useState<CoverLetterFormData>({
     nome: "",
     idade: "",
@@ -57,10 +59,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (file.type !== 'application/pdf') {
       toast({
         title: "Formato inválido",
@@ -82,6 +81,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
     }
 
     setExtractingCV(true);
+    setUploadedFileName(file.name);
     
     toast({
       title: "Processando CV...",
@@ -123,6 +123,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
         });
       } catch (error: any) {
         console.error('Error extracting CV:', error);
+        setUploadedFileName(null);
         
         // Provide more specific error messages
         let errorMessage = "Tente novamente.";
@@ -145,6 +146,7 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
     };
     reader.onerror = () => {
       setExtractingCV(false);
+      setUploadedFileName(null);
       toast({
         title: "Erro ao ler arquivo",
         description: "Não foi possível ler o arquivo PDF.",
@@ -152,6 +154,43 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFileName(null);
+    handleChange('cvAnalysis', '');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const formatExtractedCV = (data: any): string => {
@@ -379,47 +418,93 @@ export function CoverLetterForm({ open, onOpenChange, onGenerate, isLoading }: C
             />
           </div>
 
-          {/* Row 6: CV Upload */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Label>Análise do Currículo *</Label>
-              <span className="text-xs text-muted-foreground">(Anexe seu CV ATS)</span>
-            </div>
+          {/* Row 6: CV Upload - Modern Dropzone */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Análise do Currículo *
+              <span className="text-xs text-muted-foreground font-normal">(Anexe seu CV ATS)</span>
+            </Label>
             
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".pdf"
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".pdf"
+              className="hidden"
+            />
+            
+            {/* Dropzone Area */}
+            {!formData.cvAnalysis && !extractingCV ? (
+              <div
                 onClick={() => fileInputRef.current?.click()}
-                disabled={extractingCV}
-                className="gap-2"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
+                  relative cursor-pointer rounded-xl border-2 border-dashed 
+                  transition-all duration-200 ease-out
+                  ${isDragging 
+                    ? 'border-primary bg-primary/5 scale-[1.01]' 
+                    : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30'
+                  }
+                `}
               >
-                {extractingCV ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analisando CV...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Anexar CV (PDF)
-                  </>
-                )}
-              </Button>
-              {formData.cvAnalysis && !extractingCV && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30">
-                  <FileText className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-500 font-medium">CV analisado com sucesso</span>
+                <div className="flex flex-col items-center justify-center py-8 px-4 gap-3">
+                  <div className={`
+                    p-3 rounded-full transition-colors duration-200
+                    ${isDragging ? 'bg-primary/20' : 'bg-muted'}
+                  `}>
+                    <Upload className={`w-6 h-6 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-medium">
+                      {isDragging ? 'Solte o arquivo aqui' : 'Arraste seu CV aqui ou clique para selecionar'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Apenas PDF • Máximo 5MB
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : extractingCV ? (
+              /* Loading State */
+              <div className="rounded-xl border border-primary/30 bg-primary/5 py-6 px-4">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                    <FileText className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-medium text-primary">Analisando seu currículo...</p>
+                    <p className="text-xs text-muted-foreground">{uploadedFileName}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Success State */
+              <div className="rounded-xl border border-green-500/30 bg-green-500/5 py-4 px-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/20">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium text-green-500">CV analisado com sucesso</p>
+                      <p className="text-xs text-muted-foreground">{uploadedFileName || 'Documento anexado'}</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveFile}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           </div>
         )}
