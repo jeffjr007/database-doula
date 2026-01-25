@@ -24,7 +24,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, useBlocker } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { InterviewScriptBuilder, KeywordScript } from "./InterviewScriptBuilder";
 import { AboutMeGenerator } from "./AboutMeGenerator";
@@ -129,19 +129,31 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
     );
   }, [data, savedScripts, hasSavedToHistory]);
 
-  // Block navigation when there's unsaved progress
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedProgress() && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  // Handle blocker state changes
+  // Handle browser back/refresh with beforeunload
   useEffect(() => {
-    if (blocker.state === "blocked") {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedProgress()) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedProgress]);
+
+  // Wrapper for navigate that checks for unsaved progress
+  const safeNavigate = (path: string) => {
+    if (hasUnsavedProgress()) {
       setShowExitConfirm(true);
-      setPendingNavigation(() => () => blocker.proceed());
+      setPendingNavigation(() => () => {
+        window.location.href = path;
+      });
+    } else {
+      navigate(path);
     }
-  }, [blocker.state]);
+  };
 
   const mergeStepData = (db: StepData, local: StepData): StepData => {
     const pick = (a: string, b: string) => (a?.trim()?.length ? a : b);
@@ -1217,9 +1229,6 @@ Exemplo:
         onCancel={() => {
           setShowExitConfirm(false);
           setPendingNavigation(null);
-          if (blocker.state === "blocked") {
-            blocker.reset();
-          }
         }}
       />
     </div>
