@@ -82,6 +82,7 @@ export const InterviewSimulator = ({
   const [currentMessage, setCurrentMessage] = useState<string>('');
   const [showTyping, setShowTyping] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
+  const [showMaterial, setShowMaterial] = useState(false);
   
   const currentQuestionRef = useRef<1 | 2>(1);
   const introStartedRef = useRef(false);
@@ -157,6 +158,9 @@ export const InterviewSimulator = ({
     const token = introTokenRef.current;
     if (cancelIntroRef.current) return;
 
+    // Hide material initially
+    setShowMaterial(false);
+
     await showMessage(
       "Olá! Meu nome é Ana e serei a recrutadora responsável por conversar com você hoje.",
       2000,
@@ -170,14 +174,33 @@ export const InterviewSimulator = ({
     await showMessage("Vamos começar... Me fale sobre você.", 1800, token);
     if (cancelIntroRef.current || introTokenRef.current !== token) return;
 
+    // Now show material with a smooth delay
+    await sleep(800, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+    
+    setShowMaterial(true);
     setPhase('question1');
   };
 
   const startTransition = async () => {
+    const token = introTokenRef.current;
     setPhase('transition');
-    await showMessage("Muito bom! Gostei de conhecer um pouco mais sobre você.", 2000);
-    await new Promise(r => setTimeout(r, 1500));
-    await showMessage("Agora me fale sobre suas experiências profissionais.", 1800);
+    setShowMaterial(false); // Hide material during transition
+    
+    await showMessage("Muito bom! Gostei de conhecer um pouco mais sobre você.", 2000, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+    
+    await sleep(1500, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+    
+    await showMessage("Agora me fale sobre suas experiências profissionais.", 1800, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+    
+    // Show material again with delay
+    await sleep(800, token);
+    if (cancelIntroRef.current || introTokenRef.current !== token) return;
+    
+    setShowMaterial(true);
     setPhase('question2');
   };
 
@@ -334,14 +357,14 @@ export const InterviewSimulator = ({
     }
   };
 
-  // Keep the support material visible from the very beginning (intro included)
+  // Control material visibility based on phase and showMaterial state
   const isQuestionPhase =
-    phase === 'intro' ||
     phase === 'question1' ||
     phase === 'question2' ||
     phase === 'recording1' ||
     phase === 'recording2';
-  const showAboutScript = phase === 'intro' || phase === 'question1' || phase === 'recording1';
+  const shouldShowMaterialSection = isQuestionPhase && showMaterial;
+  const showAboutScript = phase === 'question1' || phase === 'recording1';
   const showExperienceScript = phase === 'question2' || phase === 'recording2';
 
   return (
@@ -457,23 +480,27 @@ export const InterviewSimulator = ({
           </div>
 
           {/* Divider */}
-          {isQuestionPhase && (
-            <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              className="border-t border-dashed border-border/60"
-            />
-          )}
+          <AnimatePresence>
+            {shouldShowMaterialSection && (
+              <motion.div
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                exit={{ opacity: 0, scaleX: 0 }}
+                transition={{ duration: 0.3 }}
+                className="border-t border-dashed border-border/60"
+              />
+            )}
+          </AnimatePresence>
 
             {/* Script Reference Section */}
           <AnimatePresence mode="wait">
-            {isQuestionPhase && (
+            {shouldShowMaterialSection && (
               <motion.div
                 key={showAboutScript ? 'about' : 'experience'}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
                 className="space-y-4"
               >
                 <div className="flex items-center gap-2 text-muted-foreground">
