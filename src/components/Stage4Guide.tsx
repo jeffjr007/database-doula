@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +35,6 @@ import { InterviewSimulator } from "./InterviewSimulator";
 import { SaveInterviewModal } from "./SaveInterviewModal";
 import { InterviewHistoryList } from "./InterviewHistoryList";
 import { MentorAvatar } from "./MentorAvatar";
-import { Stage4ExitConfirmModal } from "./Stage4ExitConfirmModal";
 
 interface Stage4GuideProps {
   stageNumber: number;
@@ -64,8 +63,28 @@ const STEPS = [
 ];
 
 const STAGE4_STARTED_KEY = 'stage4_started';
+const STAGE4_VISITED_STEPS_KEY = 'stage4_visited_steps';
 const STAGE4_DATA_CACHE_KEY = 'stage4_data_cache_v1';
 const STAGE4_SCRIPTS_CACHE_KEY = 'stage4_scripts_cache_v1';
+
+// Helper to get visited steps from sessionStorage
+const getVisitedSteps = (): number[] => {
+  try {
+    const stored = sessionStorage.getItem(STAGE4_VISITED_STEPS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper to mark a step as visited
+const markStepVisited = (step: number) => {
+  const visited = getVisitedSteps();
+  if (!visited.includes(step)) {
+    visited.push(step);
+    sessionStorage.setItem(STAGE4_VISITED_STEPS_KEY, JSON.stringify(visited));
+  }
+};
 
 // Messages for "Sobre Você" intro
 const ABOUT_ME_INTRO_MESSAGES = [
@@ -84,21 +103,19 @@ const KEYWORDS_INTRO_MESSAGES = [
 
 export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
   const hasStartedBefore = sessionStorage.getItem(STAGE4_STARTED_KEY) === 'true';
+  const initialVisitedSteps = getVisitedSteps();
   
   const [showIntroduction, setShowIntroduction] = useState(!hasStartedBefore);
   const [currentStep, setCurrentStep] = useState(1);
-  const [highestStepReached, setHighestStepReached] = useState(1);
+  const [visitedSteps, setVisitedSteps] = useState<number[]>(initialVisitedSteps);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [savedScripts, setSavedScripts] = useState<KeywordScript[]>([]);
-  const [showAboutMeIntro, setShowAboutMeIntro] = useState(true);
-  const [showKeywordsIntro, setShowKeywordsIntro] = useState(true);
+  const [showAboutMeIntro, setShowAboutMeIntro] = useState(!initialVisitedSteps.includes(5));
+  const [showKeywordsIntro, setShowKeywordsIntro] = useState(!initialVisitedSteps.includes(6));
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
-  const [hasSavedToHistory, setHasSavedToHistory] = useState(false);
   const [data, setData] = useState<StepData>({
     companyName: "",
     companyLinkedin: "",
@@ -114,131 +131,6 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
 
   const hasInitializedRef = useRef(false);
   const hasUserNavigatedRef = useRef(false);
-  const popstateGuardArmedRef = useRef(false);
-
-  // Check if there's unsaved progress (any data filled but not saved to history)
-  const hasUnsavedProgress = useCallback(() => {
-    if (hasSavedToHistory) return false;
-    return (
-      data.companyName.trim().length > 0 ||
-      data.jobDescription.trim().length > 0 ||
-      data.linkedinAbout.trim().length > 0 ||
-      data.experiences.trim().length > 0 ||
-      data.keywords.length > 0 ||
-      savedScripts.length > 0 ||
-      !!data.aboutMeScript
-    );
-  }, [data, savedScripts, hasSavedToHistory]);
-
-  const clearStage4LocalCache = useCallback(() => {
-    try {
-      sessionStorage.removeItem(STAGE4_STARTED_KEY);
-      sessionStorage.removeItem(STAGE4_DATA_CACHE_KEY);
-      sessionStorage.removeItem(STAGE4_SCRIPTS_CACHE_KEY);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const resetStage4Session = useCallback(async () => {
-    // IMPORTANT: This reset MUST NOT run for interviews already saved to history.
-    if (hasSavedToHistory || isReviewMode) return;
-
-    // Clear local cache immediately (prevents rehydration when coming back)
-    clearStage4LocalCache();
-
-    // Clear server-side progress so returning to /etapa/4 starts from scratch
-    if (user?.id) {
-      try {
-        await supabase
-          .from('collected_data')
-          .delete()
-          .eq('user_id', user.id)
-          .in('data_type', ['stage4_data', 'stage4_interview_experiences']);
-      } catch {
-        // ignore
-      }
-    }
-  }, [clearStage4LocalCache, hasSavedToHistory, isReviewMode, user?.id]);
-
-  // Handle browser back/refresh with beforeunload
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedProgress()) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedProgress]);
-
-  // Intercept browser BACK (popstate) to show exit confirmation in SPA navigation.
-  // React Router's useBlocker requires a data router; this guard works with BrowserRouter.
-  useEffect(() => {
-    // Arm once to avoid pushing multiple times during re-renders.
-    if (!popstateGuardArmedRef.current) {
-      try {
-        window.history.pushState(null, "", window.location.href);
-      } catch {
-        // ignore
-      }
-      popstateGuardArmedRef.current = true;
-    }
-
-    const onPopState = () => {
-      if (!hasUnsavedProgress()) return;
-      // Cancel the back navigation by pushing current URL again
-      try {
-        window.history.pushState(null, "", window.location.href);
-      } catch {
-        // ignore
-      }
-      setShowExitConfirm(true);
-      setPendingNavigation(() => () => {
-        void resetStage4Session().finally(() => {
-          // Now allow leaving
-          window.history.back();
-        });
-      });
-    };
-
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [hasUnsavedProgress, resetStage4Session]);
-
-  // If the user leaves /etapa/4 without saving to history, wipe everything.
-  // This ensures coming back starts from scratch.
-  useEffect(() => {
-    return () => {
-      if (hasSavedToHistory || isReviewMode) return;
-      clearStage4LocalCache();
-      // Fire-and-forget remote cleanup
-      if (user?.id) {
-        void supabase
-          .from('collected_data')
-          .delete()
-          .eq('user_id', user.id)
-          .in('data_type', ['stage4_data', 'stage4_interview_experiences']);
-      }
-    };
-  }, [clearStage4LocalCache, hasSavedToHistory, isReviewMode, user?.id]);
-
-  // Wrapper for navigate that checks for unsaved progress
-  const safeNavigate = (path: string) => {
-    if (hasUnsavedProgress()) {
-      setShowExitConfirm(true);
-      setPendingNavigation(() => () => {
-        void resetStage4Session().finally(() => {
-          window.location.href = path;
-        });
-      });
-    } else {
-      navigate(path);
-    }
-  };
 
   const mergeStepData = (db: StepData, local: StepData): StepData => {
     const pick = (a: string, b: string) => (a?.trim()?.length ? a : b);
@@ -356,21 +248,22 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
     loadProgress();
   }, [user?.id]);
 
-  // Track highest step reached and update intro visibility
+  // Mark current step as visited and update intro visibility
   useEffect(() => {
-    if (currentStep > highestStepReached) {
-      setHighestStepReached(currentStep);
+    if (currentStep > 0) {
+      markStepVisited(currentStep);
+      setVisitedSteps(getVisitedSteps());
+      
+      // If step 5 was already visited, skip intro
+      if (currentStep === 5 && getVisitedSteps().includes(5)) {
+        setShowAboutMeIntro(false);
+      }
+      // If step 6 was already visited, skip intro  
+      if (currentStep === 6 && getVisitedSteps().includes(6)) {
+        setShowKeywordsIntro(false);
+      }
     }
-    
-    // If user reaches step 5 for the first time, show intro; on revisit, skip
-    if (currentStep === 5 && highestStepReached >= 5) {
-      setShowAboutMeIntro(false);
-    }
-    // If user reaches step 6 for the first time, show intro; on revisit, skip
-    if (currentStep === 6 && highestStepReached >= 6) {
-      setShowKeywordsIntro(false);
-    }
-  }, [currentStep, highestStepReached]);
+  }, [currentStep]);
 
   const saveProgress = async (newData: StepData) => {
     if (!user?.id) return;
@@ -500,9 +393,10 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 5: return !!data.aboutMeScript;
       case 6: return data.keywords.length > 0;
       case 7: return savedScripts.length > 0;
-      // Steps 8 and 9: only completed if user has moved PAST them
-      case 8: return currentStep > 8;
-      case 9: return currentStep > 9;
+      // Steps 8 and 9: only completed if user has moved PAST them (currentStep > stepId)
+      // or if they were visited AND user is past that point
+      case 8: return currentStep > 8 || (visitedSteps.includes(8) && currentStep >= 9);
+      case 9: return currentStep > 9 || visitedSteps.includes(9);
       default: return false;
     }
   };
@@ -519,8 +413,8 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
     }
 
     // Going forward: only if current step is completed AND target is the next one
-    // OR if target step was already reached (allowing re-visit of completed steps)
-    const canGoForward = isStepCompleted(currentStep) && (targetStep === currentStep + 1 || targetStep <= highestStepReached);
+    // OR if target step was already visited (allowing re-visit of completed steps)
+    const canGoForward = isStepCompleted(currentStep) && (targetStep === currentStep + 1 || visitedSteps.includes(targetStep));
     
     if (canGoForward) {
       hasUserNavigatedRef.current = true;
@@ -752,8 +646,8 @@ Exemplo:
         );
 
       case 5:
-        // Show intro only if no script yet and first time on step 5
-        if (showAboutMeIntro && !data.aboutMeScript && highestStepReached < 5) {
+        // Show intro only if step not visited before and no script yet
+        if (showAboutMeIntro && !data.aboutMeScript && !visitedSteps.includes(5)) {
           return (
             <motion.div
               key="step-5-intro"
@@ -791,8 +685,8 @@ Exemplo:
         );
 
       case 6:
-        // Show intro only if no keywords yet and first time on step 6
-        if (showKeywordsIntro && data.keywords.length === 0 && highestStepReached < 6) {
+        // Show intro only if step not visited before and no keywords yet
+        if (showKeywordsIntro && data.keywords.length === 0 && !visitedSteps.includes(6)) {
           return (
             <motion.div
               key="step-6-intro"
@@ -966,7 +860,7 @@ Exemplo:
         const step9IntroKey = 'stage4_step9_intro_seen';
         const hasSeenStep9Intro = sessionStorage.getItem(step9IntroKey) === 'true';
         
-        if (!hasSeenStep9Intro && highestStepReached < 9) {
+        if (!hasSeenStep9Intro && !visitedSteps.includes(9)) {
           // Mark as seen immediately to avoid re-showing
           sessionStorage.setItem(step9IntroKey, 'true');
           
@@ -986,7 +880,14 @@ Exemplo:
                   Você completou a preparação! Seus roteiros estão prontos para você revisar e praticar.
                 </p>
               </div>
-              <Button onClick={() => setHighestStepReached(9)} className="gap-2">
+              <Button onClick={() => {
+                const visited = [...visitedSteps];
+                if (!visited.includes(9)) {
+                  visited.push(9);
+                  setVisitedSteps(visited);
+                  sessionStorage.setItem(STAGE4_VISITED_STEPS_KEY, JSON.stringify(visited));
+                }
+              }} className="gap-2">
                 Ver Meus Roteiros
                 <ArrowRight className="w-4 h-4" />
               </Button>
@@ -1129,7 +1030,7 @@ Exemplo:
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => safeNavigate('/')}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -1147,7 +1048,7 @@ Exemplo:
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => safeNavigate('/suporte')}
+            onClick={() => navigate('/suporte')}
             className="text-muted-foreground hover:text-primary"
           >
             <HelpCircle className="w-5 h-5" />
@@ -1172,12 +1073,12 @@ Exemplo:
             // - It's a previous step (going back is always allowed)
             // - It's the current step
             // - It's the next step and current is completed
-            // - It was reached before with valid data (allows revisiting)
-            const wasReached = step.id <= highestStepReached;
+            // - It was visited before with valid data (allows revisiting)
+            const wasVisited = visitedSteps.includes(step.id);
             const canNavigate = step.id < currentStep || 
                                (step.id === currentStep) || 
                                (step.id === currentStep + 1 && canProceed()) ||
-                               (wasReached && hasValidData && step.id < currentStep);
+                               (wasVisited && hasValidData && step.id < currentStep);
             const Icon = step.icon;
 
             return (
@@ -1291,29 +1192,12 @@ Exemplo:
               onConflict: 'user_id,stage_number',
             });
           }
-          setHasSavedToHistory(true);
           setShowSaveModal(false);
           toast({
             title: "Parabéns! 🎉",
             description: "Etapa 4 concluída. Agora avance para a Etapa 5!",
           });
           navigate('/');
-        }}
-      />
-
-      {/* Exit Confirmation Modal */}
-      <Stage4ExitConfirmModal
-        open={showExitConfirm}
-        onConfirm={() => {
-          setShowExitConfirm(false);
-          if (pendingNavigation) {
-            pendingNavigation();
-            setPendingNavigation(null);
-          }
-        }}
-        onCancel={() => {
-          setShowExitConfirm(false);
-          setPendingNavigation(null);
         }}
       />
     </div>
