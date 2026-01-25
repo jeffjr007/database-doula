@@ -34,7 +34,7 @@ export const SaveInterviewModal = ({
   savedScripts,
   onSaveComplete,
 }: SaveInterviewModalProps) => {
-  const [name, setName] = useState(`Entrevista para ${data.companyName}`);
+  const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
