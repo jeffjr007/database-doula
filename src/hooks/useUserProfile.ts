@@ -20,6 +20,9 @@ interface UseUserProfileReturn {
 
 const CACHE_KEY = 'user_personal_data_cache';
 
+// Admin email that should NOT have auto-fill enabled
+const ADMIN_NO_AUTOFILL_EMAIL = 'adrianoduartefxck@gmail.com';
+
 const defaultData: UserPersonalData = {
   fullName: '',
   age: '',
@@ -50,6 +53,14 @@ export function useUserProfile(): UseUserProfileReturn {
   const fetchProfile = useCallback(async () => {
     if (!user?.id) {
       setPersonalData(defaultData);
+      setIsLoading(false);
+      return;
+    }
+
+    // Skip auto-fill for specific admin user
+    if (user?.email === ADMIN_NO_AUTOFILL_EMAIL) {
+      setPersonalData(defaultData);
+      sessionStorage.removeItem(CACHE_KEY);
       setIsLoading(false);
       return;
     }
