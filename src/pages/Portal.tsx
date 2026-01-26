@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useDev } from "@/hooks/useDev";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -138,9 +139,13 @@ const Portal = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin, isAdminSticky, loading: adminLoading } = useAdmin();
+  const { isDev, loading: devLoading } = useDev();
   
   // Effective admin status: either current check or sticky (once admin, always admin in session)
   const effectiveIsAdmin = isAdmin || isAdminSticky;
+  
+  // Dev users have full access to all stages
+  const effectiveIsDev = isDev;
   
   // Cache keys for instant loading
   const CACHE_KEY_USER = 'portal_user_cache';
@@ -227,11 +232,11 @@ const Portal = () => {
         return;
       }
       
-      if (adminLoading) return;
+      if (adminLoading || devLoading) return;
 
-      // ADMIN = PORTAL DIRETO, sem nenhuma verificação de ativação ou presente
-      if (effectiveIsAdmin) {
-        console.log('[Portal] Admin detected - bypassing all activation/gift checks');
+      // ADMIN or DEV = PORTAL DIRETO, sem nenhuma verificação de ativação ou presente
+      if (effectiveIsAdmin || effectiveIsDev) {
+        console.log('[Portal] Admin/Dev detected - bypassing all activation/gift checks');
         setPlatformActivated(true);
       }
 
@@ -274,9 +279,9 @@ const Portal = () => {
       // If profile fetch fails, don't redirect - just show loading or error
       if (profileError) {
         console.error('[Portal] Error fetching profile:', profileError);
-        // For admin, just continue - they don't need activation
-        if (effectiveIsAdmin) {
-          // Admin can continue even without profile
+        // For admin/dev, just continue - they don't need activation
+        if (effectiveIsAdmin || effectiveIsDev) {
+          // Admin/Dev can continue even without profile
           setIsDataReady(true);
         } else {
           // Non-admin with profile error: mark as ready to show error state
@@ -323,13 +328,13 @@ const Portal = () => {
         });
       }
 
-      // ADMIN NEVER gets redirected to /ativar or /presente
-      if (!effectiveIsAdmin) {
+      // ADMIN/DEV NEVER gets redirected to /ativar or /presente
+      if (!effectiveIsAdmin && !effectiveIsDev) {
         const activated = profile?.platform_activated ?? false;
         setPlatformActivated(activated);
 
         if (!activated) {
-          console.log('[Portal] Non-admin not activated, redirecting to /ativar');
+          console.log('[Portal] Non-admin/dev not activated, redirecting to /ativar');
           window.location.href = '/ativar';
           return;
         }
@@ -366,7 +371,7 @@ const Portal = () => {
     };
 
     fetchData();
-  }, [user?.id, adminLoading, effectiveIsAdmin, navigate]);
+  }, [user?.id, adminLoading, devLoading, effectiveIsAdmin, effectiveIsDev, navigate]);
 
   // Mandatory render lock: do not paint ANY portal UI until auth is resolved and
   // (when logged in) both identity + data are fully loaded.
@@ -408,6 +413,9 @@ const Portal = () => {
   };
 
   const isStageBlocked = (stageNumber: number) => {
+    // Dev users have access to ALL stages - no restrictions
+    if (effectiveIsDev) return false;
+    
     if (stageNumber === 1) {
       return linkedinDiagnostic?.status !== 'published';
     }
@@ -446,8 +454,8 @@ const Portal = () => {
       return;
     }
 
-    // Admin always has platform activated
-    if (!effectiveIsAdmin && !platformActivated) {
+    // Admin/Dev always has platform activated
+    if (!effectiveIsAdmin && !effectiveIsDev && !platformActivated) {
       return;
     }
 
