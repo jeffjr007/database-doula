@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.generate-about-me]
 verify_jwt = false
+
+[functions.generate-ats-cv]
+verify_jwt = false
