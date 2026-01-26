@@ -413,6 +413,8 @@ const Portal = () => {
     }
 
     if (stageNumber === 2) {
+      // Admin always has Stage 2 unlocked
+      if (effectiveIsAdmin) return false;
       return !stage2Unlocked;
     }
 
