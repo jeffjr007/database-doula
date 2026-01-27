@@ -1,8 +1,9 @@
 import { CVData } from "@/types/cv";
-import { Download, RefreshCw, Pencil, Save } from "lucide-react";
+import { Download, RefreshCw, Pencil, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EditSectionModal } from "./EditSectionModal";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { usePdfExport } from "@/hooks/usePdfExport";
 
 interface CVPreviewProps {
   data: CVData;
@@ -15,9 +16,11 @@ type EditSection = "header" | "sumario" | "sistemas" | "skills" | "competencias"
 
 export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
   const [editSection, setEditSection] = useState<EditSection>(null);
+  const cvRef = useRef<HTMLDivElement>(null);
+  const { exportToPdf, isExporting } = usePdfExport({ filename: `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPdf = () => {
+    exportToPdf(cvRef.current, `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`);
   };
 
   const handleSave = (section: EditSection, newData: any) => {
@@ -94,9 +97,13 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
     <div className="space-y-6">
       {/* Actions */}
       <div className="flex gap-3 print:hidden animate-fade-in">
-        <Button variant="glow" onClick={handlePrint} className="flex-1">
-          <Download className="w-4 h-4" />
-          Exportar PDF
+        <Button variant="glow" onClick={handleExportPdf} disabled={isExporting} className="flex-1">
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exportando..." : "Exportar PDF"}
         </Button>
         {onSave && (
           <Button variant="secondary" onClick={onSave} className="gap-2">
@@ -111,7 +118,7 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
       </div>
 
       {/* CV Document */}
-      <div className="bg-card rounded-xl p-8 shadow-card border border-border/50 space-y-8 animate-slide-up print:bg-white print:text-black print:shadow-none print:border-none print:p-0">
+      <div ref={cvRef} className="bg-card rounded-xl p-8 shadow-card border border-border/50 space-y-8 animate-slide-up print:bg-white print:text-black print:shadow-none print:border-none print:p-0">
 
         {/* Header */}
         <div className="pb-4 border-b-0 relative group">

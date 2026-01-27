@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,10 +10,12 @@ import {
   Check,
   X,
   Plus,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 import { ATSCVData, ATSCVLabels, ATSExperienciaItem, ATSEducacaoItem, IdiomaItem } from "@/types/ats-cv";
 import { motion } from "framer-motion";
+import { usePdfExport } from "@/hooks/usePdfExport";
 
 interface ATSCVPreviewProps {
   data: ATSCVData;
@@ -76,11 +78,13 @@ function EditableText({
 export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPreviewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<ATSCVData>(data);
+  const cvRef = useRef<HTMLDivElement>(null);
+  const { exportToPdf, isExporting } = usePdfExport({ filename: `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
 
   const labels = editData.labels || defaultLabels;
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPdf = () => {
+    exportToPdf(cvRef.current, `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`);
   };
 
   const startEditing = () => {
@@ -213,9 +217,13 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
                   Salvar
                 </Button>
               )}
-              <Button variant="glow" size="sm" onClick={handlePrint} className="gap-2">
-                <Download className="w-4 h-4" />
-                Exportar PDF
+              <Button variant="glow" size="sm" onClick={handleExportPdf} disabled={isExporting} className="gap-2">
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {isExporting ? "Exportando..." : "Exportar PDF"}
               </Button>
             </>
           )}
@@ -230,6 +238,7 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
 
       {/* CV Preview */}
       <motion.div
+        ref={cvRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white text-black rounded-lg shadow-xl p-8 md:p-12 print:shadow-none print:p-0"

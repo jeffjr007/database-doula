@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CoverLetterData, CoverLetterModel } from "@/types/cover-letter";
-import { ArrowLeft, Copy, Check, FileText, Target, Wrench, Sparkles, Save } from "lucide-react";
+import { ArrowLeft, Copy, Check, FileText, Target, Wrench, Sparkles, Save, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { usePdfExport } from "@/hooks/usePdfExport";
 
 interface CoverLetterPreviewProps {
   data: CoverLetterData;
@@ -31,6 +32,12 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
   const { toast } = useToast();
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ModelType>(data.modelos[0]?.tipo || "completa");
+  const letterRef = useRef<HTMLDivElement>(null);
+  const { exportToPdf, isExporting } = usePdfExport({ filename: `carta-apresentacao-${data.formData.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+
+  const handleExportPdf = () => {
+    exportToPdf(letterRef.current, `carta-apresentacao-${activeTab}.pdf`);
+  };
 
   const handleCopy = async (model: CoverLetterModel, index: number) => {
     try {
@@ -59,6 +66,20 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
           Voltar
         </Button>
         <div className="flex items-center gap-3">
+          <Button 
+            variant="glow" 
+            size="sm" 
+            onClick={handleExportPdf} 
+            disabled={isExporting}
+            className="gap-2"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {isExporting ? "Exportando..." : "Exportar PDF"}
+          </Button>
           {onSave && (
             <Button variant="outline" size="sm" onClick={onSave} className="gap-2">
               <Save className="w-4 h-4" />
@@ -146,7 +167,7 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
                   </div>
 
                   {/* Content */}
-                  <div className="bg-background/50 rounded-lg p-6 border border-border/30">
+                  <div ref={letterRef} className="bg-background/50 rounded-lg p-6 border border-border/30">
                     <div className="prose prose-sm prose-invert max-w-none">
                       <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
                         {model.conteudo}
