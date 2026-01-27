@@ -1,11 +1,9 @@
 import { useState } from "react";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useToast } from "@/hooks/use-toast";
 
 interface UsePdfExportOptions {
   filename?: string;
-  scale?: number;
 }
 
 export function usePdfExport(options: UsePdfExportOptions = {}) {
@@ -29,81 +27,84 @@ export function usePdfExport(options: UsePdfExportOptions = {}) {
       const clone = elementRef.cloneNode(true) as HTMLElement;
       
       // Apply print-like styles to the clone
-      clone.style.width = "794px"; // A4 width in pixels at 96dpi
-      clone.style.padding = "40px";
+      clone.style.width = "210mm";
+      clone.style.minHeight = "297mm";
+      clone.style.padding = "15mm";
       clone.style.backgroundColor = "white";
       clone.style.color = "black";
       clone.style.position = "absolute";
       clone.style.left = "-9999px";
       clone.style.top = "0";
+      clone.style.fontFamily = "Helvetica, Arial, sans-serif";
+      clone.style.fontSize = "11pt";
+      clone.style.lineHeight = "1.4";
       
       // Remove any print:hidden elements from clone
       clone.querySelectorAll('.print\\:hidden').forEach(el => el.remove());
       
-      // Apply text colors for print
+      // Apply text colors for print - force all text to be visible
       clone.querySelectorAll('*').forEach(el => {
         const element = el as HTMLElement;
-        const computedStyle = window.getComputedStyle(element);
         
-        // Force black text on elements that need it
+        // Force black text on most elements
         if (element.classList.contains('text-foreground') || 
-            element.classList.contains('text-muted-foreground')) {
-          element.style.color = '#000000';
+            element.classList.contains('text-muted-foreground') ||
+            element.classList.contains('text-gray-600') ||
+            element.classList.contains('text-gray-700') ||
+            element.classList.contains('text-gray-800')) {
+          element.style.color = '#333333';
         }
         
-        // Handle blue elements
+        // Handle blue/primary elements
         if (element.classList.contains('text-primary') || 
-            element.classList.contains('text-blue-600')) {
-          element.style.color = '#2563eb';
+            element.classList.contains('text-blue-600') ||
+            element.classList.contains('text-blue-700')) {
+          element.style.color = '#1d4ed8';
+        }
+
+        // Ensure headings are darker
+        if (element.tagName === 'H1' || element.tagName === 'H2' || 
+            element.tagName === 'H3' || element.tagName === 'H4') {
+          element.style.color = '#111111';
         }
       });
       
       document.body.appendChild(clone);
 
-      const canvas = await html2canvas(clone, {
-        scale: options.scale || 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: 794,
-      });
-
-      document.body.removeChild(clone);
-
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      // Add additional pages if content is longer than one page
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      const filename = customFilename || options.filename || "documento.pdf";
-      pdf.save(filename);
-
-      toast({
-        title: "PDF exportado! ✓",
-        description: `Arquivo "${filename}" baixado com sucesso.`,
+      // Use jsPDF's html method for proper text rendering (selectable text, smaller file)
+      await pdf.html(clone, {
+        callback: function (doc) {
+          const filename = customFilename || options.filename || "documento.pdf";
+          doc.save(filename);
+          
+          toast({
+            title: "PDF exportado! ✓",
+            description: `Arquivo "${filename}" baixado com sucesso.`,
+          });
+        },
+        x: 0,
+        y: 0,
+        width: 210,
+        windowWidth: 794,
+        autoPaging: 'text',
+        margin: [10, 10, 10, 10],
+        html2canvas: {
+          scale: 0.264583, // Convert px to mm (1mm = 3.78px, so 1/3.78 ≈ 0.264583)
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+        },
       });
+
+      document.body.removeChild(clone);
+
     } catch (error) {
       console.error("Error exporting PDF:", error);
       toast({
