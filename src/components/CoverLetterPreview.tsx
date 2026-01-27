@@ -6,7 +6,7 @@ import { CoverLetterData, CoverLetterModel } from "@/types/cover-letter";
 import { ArrowLeft, Copy, Check, FileText, Target, Wrench, Sparkles, Save, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { usePdfExport } from "@/hooks/usePdfExport";
+import { PdfTextBlock, usePdfExport } from "@/hooks/usePdfExport";
 
 interface CoverLetterPreviewProps {
   data: CoverLetterData;
@@ -33,10 +33,20 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ModelType>(data.modelos[0]?.tipo || "completa");
   const letterRef = useRef<HTMLDivElement>(null);
-  const { exportToPdf, isExporting } = usePdfExport({ filename: `carta-apresentacao-${data.formData.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+  const { exportTextPdf, isExporting } = usePdfExport({ filename: `carta-apresentacao-${data.formData.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
 
   const handleExportPdf = () => {
-    exportToPdf(letterRef.current, `carta-apresentacao-${activeTab}.pdf`);
+    const model = data.modelos.find((m) => m.tipo === activeTab);
+    if (!model) return;
+
+    const filename = `carta-apresentacao-${activeTab}.pdf`;
+    const blocks: PdfTextBlock[] = [
+      { type: "title", text: model.titulo },
+      { type: "paragraph", text: model.conteudo },
+      { type: "paragraph", text: `CTA: ${model.cta}` },
+    ];
+
+    exportTextPdf({ filename, blocks });
   };
 
   const handleCopy = async (model: CoverLetterModel, index: number) => {

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { ATSCVData, ATSCVLabels, ATSExperienciaItem, ATSEducacaoItem, IdiomaItem } from "@/types/ats-cv";
 import { motion } from "framer-motion";
-import { usePdfExport } from "@/hooks/usePdfExport";
+import { PdfTextBlock, usePdfExport } from "@/hooks/usePdfExport";
 
 interface ATSCVPreviewProps {
   data: ATSCVData;
@@ -79,12 +79,73 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<ATSCVData>(data);
   const cvRef = useRef<HTMLDivElement>(null);
-  const { exportToPdf, isExporting } = usePdfExport({ filename: `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+  const { exportTextPdf, isExporting } = usePdfExport({ filename: `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
 
   const labels = editData.labels || defaultLabels;
 
   const handleExportPdf = () => {
-    exportToPdf(cvRef.current, `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    const filename = `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+    const currentData = isEditing ? editData : data;
+    const currentLabels = currentData.labels || defaultLabels;
+
+    const blocks: PdfTextBlock[] = [];
+
+    // Header info
+    if (currentData.telefone) {
+      blocks.push({ type: "paragraph", text: `${currentLabels.telefone}: ${currentData.telefone}` });
+    }
+    if (currentData.localizacao) {
+      blocks.push({ type: "paragraph", text: `${currentLabels.localizacao}: ${currentData.localizacao}` });
+    }
+    if (currentData.email) {
+      blocks.push({ type: "paragraph", text: `${currentLabels.email}: ${currentData.email}` });
+    }
+    if (currentData.linkedin) {
+      blocks.push({ type: "paragraph", text: `${currentLabels.linkedin}: ${currentData.linkedin}` });
+    }
+    if (currentData.nacionalidade || currentData.idade) {
+      blocks.push({
+        type: "paragraph",
+        text: `${currentData.nacionalidade || ""}${currentData.nacionalidade && currentData.idade ? ", " : ""}${currentData.idade ? `${currentData.idade} ANOS` : ""}`,
+      });
+    }
+
+    blocks.push({ type: "title", text: currentData.nome });
+
+    // Experiências
+    if (currentData.experiencias.length > 0) {
+      blocks.push({ type: "heading", text: currentLabels.experiencias });
+      for (const exp of currentData.experiencias) {
+        blocks.push({
+          type: "paragraph",
+          text: `${exp.empresa}${exp.localizacao ? `, ${exp.localizacao}` : ""} — ${exp.cargo}`,
+        });
+        if (exp.periodo?.trim()) blocks.push({ type: "paragraph", text: exp.periodo.toUpperCase() });
+        for (const b of exp.bullets) blocks.push({ type: "bullet", text: b });
+      }
+    }
+
+    // Educação
+    if (currentData.educacao.length > 0) {
+      blocks.push({ type: "heading", text: currentLabels.educacao });
+      for (const item of currentData.educacao) {
+        if (!item.curso?.trim()) continue;
+        blocks.push({
+          type: "bullet",
+          text: `${item.instituicao || ""}${item.instituicao ? ", " : ""}${item.curso}`,
+        });
+      }
+    }
+
+    // Idiomas
+    if (currentData.idiomas.length > 0) {
+      blocks.push({ type: "heading", text: currentLabels.idiomas });
+      for (const item of currentData.idiomas) {
+        blocks.push({ type: "bullet", text: `${item.idioma} - ${item.nivel}` });
+      }
+    }
+
+    exportTextPdf({ filename, blocks });
   };
 
   const startEditing = () => {

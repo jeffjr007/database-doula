@@ -3,7 +3,7 @@ import { Download, RefreshCw, Pencil, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EditSectionModal } from "./EditSectionModal";
 import { useState, useRef } from "react";
-import { usePdfExport } from "@/hooks/usePdfExport";
+import { PdfTextBlock, usePdfExport } from "@/hooks/usePdfExport";
 
 interface CVPreviewProps {
   data: CVData;
@@ -17,10 +17,54 @@ type EditSection = "header" | "sumario" | "sistemas" | "skills" | "competencias"
 export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
   const [editSection, setEditSection] = useState<EditSection>(null);
   const cvRef = useRef<HTMLDivElement>(null);
-  const { exportToPdf, isExporting } = usePdfExport({ filename: `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+  const { exportTextPdf, isExporting } = usePdfExport({ filename: `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
 
   const handleExportPdf = () => {
-    exportToPdf(cvRef.current, `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    const filename = `curriculo-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+
+    const blocks: PdfTextBlock[] = [
+      { type: "title", text: data.nome },
+      { type: "paragraph", text: data.cargos },
+      {
+        type: "paragraph",
+        text: [data.telefone, data.email, data.linkedin].filter(Boolean).join(" | "),
+      },
+
+      { type: "heading", text: "Sumário" },
+      ...data.sumario.paragrafos.map((p) => ({ type: "paragraph", text: p } as const)),
+      ...data.sumario.bullets.map((b) => ({ type: "bullet", text: b } as const)),
+
+      { type: "heading", text: "Sistemas" },
+      ...data.sistemas.map((s) => ({ type: "bullet", text: s } as const)),
+
+      { type: "heading", text: "Skills" },
+      ...data.skills.map((s) => ({ type: "bullet", text: s } as const)),
+
+      { type: "heading", text: "Competências" },
+      ...data.competencias.map((s) => ({ type: "bullet", text: s } as const)),
+
+      { type: "heading", text: "Realizações" },
+      ...data.realizacoes.map((s) => ({ type: "bullet", text: s } as const)),
+
+      { type: "heading", text: "Educação & Qualificações" },
+      ...data.educacao
+        .filter((item) => item.curso && item.curso.trim().length > 0)
+        .map((item) => ({
+          type: "bullet",
+          text: `${item.curso}${item.instituicao?.trim() ? ` – ${item.instituicao}` : ""}`,
+        }) as const),
+
+      { type: "heading", text: "Experiências Profissionais" },
+      ...data.experiencias.flatMap((exp) => {
+        const header = `${exp.empresa} — ${exp.cargo}`;
+        const arr: PdfTextBlock[] = [{ type: "paragraph", text: header }];
+        if (exp.periodo?.trim()) arr.push({ type: "paragraph", text: exp.periodo });
+        arr.push(...exp.bullets.map((b) => ({ type: "bullet", text: b } as const)));
+        return arr;
+      }),
+    ];
+
+    exportTextPdf({ filename, blocks });
   };
 
   const handleSave = (section: EditSection, newData: any) => {
