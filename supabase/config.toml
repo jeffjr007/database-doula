@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-ats-cv]
 verify_jwt = false
+
+[functions.extract-cv-pdf]
+verify_jwt = false
