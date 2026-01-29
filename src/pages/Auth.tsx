@@ -63,14 +63,16 @@ const Auth = () => {
       }
 
       // Check if platform is activated for non-admins
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('platform_activated')
         .eq('user_id', user.id)
         .single();
 
-      // If not activated, go directly to /ativar (no portal flash)
-      if (!profile?.platform_activated) {
+      // If profile doesn't exist, has an error, or platform is not activated -> go to /ativar
+      // This handles new accounts where profile may not exist yet or platform_activated is false
+      if (profileError || !profile || !profile.platform_activated) {
+        console.log('[Auth] Redirecting to /ativar - profile:', profile, 'error:', profileError);
         window.location.href = '/ativar';
         return;
       }
