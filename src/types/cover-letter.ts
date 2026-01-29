@@ -3,7 +3,6 @@ export interface CoverLetterFormData {
   idade: string;
   localizacao: string;
   profissao: string;
-  estadoCivil: string;
   interesses: string;
   softSkills: string;
   hardSkills: string;
@@ -13,7 +12,7 @@ export interface CoverLetterFormData {
 }
 
 export interface CoverLetterModel {
-  tipo: 'completa' | 'objetiva' | 'tecnica';
+  tipo: "completa" | "objetiva" | "tecnica";
   titulo: string;
   descricao: string;
   conteudo: string;

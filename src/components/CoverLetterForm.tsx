@@ -42,7 +42,6 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
     idade: "",
     localizacao: "",
     profissao: "",
-    estadoCivil: "",
     interesses: "",
     softSkills: "",
     hardSkills: "",
@@ -308,16 +307,6 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
                       className={personalData.age ? `${mobileInputClass} opacity-70` : mobileInputClass}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Estado Civil</label>
-                    <input
-                      type="text"
-                      value={formData.estadoCivil}
-                      onChange={(e) => handleChange("estadoCivil", e.target.value)}
-                      placeholder="Solteiro(a)"
-                      className={mobileInputClass}
-                    />
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -552,14 +541,7 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
             className={personalData.age ? "opacity-70" : undefined}
           />
         </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
-          <label className="text-sm font-medium mb-2 block">Estado Civil</label>
-          <Input
-            value={formData.estadoCivil}
-            onChange={(e) => handleChange("estadoCivil", e.target.value)}
-            placeholder="Ex: Solteiro(a)"
-          />
-        </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}></motion.div>
       </div>
 
       {/* Row 2: Localização e Profissão */}
