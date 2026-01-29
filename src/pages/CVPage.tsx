@@ -411,11 +411,11 @@ const CVPage = () => {
         </div>
       </nav>
 
-      <div className="relative z-10 container max-w-4xl py-4 md:py-6 px-2 md:px-4 print:py-0 print:max-w-full">
+      <div className="relative z-10 container max-w-4xl py-4 md:py-6 px-3 md:px-4 print:py-0 print:max-w-full">
         <AnimatePresence mode="wait">
           {viewState !== "selector" && (
-            <motion.header key={`header-${viewState}-${cvType}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-center mb-5 md:mb-10 print:hidden">
-              <h1 className="text-2xl md:text-5xl font-display font-bold mb-2 md:mb-4">
+            <motion.header key={`header-${viewState}-${cvType}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center mb-4 md:mb-10 print:hidden">
+              <h1 className="text-xl md:text-5xl font-display font-bold">
                 {cvType === "ats" ? (
                   <><span className="text-foreground">Currículo </span><span className="text-gradient">ATS</span></>
                 ) : cvType === "cover-letter" ? (
@@ -424,14 +424,15 @@ const CVPage = () => {
                   <><span className="text-foreground">Currículo </span><span className="text-gradient">Personalizado</span></>
                 )}
               </h1>
-              <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed text-xs md:text-sm hidden md:block">
+              <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed text-xs md:text-sm hidden md:block mt-4">
                 {cvType === "ats" ? "Formatação otimizada para sistemas de rastreamento" : cvType === "cover-letter" ? "Crie cartas impactantes para suas candidaturas" : "Transforme suas experiências em um currículo estratégico"} <Zap className="w-3 h-3 inline" />
               </p>
             </motion.header>
           )}
         </AnimatePresence>
 
-        <main className="relative">
+        {/* Main content - centered with breathing room on mobile */}
+        <main className="relative mx-auto max-w-[92%] md:max-w-full">
           <AnimatePresence mode="wait">
             {viewState === "selector" && (
               <motion.div key="selector" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -528,7 +529,7 @@ const CVPage = () => {
               </motion.div>
             )}
             {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}
-            {viewState === "form" && cvType === "ats" && (<motion.div key="ats-form" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-gradient-card rounded-xl md:rounded-2xl p-3 md:p-8 border border-border/50 shadow-card"><ATSCVForm onGenerate={handleGenerateATS} onBack={handleBackToSelector} /></motion.div>)}
+            {viewState === "form" && cvType === "ats" && (<motion.div key="ats-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-gradient-card rounded-2xl p-4 md:p-8 border border-border/30 shadow-sm"><ATSCVForm onGenerate={handleGenerateATS} onBack={handleBackToSelector} /></motion.div>)}
             {viewState === "preview" && cvType === "personalized" && cvData && (<motion.div key="personalized-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CVPreview data={cvData} onReset={handleReset} onUpdate={handleUpdateCV} onSave={handleOpenSaveModal} /></motion.div>)}
             {viewState === "preview" && cvType === "ats" && atsCvData && (<motion.div key="ats-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ATSCVPreview data={atsCvData} onReset={handleReset} onSave={handleOpenSaveModalATS} onDataChange={setAtsCvData} /></motion.div>)}
             {viewState === "preview" && cvType === "cover-letter" && coverLetterData && (<motion.div key="cover-letter-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CoverLetterPreview data={coverLetterData} onBack={handleBackFromCoverLetter} onSave={handleOpenSaveCoverLetterModal} /></motion.div>)}

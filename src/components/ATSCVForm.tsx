@@ -15,8 +15,8 @@ import {
   ArrowLeft,
   Linkedin,
   Lock,
-  ChevronDown,
-  ChevronUp,
+  ChevronRight,
+  Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +44,8 @@ interface FormData {
   idiomas: IdiomaItem[];
 }
 
-// Locked/readonly input style for auto-filled fields
-const lockedInputClass = "h-11 md:h-10 text-sm rounded-lg bg-muted/50 border-muted-foreground/20 cursor-default opacity-90";
+// Locked/readonly input style for auto-filled fields - softer on mobile
+const lockedInputClass = "h-10 text-sm rounded-lg bg-muted/30 border-border/40 cursor-default";
 
 // Mobile-optimized collapsible section component
 interface CollapsibleSectionProps {
@@ -56,6 +56,7 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
   isMobile: boolean;
   hasContent?: boolean;
+  stepNumber?: number;
 }
 
 function CollapsibleSection({ 
@@ -65,7 +66,8 @@ function CollapsibleSection({
   onToggle, 
   children, 
   isMobile,
-  hasContent = false 
+  hasContent = false,
+  stepNumber
 }: CollapsibleSectionProps) {
   if (!isMobile) {
     // Desktop: always show content, no collapse
@@ -80,37 +82,57 @@ function CollapsibleSection({
     );
   }
 
-  // Mobile: collapsible
+  // Mobile: collapsible with guided step indicator
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
         <button
           type="button"
-          className="w-full flex items-center justify-between py-3 px-1 border-b border-border/30 active:bg-muted/30 transition-colors"
+          className={`w-full flex items-center justify-between py-3.5 transition-colors rounded-lg ${
+            isOpen 
+              ? 'bg-primary/5' 
+              : 'active:bg-muted/20'
+          }`}
         >
-          <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            {icon}
-            {title}
-            {hasContent && !isOpen && (
-              <span className="text-xs text-primary/70 ml-1">✓</span>
-            )}
+          <div className="flex items-center gap-3">
+            {/* Step indicator */}
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+              hasContent 
+                ? 'bg-primary/20 text-primary' 
+                : isOpen 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted/50 text-muted-foreground'
+            }`}>
+              {hasContent ? <Check className="w-3.5 h-3.5" /> : stepNumber}
+            </div>
+            <span className={`text-sm font-medium transition-colors ${
+              isOpen ? 'text-foreground' : 'text-muted-foreground'
+            }`}>
+              {title}
+            </span>
           </div>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
+          <ChevronRight className={`w-4 h-4 text-muted-foreground/60 transition-transform duration-200 ${
+            isOpen ? 'rotate-90' : ''
+          }`} />
         </button>
       </CollapsibleTrigger>
-      <CollapsibleContent>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="pt-3 pb-2 space-y-3"
-        >
-          {children}
-        </motion.div>
-      </CollapsibleContent>
+      <AnimatePresence>
+        {isOpen && (
+          <CollapsibleContent forceMount>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="overflow-hidden"
+            >
+              <div className="pt-2 pb-1 pl-10 space-y-3">
+                {children}
+              </div>
+            </motion.div>
+          </CollapsibleContent>
+        )}
+      </AnimatePresence>
     </Collapsible>
   );
 }
@@ -154,7 +176,6 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
         linkedin: prev.linkedin || personalData.linkedinUrl,
         idade: prev.idade || personalData.age,
       }));
-      // Mark profile as loaded after a brief delay for smooth animation
       setTimeout(() => setIsProfileLoaded(true), 300);
     }
   }, [personalData, isLoadingProfile]);
@@ -245,98 +266,99 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="gap-2 -ml-2 text-sm"
+          className="gap-2 text-sm h-9"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar
         </Button>
         
-        <div className="flex flex-col items-center justify-center py-12 gap-3">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center py-10 gap-3">
+          <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-muted-foreground">Carregando seus dados...</p>
         </div>
       </div>
     );
   }
 
+  // Compact input class for mobile
+  const inputClass = "h-10 text-sm rounded-lg border-border/50 focus:border-primary/50";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-      {/* Back Button */}
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+      {/* Back Button - subtle */}
       <Button
         type="button"
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="gap-2 -ml-2 text-sm h-9"
+        className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 -ml-1"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-3.5 h-3.5" />
         Voltar
       </Button>
 
-      {/* Personal Info Section - Always visible, more compact on mobile */}
+      {/* Personal Info Section - Always visible, streamlined */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-3"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-2.5"
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
           <User className="w-4 h-4 text-primary" />
-          Dados Pessoais
+          Seus Dados
         </div>
 
-        {/* Nome - Locked field */}
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            Nome Completo
-            {formData.nome && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+        {/* Nome */}
+        <div className="space-y-1">
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
+            Nome
+            {formData.nome && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
           </label>
           <Input
             value={formData.nome}
             onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
             placeholder="LUCIANO DUARTE"
             readOnly={!!personalData.fullName}
-            className={personalData.fullName ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+            className={personalData.fullName ? lockedInputClass : inputClass}
           />
         </div>
 
-        {/* Contact Row - Telefone and Localização are locked */}
-        <div className="grid grid-cols-2 gap-2.5 md:gap-3">
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Phone className="w-3 h-3" />
+        {/* Telefone + Localização - compact grid */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
               Telefone
-              {formData.telefone && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+              {formData.telefone && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
             </label>
             <Input
               value={formData.telefone}
               onChange={(e) => handleChange("telefone", e.target.value)}
-              placeholder="+55 11 98601-0599"
+              placeholder="(11) 99999-9999"
               readOnly={!!personalData.phone}
-              className={personalData.phone ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+              className={personalData.phone ? lockedInputClass : inputClass}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3" />
-              Localização
-              {formData.localizacao && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
+              Cidade
+              {formData.localizacao && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
             </label>
             <Input
               value={formData.localizacao}
               onChange={(e) => handleChange("localizacao", e.target.value)}
-              placeholder="São Paulo, Brasil"
+              placeholder="São Paulo, SP"
               readOnly={!!personalData.location}
-              className={personalData.location ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+              className={personalData.location ? lockedInputClass : inputClass}
             />
           </div>
         </div>
 
-        {/* Email - Full width on mobile for better readability */}
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {/* Email - full width for readability */}
+        <div className="space-y-1">
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
             E-mail
-            {formData.email && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+            {formData.email && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
           </label>
           <Input
             type="email"
@@ -344,126 +366,113 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="seu@email.com"
             readOnly={!!personalData.email}
-            className={personalData.email ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+            className={personalData.email ? lockedInputClass : inputClass}
           />
         </div>
 
         {/* LinkedIn */}
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="space-y-1">
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
             LinkedIn
-            {formData.linkedin && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+            {formData.linkedin && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
           </label>
           <Input
             value={formData.linkedin}
             onChange={(e) => handleChange("linkedin", e.target.value)}
             placeholder="linkedin.com/in/seuperfil"
             readOnly={!!personalData.linkedinUrl}
-            className={personalData.linkedinUrl ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+            className={personalData.linkedinUrl ? lockedInputClass : inputClass}
           />
         </div>
 
-        {/* Nacionalidade and Idade */}
-        <div className="grid grid-cols-2 gap-2.5 md:gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Nacionalidade</label>
+        {/* Nacionalidade + Idade - compact */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wide">
+              Nacionalidade
+            </label>
             <Input
               value={formData.nacionalidade}
               onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
               placeholder="BRASILEIRO"
-              className="h-11 md:h-10 text-sm rounded-lg"
+              className={inputClass}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="space-y-1">
+            <label className="flex items-center gap-1 text-[11px] text-muted-foreground uppercase tracking-wide">
               Idade
-              {formData.idade && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+              {formData.idade && <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />}
             </label>
             <Input
               value={formData.idade}
               onChange={(e) => handleChange("idade", e.target.value)}
               placeholder="30 ANOS"
               readOnly={!!personalData.age}
-              className={personalData.age ? lockedInputClass : "h-11 md:h-10 text-sm rounded-lg"}
+              className={personalData.age ? lockedInputClass : inputClass}
             />
           </div>
         </div>
       </motion.div>
 
-      {/* Divider for mobile */}
-      {isMobile && <div className="border-t border-border/50 pt-2" />}
+      {/* Divider - subtle on mobile */}
+      {isMobile && (
+        <div className="flex items-center gap-3 py-1">
+          <div className="flex-1 h-px bg-border/30" />
+          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Cole do LinkedIn</span>
+          <div className="flex-1 h-px bg-border/30" />
+        </div>
+      )}
 
       {/* Experiences Section - Collapsible on mobile */}
       <CollapsibleSection
-        title="Experiências Profissionais"
+        title="Experiências"
         icon={<Briefcase className="w-4 h-4 text-primary" />}
         isOpen={openSection === 'experiencias'}
         onToggle={() => handleSectionToggle('experiencias')}
         isMobile={isMobile}
         hasContent={formData.experiencias.trim().length > 0}
+        stepNumber={1}
       >
-        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <div className="flex items-start gap-2">
-            <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-            <div className="text-xs text-blue-500/90">
-              <p className="font-medium mb-1">Como copiar do LinkedIn:</p>
-              <ol className="list-decimal list-inside space-y-0.5 text-blue-500/70">
-                <li>Acesse seu perfil do LinkedIn</li>
-                <li>Selecione e copie as experiências</li>
-                <li>Cole abaixo (Ctrl+V)</li>
-              </ol>
-            </div>
-          </div>
+        {/* Tip box - more subtle */}
+        <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/30 border border-border/30">
+          <Linkedin className="w-3.5 h-3.5 text-[#0A66C2] mt-0.5 shrink-0" />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Copie suas experiências do LinkedIn e cole aqui
+          </p>
         </div>
 
         <Textarea
           value={formData.experiencias}
           onChange={(e) => handleChange("experiencias", e.target.value)}
-          placeholder={`Cole aqui suas experiências do LinkedIn...
-
-Exemplo:
-Gerente de Projetos
-Empresa ABC
-jan de 2020 - presente`}
-          className="min-h-[140px] md:min-h-[200px] text-sm rounded-lg p-3"
+          placeholder="Cole aqui suas experiências..."
+          className="min-h-[120px] md:min-h-[180px] text-sm rounded-lg p-3 border-border/50 resize-none"
         />
-        <p className="text-xs text-muted-foreground/70">
-          A IA organiza exatamente como você escreveu.
-        </p>
       </CollapsibleSection>
 
       {/* Education Section - Collapsible on mobile */}
       <CollapsibleSection
-        title="Formação e Certificados"
+        title="Formação"
         icon={<GraduationCap className="w-4 h-4 text-primary" />}
         isOpen={openSection === 'educacao'}
         onToggle={() => handleSectionToggle('educacao')}
         isMobile={isMobile}
         hasContent={formData.educacao.trim().length > 0}
+        stepNumber={2}
       >
-        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <div className="flex items-start gap-2">
-            <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-500/70">
-              Copie de "Formação acadêmica" e "Certificados"
-            </p>
-          </div>
+        <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/30 border border-border/30">
+          <Linkedin className="w-3.5 h-3.5 text-[#0A66C2] mt-0.5 shrink-0" />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Copie sua formação acadêmica e certificados
+          </p>
         </div>
 
         <Textarea
           value={formData.educacao}
           onChange={(e) => handleChange("educacao", e.target.value)}
-          placeholder={`Cole sua formação e certificados...
-
-Exemplo:
-MBA em Gestão de Projetos
-FGV - 2018 a 2020`}
-          className="min-h-[120px] md:min-h-[150px] text-sm rounded-lg p-3"
+          placeholder="Cole sua formação..."
+          className="min-h-[100px] md:min-h-[140px] text-sm rounded-lg p-3 border-border/50 resize-none"
         />
-        <p className="text-xs text-muted-foreground/70">
-          A IA organiza exatamente como você escreveu.
-        </p>
       </CollapsibleSection>
 
       {/* Languages Section - Collapsible on mobile */}
@@ -474,20 +483,8 @@ FGV - 2018 a 2020`}
         onToggle={() => handleSectionToggle('idiomas')}
         isMobile={isMobile}
         hasContent={formData.idiomas.some(i => i.idioma.trim().length > 0)}
+        stepNumber={3}
       >
-        <div className="flex justify-end mb-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={addIdioma}
-            className="gap-1 text-xs h-8"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Adicionar
-          </Button>
-        </div>
-
         <div className="space-y-2">
           {formData.idiomas.map((idioma, index) => (
             <div key={index} className="flex gap-2 items-center">
@@ -495,13 +492,13 @@ FGV - 2018 a 2020`}
                 value={idioma.idioma}
                 onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
                 placeholder="Inglês"
-                className="flex-1 h-11 md:h-10 text-sm rounded-lg"
+                className={`flex-1 ${inputClass}`}
               />
               <Input
                 value={idioma.nivel}
                 onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
                 placeholder="FLUENTE"
-                className="flex-1 h-11 md:h-10 text-sm rounded-lg"
+                className={`flex-1 ${inputClass}`}
               />
               {formData.idiomas.length > 1 && (
                 <Button
@@ -509,32 +506,42 @@ FGV - 2018 a 2020`}
                   variant="ghost"
                   size="icon"
                   onClick={() => removeIdioma(index)}
-                  className="shrink-0 w-10 h-10"
+                  className="shrink-0 w-9 h-9 text-muted-foreground hover:text-destructive"
                 >
-                  <Trash2 className="w-4 h-4 text-destructive" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               )}
             </div>
           ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={addIdioma}
+            className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground w-full justify-center border border-dashed border-border/50 hover:border-border"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Adicionar idioma
+          </Button>
         </div>
       </CollapsibleSection>
 
-      {/* Submit Button - Sticky on mobile for easy thumb access */}
+      {/* Submit Button - prominent, with breathing room */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="pt-3 md:pt-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        className="pt-4 md:pt-2 pb-2"
       >
         <Button
           type="submit"
           disabled={!isValid || isLoading}
-          className="w-full gap-2 h-12 text-sm rounded-xl"
+          className="w-full gap-2.5 h-12 text-sm font-medium rounded-xl shadow-lg shadow-primary/20 disabled:shadow-none transition-shadow"
         >
           {isLoading ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Gerando currículo...
+              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              Gerando...
             </>
           ) : (
             <>
@@ -543,6 +550,11 @@ FGV - 2018 a 2020`}
             </>
           )}
         </Button>
+        {!isValid && (
+          <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
+            Preencha experiências e formação para continuar
+          </p>
+        )}
       </motion.div>
     </form>
   );
