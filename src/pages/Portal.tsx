@@ -701,7 +701,6 @@ const Portal = () => {
               <div className="p-4 flex items-center justify-between border-b border-border/30">
                 <div className="flex items-center gap-3">
                   <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
-                  <span className="font-display font-bold text-foreground">Perfil Glorioso</span>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                   <X className="w-5 h-5" />
