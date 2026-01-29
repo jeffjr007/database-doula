@@ -157,12 +157,8 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
 
-  // Mobile collapsible section states - only one open at a time
-  const [openSection, setOpenSection] = useState<'experiencias' | 'educacao' | 'idiomas' | null>('experiencias');
-
-  const handleSectionToggle = (section: 'experiencias' | 'educacao' | 'idiomas') => {
-    setOpenSection(prev => prev === section ? null : section);
-  };
+  // Mobile step navigation: 1 = Dados Pessoais, 2 = Seu LinkedIn
+  const [mobileStep, setMobileStep] = useState<1 | 2>(1);
 
   // Auto-fill personal data from profile
   useEffect(() => {
@@ -282,317 +278,275 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
 
   // Mobile: lighter, more breathable input styles
   const inputClass = isMobile 
-    ? "h-11 text-base rounded-xl bg-muted/20 border-transparent focus:border-primary/40 focus:bg-muted/30 placeholder:text-muted-foreground/40" 
+    ? "h-12 text-base rounded-xl bg-muted/20 border-transparent focus:border-primary/40 focus:bg-muted/30 placeholder:text-muted-foreground/40" 
     : "h-10 text-sm rounded-lg border-border/50 focus:border-primary/50";
 
   const textareaClass = isMobile
     ? "text-base rounded-xl bg-muted/20 border-transparent focus:border-primary/40 focus:bg-muted/30 placeholder:text-muted-foreground/40 resize-none"
     : "text-sm rounded-lg border-border/50 resize-none";
 
-  // Mobile section header style - simple and clean
-  const SectionHeader = ({ icon, title, step }: { icon: React.ReactNode; title: string; step?: number }) => (
-    <div className={`flex items-center gap-3 ${isMobile ? 'pt-6 pb-3' : 'pb-2'}`}>
-      {isMobile && step && (
-        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-          {step}
-        </span>
-      )}
-      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        {icon}
-        {title}
-      </div>
-    </div>
-  );
+  // Check if step 1 is complete (has name and email at minimum)
+  const isStep1Valid = formData.nome.trim().length > 0 && formData.email.trim().length > 0;
 
-  // Mobile-only: simple expandable section (not boxed)
-  const MobileSection = ({ 
-    title, 
-    icon, 
-    step,
-    isOpen, 
-    onToggle, 
-    hasContent,
-    children 
-  }: { 
-    title: string; 
-    icon: React.ReactNode; 
-    step: number;
-    isOpen: boolean; 
-    onToggle: () => void;
-    hasContent?: boolean;
-    children: React.ReactNode;
-  }) => (
-    <div className="border-t border-border/20 pt-2">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between py-4 text-left"
-      >
-        <div className="flex items-center gap-3">
-          <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-colors ${
-            hasContent 
-              ? 'bg-primary/20 text-primary' 
-              : isOpen 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted/40 text-muted-foreground'
-          }`}>
-            {hasContent ? <Check className="w-3.5 h-3.5" /> : step}
-          </span>
-          <span className={`text-base font-medium transition-colors ${
-            isOpen ? 'text-foreground' : 'text-muted-foreground'
-          }`}>
-            {title}
-          </span>
-        </div>
-        <ChevronRight className={`w-5 h-5 text-muted-foreground/50 transition-transform duration-200 ${
-          isOpen ? 'rotate-90' : ''
-        }`} />
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="overflow-hidden"
-          >
-            <div className="pb-4 space-y-4">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
-  // MOBILE LAYOUT - Open, breathable, no heavy container
+  // MOBILE LAYOUT - 2 Steps: Dados Pessoais + Seu LinkedIn
   if (isMobile) {
     return (
-      <form onSubmit={handleSubmit} className="space-y-0">
-        {/* Back Button - subtle, top aligned */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-1.5 text-sm text-muted-foreground hover:text-foreground h-9 -ml-2 mb-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </Button>
-
-        {/* Personal Data - always visible, open layout */}
-        <div className="space-y-5">
-          <SectionHeader 
-            icon={<User className="w-4 h-4 text-primary" />} 
-            title="Seus Dados" 
-          />
-
-          {/* Name - full width, prominent */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Nome completo</label>
-            <Input
-              value={formData.nome}
-              onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
-              placeholder="SEU NOME COMPLETO"
-              readOnly={!!personalData.fullName}
-              className={personalData.fullName ? `${inputClass} opacity-70` : inputClass}
-            />
-          </div>
-
-          {/* Email - full width */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">E-mail</label>
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              placeholder="seu@email.com"
-              readOnly={!!personalData.email}
-              className={personalData.email ? `${inputClass} opacity-70` : inputClass}
-            />
-          </div>
-
-          {/* Phone + Location - side by side */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Telefone</label>
-              <Input
-                value={formData.telefone}
-                onChange={(e) => handleChange("telefone", e.target.value)}
-                placeholder="(11) 99999-9999"
-                readOnly={!!personalData.phone}
-                className={personalData.phone ? `${inputClass} opacity-70` : inputClass}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Cidade</label>
-              <Input
-                value={formData.localizacao}
-                onChange={(e) => handleChange("localizacao", e.target.value)}
-                placeholder="São Paulo, SP"
-                readOnly={!!personalData.location}
-                className={personalData.location ? `${inputClass} opacity-70` : inputClass}
-              />
-            </div>
-          </div>
-
-          {/* LinkedIn - full width */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">LinkedIn</label>
-            <Input
-              value={formData.linkedin}
-              onChange={(e) => handleChange("linkedin", e.target.value)}
-              placeholder="linkedin.com/in/seuperfil"
-              readOnly={!!personalData.linkedinUrl}
-              className={personalData.linkedinUrl ? `${inputClass} opacity-70` : inputClass}
-            />
-          </div>
-
-          {/* Nationality + Age */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Nacionalidade</label>
-              <Input
-                value={formData.nacionalidade}
-                onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
-                placeholder="BRASILEIRO"
-                className={inputClass}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Idade</label>
-              <Input
-                value={formData.idade}
-                onChange={(e) => handleChange("idade", e.target.value)}
-                placeholder="30 ANOS"
-                readOnly={!!personalData.age}
-                className={personalData.age ? `${inputClass} opacity-70` : inputClass}
-              />
-            </div>
+      <form onSubmit={handleSubmit}>
+        {/* Step indicator */}
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={mobileStep === 1 ? onBack : () => setMobileStep(1)}
+            className="gap-1.5 text-sm text-muted-foreground hover:text-foreground h-9 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {mobileStep === 1 ? 'Voltar' : 'Anterior'}
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-medium ${mobileStep === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+              Etapa {mobileStep} de 2
+            </span>
           </div>
         </div>
 
-        {/* Collapsible Sections - Clean, step-by-step */}
-        <MobileSection
-          title="Experiências Profissionais"
-          icon={<Briefcase className="w-4 h-4 text-primary" />}
-          step={1}
-          isOpen={openSection === 'experiencias'}
-          onToggle={() => handleSectionToggle('experiencias')}
-          hasContent={formData.experiencias.trim().length > 0}
-        >
-          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-muted/20">
-            <Linkedin className="w-4 h-4 text-[#0A66C2] mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              Copie suas experiências do LinkedIn e cole aqui
-            </p>
-          </div>
-          <Textarea
-            value={formData.experiencias}
-            onChange={(e) => handleChange("experiencias", e.target.value)}
-            placeholder="Cole aqui suas experiências profissionais..."
-            className={`min-h-[140px] p-4 ${textareaClass}`}
-          />
-        </MobileSection>
+        <AnimatePresence mode="wait">
+          {/* STEP 1: Dados Pessoais */}
+          {mobileStep === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
+                <p className="text-sm text-muted-foreground mt-1">Informações básicas do seu currículo</p>
+              </div>
 
-        <MobileSection
-          title="Formação Acadêmica"
-          icon={<GraduationCap className="w-4 h-4 text-primary" />}
-          step={2}
-          isOpen={openSection === 'educacao'}
-          onToggle={() => handleSectionToggle('educacao')}
-          hasContent={formData.educacao.trim().length > 0}
-        >
-          <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-muted/20">
-            <Linkedin className="w-4 h-4 text-[#0A66C2] mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              Copie sua formação acadêmica e certificados
-            </p>
-          </div>
-          <Textarea
-            value={formData.educacao}
-            onChange={(e) => handleChange("educacao", e.target.value)}
-            placeholder="Cole aqui sua formação..."
-            className={`min-h-[120px] p-4 ${textareaClass}`}
-          />
-        </MobileSection>
+              {/* All fields full width, stacked */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Nome completo</label>
+                  <Input
+                    value={formData.nome}
+                    onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
+                    placeholder="SEU NOME COMPLETO"
+                    readOnly={!!personalData.fullName}
+                    className={personalData.fullName ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
 
-        <MobileSection
-          title="Idiomas"
-          icon={<Languages className="w-4 h-4 text-primary" />}
-          step={3}
-          isOpen={openSection === 'idiomas'}
-          onToggle={() => handleSectionToggle('idiomas')}
-          hasContent={formData.idiomas.some(i => i.idioma.trim().length > 0)}
-        >
-          <div className="space-y-3">
-            {formData.idiomas.map((idioma, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Input
-                  value={idioma.idioma}
-                  onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
-                  placeholder="Inglês"
-                  className={`flex-1 ${inputClass}`}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">E-mail</label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    placeholder="seu@email.com"
+                    readOnly={!!personalData.email}
+                    className={personalData.email ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Telefone</label>
+                  <Input
+                    value={formData.telefone}
+                    onChange={(e) => handleChange("telefone", e.target.value)}
+                    placeholder="(11) 99999-9999"
+                    readOnly={!!personalData.phone}
+                    className={personalData.phone ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Cidade</label>
+                  <Input
+                    value={formData.localizacao}
+                    onChange={(e) => handleChange("localizacao", e.target.value)}
+                    placeholder="São Paulo, SP"
+                    readOnly={!!personalData.location}
+                    className={personalData.location ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">LinkedIn</label>
+                  <Input
+                    value={formData.linkedin}
+                    onChange={(e) => handleChange("linkedin", e.target.value)}
+                    placeholder="linkedin.com/in/seuperfil"
+                    readOnly={!!personalData.linkedinUrl}
+                    className={personalData.linkedinUrl ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Nacionalidade</label>
+                  <Input
+                    value={formData.nacionalidade}
+                    onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
+                    placeholder="BRASILEIRO"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Idade</label>
+                  <Input
+                    value={formData.idade}
+                    onChange={(e) => handleChange("idade", e.target.value)}
+                    placeholder="30 ANOS"
+                    readOnly={!!personalData.age}
+                    className={personalData.age ? `${inputClass} opacity-70` : inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Next button */}
+              <div className="pt-6">
+                <Button
+                  type="button"
+                  onClick={() => setMobileStep(2)}
+                  disabled={!isStep1Valid}
+                  className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
+                >
+                  Continuar
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: Seu LinkedIn */}
+          {mobileStep === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-foreground">Seu LinkedIn</h2>
+                <p className="text-sm text-muted-foreground mt-1">Cole suas informações do LinkedIn</p>
+              </div>
+
+              {/* Experiências - sempre visível */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-primary" />
+                  <label className="text-base font-medium text-foreground">Experiências Profissionais</label>
+                </div>
+                <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-muted/20">
+                  <Linkedin className="w-4 h-4 text-[#0A66C2] mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    Copie do LinkedIn e cole aqui
+                  </p>
+                </div>
+                <Textarea
+                  value={formData.experiencias}
+                  onChange={(e) => handleChange("experiencias", e.target.value)}
+                  placeholder="Cole aqui suas experiências profissionais..."
+                  className={`min-h-[160px] p-4 ${textareaClass}`}
                 />
-                <Input
-                  value={idioma.nivel}
-                  onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
-                  placeholder="FLUENTE"
-                  className={`flex-1 ${inputClass}`}
+              </div>
+
+              {/* Formação - sempre visível */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-primary" />
+                  <label className="text-base font-medium text-foreground">Formação Acadêmica</label>
+                </div>
+                <Textarea
+                  value={formData.educacao}
+                  onChange={(e) => handleChange("educacao", e.target.value)}
+                  placeholder="Cole aqui sua formação e certificados..."
+                  className={`min-h-[120px] p-4 ${textareaClass}`}
                 />
-                {formData.idiomas.length > 1 && (
+              </div>
+
+              {/* Idiomas - sempre visível */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4 text-primary" />
+                  <label className="text-base font-medium text-foreground">Idiomas</label>
+                </div>
+                <div className="space-y-3">
+                  {formData.idiomas.map((idioma, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        value={idioma.idioma}
+                        onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
+                        placeholder="Inglês"
+                        className={`flex-1 ${inputClass}`}
+                      />
+                      <Input
+                        value={idioma.nivel}
+                        onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
+                        placeholder="FLUENTE"
+                        className={`flex-1 ${inputClass}`}
+                      />
+                      {formData.idiomas.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeIdioma(index)}
+                          className="shrink-0 w-11 h-11 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
-                    onClick={() => removeIdioma(index)}
-                    className="shrink-0 w-10 h-10 text-muted-foreground hover:text-destructive"
+                    size="sm"
+                    onClick={addIdioma}
+                    className="gap-2 text-sm h-11 text-muted-foreground hover:text-foreground w-full justify-center"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
+                    Adicionar idioma
                   </Button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-6 pb-4">
+                <Button
+                  type="submit"
+                  disabled={!isValid || isLoading}
+                  className="w-full gap-2.5 h-14 text-base font-medium rounded-2xl shadow-lg shadow-primary/25 disabled:shadow-none transition-all"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Gerar Currículo ATS
+                    </>
+                  )}
+                </Button>
+                {!isValid && (
+                  <p className="text-sm text-muted-foreground/60 text-center mt-3">
+                    Preencha experiências e formação para continuar
+                  </p>
                 )}
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={addIdioma}
-              className="gap-2 text-sm h-10 text-muted-foreground hover:text-foreground w-full justify-center"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar idioma
-            </Button>
-          </div>
-        </MobileSection>
-
-        {/* Submit Button - prominent, with good spacing */}
-        <div className="pt-8 pb-4">
-          <Button
-            type="submit"
-            disabled={!isValid || isLoading}
-            className="w-full gap-2.5 h-14 text-base font-medium rounded-2xl shadow-lg shadow-primary/25 disabled:shadow-none transition-all"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                Gerando...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Gerar Currículo ATS
-              </>
-            )}
-          </Button>
-          {!isValid && (
-            <p className="text-sm text-muted-foreground/60 text-center mt-3">
-              Preencha experiências e formação para continuar
-            </p>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </form>
     );
   }
