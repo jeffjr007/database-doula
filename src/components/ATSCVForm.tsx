@@ -160,6 +160,11 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
   // Mobile step navigation: 1 = Dados Pessoais, 2 = Seu LinkedIn
   const [mobileStep, setMobileStep] = useState<1 | 2>(1);
 
+  // Scroll to top when advancing steps
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Auto-fill personal data from profile
   useEffect(() => {
     if (!isLoadingProfile && personalData) {
@@ -412,7 +417,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
               <div className="pt-6">
                 <Button
                   type="button"
-                  onClick={() => setMobileStep(2)}
+                  onClick={() => { setMobileStep(2); scrollToTop(); }}
                   disabled={!isStep1Valid}
                   className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
                 >

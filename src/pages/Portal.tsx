@@ -886,13 +886,13 @@ const Portal = () => {
                           whileTap={!blocked ? { scale: 0.99 } : {}}
                           className={`
                             group/card relative p-4 rounded-xl text-left
-                            bg-card/60 backdrop-blur-sm border border-border/50
+                            bg-card/60 backdrop-blur-sm
                             transition-all duration-200
                             ${blocked
                               ? 'opacity-40 cursor-not-allowed'
-                              : 'cursor-pointer hover:bg-card/80 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5'
+                              : 'cursor-pointer hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5'
                             }
-                            ${isCompleted ? 'border-primary/50 bg-primary/5' : ''}
+                            ${isCompleted ? 'bg-primary/5' : ''}
                           `}
                           disabled={blocked}
                         >

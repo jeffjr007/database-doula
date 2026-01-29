@@ -32,7 +32,7 @@ const CVPage = () => {
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showCoverLetterForm, setShowCoverLetterForm] = useState(false);
+  const [showCoverLetterForm] = useState(false); // Unused now, kept for backwards compat
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
   const [savedCoverLetters, setSavedCoverLetters] = useState<any[]>([]);
   const [showSaveCoverLetterModal, setShowSaveCoverLetterModal] = useState(false);
@@ -189,11 +189,9 @@ const CVPage = () => {
 
   const handleSelectCVType = (type: CVType) => {
     setCvType(type);
-    if (type === "cover-letter") {
-      setShowCoverLetterForm(true);
-    } else {
-      setViewState("form");
-    }
+    setViewState("form");
+    // Scroll to top when selecting a type
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleGenerateCoverLetter = async (formData: CoverLetterFormData) => {
@@ -210,8 +208,8 @@ const CVPage = () => {
         formData,
         modelos: data.modelos,
       });
-      setShowCoverLetterForm(false);
       setViewState("preview");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({ title: "Cartas geradas! 🎉", description: "3 modelos de carta de apresentação prontos." });
     } catch (error: any) {
       toast({ title: "Erro ao gerar carta", description: error.message, variant: "destructive" });
@@ -528,8 +526,9 @@ const CVPage = () => {
                 */}
               </motion.div>
             )}
-            {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card"><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}
+            {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="md:bg-gradient-card md:rounded-2xl md:p-8 md:border md:border-border/30 md:shadow-sm"><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4 md:block hidden"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}
             {viewState === "form" && cvType === "ats" && (<motion.div key="ats-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="md:bg-gradient-card md:rounded-2xl md:p-8 md:border md:border-border/30 md:shadow-sm"><ATSCVForm onGenerate={handleGenerateATS} onBack={handleBackToSelector} /></motion.div>)}
+            {viewState === "form" && cvType === "cover-letter" && (<motion.div key="cover-letter-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="md:bg-gradient-card md:rounded-2xl md:p-8 md:border md:border-border/30 md:shadow-sm"><CoverLetterForm onGenerate={handleGenerateCoverLetter} isLoading={isLoading} onBack={handleBackToSelector} /></motion.div>)}
             {viewState === "preview" && cvType === "personalized" && cvData && (<motion.div key="personalized-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CVPreview data={cvData} onReset={handleReset} onUpdate={handleUpdateCV} onSave={handleOpenSaveModal} /></motion.div>)}
             {viewState === "preview" && cvType === "ats" && atsCvData && (<motion.div key="ats-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ATSCVPreview data={atsCvData} onReset={handleReset} onSave={handleOpenSaveModalATS} onDataChange={setAtsCvData} /></motion.div>)}
             {viewState === "preview" && cvType === "cover-letter" && coverLetterData && (<motion.div key="cover-letter-preview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CoverLetterPreview data={coverLetterData} onBack={handleBackFromCoverLetter} onSave={handleOpenSaveCoverLetterModal} /></motion.div>)}
@@ -544,15 +543,6 @@ const CVPage = () => {
         onSave={handleSaveCoverLetter}
         title="Salvar Carta de Apresentação"
         placeholder="Ex: Carta para Vaga de Analista"
-      />
-      <CoverLetterForm 
-        open={showCoverLetterForm} 
-        onOpenChange={(open) => {
-          setShowCoverLetterForm(open);
-          if (!open) setCvType(null);
-        }} 
-        onGenerate={handleGenerateCoverLetter} 
-        isLoading={isLoading} 
       />
     </div>
   );
