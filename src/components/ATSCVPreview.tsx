@@ -11,11 +11,15 @@ import {
   X,
   Plus,
   Trash2,
-  Loader2
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+  FileText
 } from "lucide-react";
 import { ATSCVData, ATSCVLabels, ATSExperienciaItem, ATSEducacaoItem, IdiomaItem } from "@/types/ats-cv";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { PdfTextBlock, usePdfExport } from "@/hooks/usePdfExport";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ATSCVPreviewProps {
   data: ATSCVData;
@@ -78,8 +82,10 @@ function EditableText({
 export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPreviewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<ATSCVData>(data);
+  const [mobileZoom, setMobileZoom] = useState(0.55);
   const cvRef = useRef<HTMLDivElement>(null);
   const { exportTextPdf, isExporting } = usePdfExport({ filename: `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+  const isMobile = useIsMobile();
 
   const labels = editData.labels || defaultLabels;
 
@@ -255,6 +261,249 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
   const currentData = isEditing ? editData : data;
   const currentLabels = currentData.labels || defaultLabels;
 
+  // Mobile Layout - Completely redesigned
+  if (isMobile) {
+    return (
+      <div className="min-h-screen flex flex-col pb-24">
+        {/* Mobile Header - Compact */}
+        <div className="flex items-center justify-between py-3 px-1 print:hidden">
+          <Button variant="ghost" size="sm" onClick={onReset} className="gap-1.5 text-sm h-9">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+          
+          {/* Zoom controls */}
+          <div className="flex items-center gap-1 bg-muted/30 rounded-full px-2 py-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setMobileZoom(Math.max(0.35, mobileZoom - 0.1))}
+              className="h-7 w-7 p-0"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-10 text-center">
+              {Math.round(mobileZoom * 100)}%
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setMobileZoom(Math.min(1, mobileZoom + 0.1))}
+              className="h-7 w-7 p-0"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="text-center mb-4 px-4">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+            <FileText className="w-4 h-4" />
+            <span>Pré-visualização do Currículo</span>
+          </div>
+        </div>
+
+        {isEditing && (
+          <div className="mx-4 mb-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 print:hidden">
+            <strong>Modo de edição:</strong> Toque nos textos para editar.
+          </div>
+        )}
+
+        {/* CV Preview Container - Scalable */}
+        <div className="flex-1 px-4 overflow-auto">
+          <div 
+            className="mx-auto bg-white rounded-xl shadow-lg border border-border/20 overflow-hidden"
+            style={{ 
+              width: `${100 / mobileZoom}%`,
+              maxWidth: `${100 / mobileZoom}%`,
+              transform: `scale(${mobileZoom})`,
+              transformOrigin: 'top center',
+              marginBottom: `${(1 - mobileZoom) * -50}%`
+            }}
+          >
+            <motion.div
+              ref={cvRef}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white text-black p-6"
+            >
+              {/* Header */}
+              <header className="mb-6">
+                <div className="flex justify-end mb-3">
+                  <div className="text-right text-xs text-black space-y-0.5">
+                    {currentData.telefone && (
+                      <p><span className="font-semibold">{currentLabels.telefone}:</span> <span className="text-blue-600">{currentData.telefone}</span></p>
+                    )}
+                    {currentData.localizacao && (
+                      <p><span className="font-semibold">{currentLabels.localizacao}:</span> <span className="text-blue-600">{currentData.localizacao}</span></p>
+                    )}
+                    {currentData.email && (
+                      <p><span className="font-semibold">{currentLabels.email}:</span> <span className="text-blue-600">{currentData.email}</span></p>
+                    )}
+                    {currentData.linkedin && (
+                      <p><span className="font-semibold">{currentLabels.linkedin}:</span> <span className="text-blue-600 break-all">{currentData.linkedin}</span></p>
+                    )}
+                    {(currentData.nacionalidade || currentData.idade) && (
+                      <p className="mt-1.5 uppercase font-semibold text-[10px]">
+                        {currentData.nacionalidade}{currentData.nacionalidade && currentData.idade ? ", " : ""}{currentData.idade ? `${currentData.idade} ANOS` : ""}.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="border-b-2 border-black mb-1.5" />
+                <h1 className="text-xl font-light tracking-wide text-black uppercase">
+                  {currentData.nome}
+                </h1>
+              </header>
+
+              {/* Experiências - Compact */}
+              {currentData.experiencias.length > 0 && (
+                <section className="mb-5">
+                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
+                    {currentLabels.experiencias}
+                  </h2>
+                  <div className="space-y-3">
+                    {currentData.experiencias.map((exp, index) => (
+                      <div key={index}>
+                        <div className="flex flex-wrap items-baseline gap-x-1 text-xs">
+                          <span className="font-bold text-black">{exp.empresa}{exp.localizacao && `, ${exp.localizacao}`}</span>
+                          <span className="text-gray-700">—</span>
+                          <span className="font-semibold text-gray-800">{exp.cargo}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-600 uppercase mb-1">{exp.periodo}</p>
+                        {exp.bullets.length > 0 && (
+                          <ul className="space-y-0.5">
+                            {exp.bullets.map((bullet, bulletIndex) => (
+                              <li key={bulletIndex} className="text-[10px] text-gray-700 pl-2.5 relative">
+                                <span className="absolute left-0">&gt;</span>
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Educação - Compact */}
+              {currentData.educacao.length > 0 && (
+                <section className="mb-5">
+                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
+                    {currentLabels.educacao}
+                  </h2>
+                  <ul className="space-y-0.5">
+                    {currentData.educacao.map((edu, index) => (
+                      <li key={index} className="text-[10px] text-gray-700">
+                        {edu.instituicao} - {edu.curso}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Idiomas - Compact */}
+              {currentData.idiomas.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
+                    {currentLabels.idiomas}
+                  </h2>
+                  <ul className="space-y-0.5">
+                    {currentData.idiomas.map((idioma, index) => (
+                      <li key={index} className="text-[10px] text-gray-700 pl-2 relative">
+                        <span className="absolute left-0">-</span>
+                        {idioma.idioma} - {idioma.nivel}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Fixed Bottom Actions - Always visible */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/30 p-4 print:hidden safe-area-bottom">
+          <AnimatePresence mode="wait">
+            {isEditing ? (
+              <motion.div 
+                key="editing"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="flex gap-3"
+              >
+                <Button 
+                  variant="outline" 
+                  onClick={cancelEditing} 
+                  className="flex-1 h-12 gap-2 rounded-xl"
+                >
+                  <X className="w-4 h-4" />
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={saveEditing} 
+                  className="flex-1 h-12 gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Check className="w-4 h-4" />
+                  Aplicar
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="actions"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="space-y-3"
+              >
+                {/* Primary action */}
+                <Button 
+                  variant="glow" 
+                  onClick={handleExportPdf} 
+                  disabled={isExporting} 
+                  className="w-full h-12 gap-2 rounded-xl text-base font-medium"
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                  {isExporting ? "Exportando..." : "Exportar PDF"}
+                </Button>
+                
+                {/* Secondary actions */}
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={startEditing} 
+                    className="flex-1 h-11 gap-2 rounded-xl"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar
+                  </Button>
+                  {onSave && (
+                    <Button 
+                      variant="outline" 
+                      onClick={onSave} 
+                      className="flex-1 h-11 gap-2 rounded-xl"
+                    >
+                      <Save className="w-4 h-4" />
+                      Salvar
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout - Original
   return (
     <div className="space-y-4">
       {/* Action Buttons - Hidden on print */}
