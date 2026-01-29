@@ -7,6 +7,7 @@ import { ArrowLeft, Copy, Check, FileText, Target, Wrench, Sparkles, Save, Downl
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { PdfTextBlock, usePdfExport } from "@/hooks/usePdfExport";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CoverLetterPreviewProps {
   data: CoverLetterData;
@@ -34,6 +35,7 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
   const [activeTab, setActiveTab] = useState<ModelType>(data.modelos[0]?.tipo || "completa");
   const letterRef = useRef<HTMLDivElement>(null);
   const { exportTextPdf, isExporting } = usePdfExport({ filename: `carta-apresentacao-${data.formData.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
+  const isMobile = useIsMobile();
 
   const handleExportPdf = () => {
     const model = data.modelos.find((m) => m.tipo === activeTab);
@@ -76,6 +78,141 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
     }
   };
 
+  const currentModel = data.modelos.find((m) => m.tipo === activeTab);
+  const currentIndex = data.modelos.findIndex((m) => m.tipo === activeTab);
+
+  // Mobile Layout - Fluid and Premium
+  if (isMobile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between py-4 px-4">
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 text-sm h-10">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+          <span className="text-sm text-muted-foreground font-medium">Cartas Geradas</span>
+          <div className="w-20" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 px-4 pb-6 flex flex-col">
+          {/* Model Selector - Pill Style */}
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-2">
+            {data.modelos.map((model) => {
+              const Icon = modelIcons[model.tipo];
+              const isActive = activeTab === model.tipo;
+              return (
+                <button
+                  key={model.tipo}
+                  onClick={() => setActiveTab(model.tipo)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all
+                    ${isActive 
+                      ? 'bg-primary text-primary-foreground shadow-lg' 
+                      : 'bg-muted/50 text-muted-foreground hover:bg-muted'}
+                  `}
+                >
+                  <Icon className="w-4 h-4" />
+                  {modelLabels[model.tipo]}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Current Model Card - Fluid Content */}
+          {currentModel && (
+            <motion.div
+              key={currentModel.tipo}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex-1 flex flex-col"
+            >
+              {/* Model Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  {(() => {
+                    const Icon = modelIcons[currentModel.tipo];
+                    return <Icon className="w-5 h-5 text-primary" />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base">{currentModel.titulo}</h3>
+                  <p className="text-xs text-muted-foreground">{currentModel.descricao}</p>
+                </div>
+              </div>
+
+              {/* Content - Fluid, Open, No Heavy Container */}
+              <div className="flex-1 mb-5">
+                <div className="prose prose-sm prose-invert max-w-none">
+                  <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed text-[15px]">
+                    {currentModel.conteudo}
+                  </div>
+                </div>
+
+                {/* CTA Badge */}
+                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-sm">
+                  <span className="text-muted-foreground">CTA:</span>
+                  <span className="font-medium text-primary">{currentModel.cta}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3 mt-auto">
+                {/* Copy - Primary Action */}
+                <Button
+                  variant="glow"
+                  onClick={() => handleCopy(currentModel, currentIndex)}
+                  className="w-full h-14 gap-3 rounded-2xl text-base font-semibold shadow-lg"
+                >
+                  {copiedIndex === currentIndex ? (
+                    <>
+                      <Check className="w-5 h-5" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-5 h-5" />
+                      Copiar Carta
+                    </>
+                  )}
+                </Button>
+
+                {/* Secondary Actions */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleExportPdf}
+                    disabled={isExporting}
+                    className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {isExporting ? "..." : "PDF"}
+                  </Button>
+                  {onSave && (
+                    <Button
+                      variant="outline"
+                      onClick={onSave}
+                      className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
+                    >
+                      <Save className="w-4 h-4" />
+                      Salvar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout - Original
   return (
     <div className="space-y-6">
       {/* Header */}

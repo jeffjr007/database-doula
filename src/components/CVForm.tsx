@@ -12,11 +12,15 @@ import {
   CheckCircle,
   Loader2,
   Lock,
+  ArrowLeft,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface CVFormData {
   nome: string;
@@ -40,6 +44,8 @@ const normalInputClass = "w-full h-10 px-4 rounded-lg border border-border bg-ca
 
 export function CVForm({ onGenerate, isLoading }: CVFormProps) {
   const { personalData, isLoading: isLoadingProfile } = useUserProfile();
+  const isMobile = useIsMobile();
+  const [mobileStep, setMobileStep] = useState<1 | 2>(1);
   
   const [formData, setFormData] = useState<CVFormData>({
     nome: "",
@@ -192,6 +198,262 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
     );
   }
 
+  // Mobile input classes
+  const mobileInputClass = "w-full h-12 px-4 rounded-xl border-transparent bg-muted/20 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200";
+  const mobileLockedInputClass = "w-full h-12 px-4 rounded-xl border border-muted-foreground/20 bg-muted/50 text-base text-foreground cursor-default opacity-90";
+
+  // Mobile Layout - 2 Steps
+  if (isMobile) {
+    return (
+      <form onSubmit={handleSubmit} className="min-h-screen flex flex-col">
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center gap-3 py-4">
+          <div className={`flex items-center gap-2 ${mobileStep === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${mobileStep === 1 ? 'bg-primary text-primary-foreground' : mobileStep > 1 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              {mobileStep > 1 ? <Check className="w-4 h-4" /> : '1'}
+            </div>
+            <span className="text-sm font-medium">Dados</span>
+          </div>
+          <div className="w-8 h-px bg-border" />
+          <div className={`flex items-center gap-2 ${mobileStep === 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${mobileStep === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              2
+            </div>
+            <span className="text-sm font-medium">Currículo</span>
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="flex-1 px-1">
+          <AnimatePresence mode="wait">
+            {mobileStep === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                  <User className="w-4 h-4 text-primary" />
+                  Dados Pessoais
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    Nome Completo
+                    {formData.nome && personalData.fullName && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => handleChange("nome", e.target.value)}
+                    placeholder="Seu nome completo"
+                    readOnly={!!personalData.fullName}
+                    className={personalData.fullName ? mobileLockedInputClass : mobileInputClass}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Briefcase className="w-3 h-3" />
+                    Cargos (separados por |)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cargos}
+                    onChange={(e) => handleChange("cargos", e.target.value)}
+                    placeholder="Gerente | Especialista | Coordenador"
+                    className={mobileInputClass}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Phone className="w-3 h-3" />
+                    Telefone
+                    {formData.telefone && personalData.phone && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.telefone}
+                    onChange={(e) => handleChange("telefone", e.target.value)}
+                    placeholder="(11) 99999-9999"
+                    readOnly={!!personalData.phone}
+                    className={personalData.phone ? mobileLockedInputClass : mobileInputClass}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    Email
+                    {formData.email && personalData.email && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    placeholder="seu@email.com"
+                    readOnly={!!personalData.email}
+                    className={personalData.email ? mobileLockedInputClass : mobileInputClass}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    LinkedIn
+                    {formData.linkedin && personalData.linkedinUrl && <Lock className="w-3 h-3 text-muted-foreground/60" />}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.linkedin}
+                    onChange={(e) => handleChange("linkedin", e.target.value)}
+                    placeholder="linkedin.com/in/seuperfil"
+                    readOnly={!!personalData.linkedinUrl}
+                    className={personalData.linkedinUrl ? mobileLockedInputClass : mobileInputClass}
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <Button
+                    type="button"
+                    variant="glow"
+                    className="w-full h-14 rounded-2xl text-base font-medium gap-2"
+                    onClick={() => setMobileStep(2)}
+                  >
+                    Continuar
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {mobileStep === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-5"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileStep(1)}
+                  className="gap-2 -ml-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar
+                </Button>
+
+                {/* PDF Upload */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <FileText className="w-4 h-4 text-primary" />
+                    Currículo em PDF
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
+                    <p className="text-xs text-primary font-medium">
+                      📎 Anexe o <strong>Currículo ATS</strong> que você criou anteriormente
+                    </p>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  <div
+                    onClick={() => {
+                      if (isExtracting) return;
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                      fileInputRef.current?.click();
+                    }}
+                    className={`
+                      relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer
+                      transition-all duration-300
+                      ${isExtracting ? "border-primary/50 bg-primary/5" : extractionDone ? "border-green-500/50 bg-green-500/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}
+                    `}
+                  >
+                    {isExtracting ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        <p className="text-sm font-medium">Analisando currículo...</p>
+                      </div>
+                    ) : extractionDone ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <CheckCircle className="w-8 h-8 text-green-500" />
+                        <p className="text-sm font-medium">{pdfFile?.name}</p>
+                        <p className="text-xs text-muted-foreground">Clique para trocar</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">Toque para fazer upload</p>
+                        <p className="text-xs text-muted-foreground">PDF até 10MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Job Description */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Target className="w-4 h-4 text-primary" />
+                    Vaga Alvo
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Cole a descrição completa da vaga
+                  </p>
+                  <Textarea
+                    value={formData.jobDescription}
+                    onChange={(e) => handleChange("jobDescription", e.target.value)}
+                    placeholder="Título da Vaga&#10;&#10;Responsabilidades:&#10;• Desenvolver e implementar...&#10;&#10;Requisitos:&#10;• Experiência em..."
+                    className="min-h-[200px] bg-muted/20 border-transparent rounded-xl text-base"
+                  />
+                </div>
+
+                <div className="pt-2 pb-6">
+                  <Button
+                    type="submit"
+                    variant="glow"
+                    className="w-full h-14 rounded-2xl text-base font-medium"
+                    disabled={!isValid || isLoading || isExtracting}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Gerando com IA...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar Currículo com IA
+                      </>
+                    )}
+                  </Button>
+                  {!isValid && (
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      {!extractionDone ? "Faça upload do seu currículo em PDF" : "Preencha a vaga alvo (mínimo 50 caracteres)"}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </form>
+    );
+  }
+
+  // Desktop Layout - Original
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Personal Info Section */}
