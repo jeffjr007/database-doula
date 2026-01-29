@@ -11,10 +11,7 @@ import {
   X,
   Plus,
   Trash2,
-  Loader2,
-  ZoomIn,
-  ZoomOut,
-  FileText
+  Loader2
 } from "lucide-react";
 import { ATSCVData, ATSCVLabels, ATSExperienciaItem, ATSEducacaoItem, IdiomaItem } from "@/types/ats-cv";
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,7 +79,6 @@ function EditableText({
 export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPreviewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<ATSCVData>(data);
-  const [mobileZoom, setMobileZoom] = useState(0.55);
   const cvRef = useRef<HTMLDivElement>(null);
   const { exportTextPdf, isExporting } = usePdfExport({ filename: `cv-ats-${data.nome.toLowerCase().replace(/\s+/g, '-')}.pdf` });
   const isMobile = useIsMobile();
@@ -261,244 +257,354 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
   const currentData = isEditing ? editData : data;
   const currentLabels = currentData.labels || defaultLabels;
 
-  // Mobile Layout - Completely redesigned
+  // Mobile Layout - Premium Modal Style
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col pb-24">
-        {/* Mobile Header - Compact */}
-        <div className="flex items-center justify-between py-3 px-1 print:hidden">
-          <Button variant="ghost" size="sm" onClick={onReset} className="gap-1.5 text-sm h-9">
+      <div className="min-h-screen flex flex-col">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between py-4 px-4 print:hidden">
+          <Button variant="ghost" size="sm" onClick={onReset} className="gap-2 text-sm h-10">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Button>
+          <span className="text-sm text-muted-foreground font-medium">Currículo ATS</span>
+          <div className="w-20" /> {/* Spacer for centering */}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 px-4 pb-4 flex flex-col gap-5">
           
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1 bg-muted/30 rounded-full px-2 py-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setMobileZoom(Math.max(0.35, mobileZoom - 0.1))}
-              className="h-7 w-7 p-0"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </Button>
-            <span className="text-xs text-muted-foreground w-10 text-center">
-              {Math.round(mobileZoom * 100)}%
-            </span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setMobileZoom(Math.min(1, mobileZoom + 0.1))}
-              className="h-7 w-7 p-0"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="text-center mb-4 px-4">
-          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-            <FileText className="w-4 h-4" />
-            <span>Pré-visualização do Currículo</span>
-          </div>
-        </div>
-
-        {isEditing && (
-          <div className="mx-4 mb-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 print:hidden">
-            <strong>Modo de edição:</strong> Toque nos textos para editar.
-          </div>
-        )}
-
-        {/* CV Preview Container - Scalable */}
-        <div className="flex-1 px-4 overflow-auto">
-          <div 
-            className="mx-auto bg-white rounded-xl shadow-lg border border-border/20 overflow-hidden"
-            style={{ 
-              width: `${100 / mobileZoom}%`,
-              maxWidth: `${100 / mobileZoom}%`,
-              transform: `scale(${mobileZoom})`,
-              transformOrigin: 'top center',
-              marginBottom: `${(1 - mobileZoom) * -50}%`
-            }}
+          {/* Preview Card - Premium Modal Style */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative bg-card/50 backdrop-blur-sm rounded-2xl border border-border/40 p-3 shadow-lg"
           >
-            <motion.div
-              ref={cvRef}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-white text-black p-6"
-            >
-              {/* Header */}
-              <header className="mb-6">
-                <div className="flex justify-end mb-3">
-                  <div className="text-right text-xs text-black space-y-0.5">
-                    {currentData.telefone && (
-                      <p><span className="font-semibold">{currentLabels.telefone}:</span> <span className="text-blue-600">{currentData.telefone}</span></p>
-                    )}
-                    {currentData.localizacao && (
-                      <p><span className="font-semibold">{currentLabels.localizacao}:</span> <span className="text-blue-600">{currentData.localizacao}</span></p>
-                    )}
-                    {currentData.email && (
-                      <p><span className="font-semibold">{currentLabels.email}:</span> <span className="text-blue-600">{currentData.email}</span></p>
-                    )}
-                    {currentData.linkedin && (
-                      <p><span className="font-semibold">{currentLabels.linkedin}:</span> <span className="text-blue-600 break-all">{currentData.linkedin}</span></p>
-                    )}
-                    {(currentData.nacionalidade || currentData.idade) && (
-                      <p className="mt-1.5 uppercase font-semibold text-[10px]">
-                        {currentData.nacionalidade}{currentData.nacionalidade && currentData.idade ? ", " : ""}{currentData.idade ? `${currentData.idade} ANOS` : ""}.
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="border-b-2 border-black mb-1.5" />
-                <h1 className="text-xl font-light tracking-wide text-black uppercase">
-                  {currentData.nome}
-                </h1>
-              </header>
+            {/* Preview Label */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Pré-visualização
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground/60">
+                Role para ver mais ↓
+              </span>
+            </div>
 
-              {/* Experiências - Compact */}
-              {currentData.experiencias.length > 0 && (
-                <section className="mb-5">
-                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
-                    {currentLabels.experiencias}
-                  </h2>
-                  <div className="space-y-3">
-                    {currentData.experiencias.map((exp, index) => (
-                      <div key={index}>
-                        <div className="flex flex-wrap items-baseline gap-x-1 text-xs">
-                          <span className="font-bold text-black">{exp.empresa}{exp.localizacao && `, ${exp.localizacao}`}</span>
-                          <span className="text-gray-700">—</span>
-                          <span className="font-semibold text-gray-800">{exp.cargo}</span>
-                        </div>
-                        <p className="text-[10px] text-gray-600 uppercase mb-1">{exp.periodo}</p>
-                        {exp.bullets.length > 0 && (
-                          <ul className="space-y-0.5">
-                            {exp.bullets.map((bullet, bulletIndex) => (
-                              <li key={bulletIndex} className="text-[10px] text-gray-700 pl-2.5 relative">
-                                <span className="absolute left-0">&gt;</span>
-                                {bullet}
-                              </li>
-                            ))}
-                          </ul>
+            {/* Scrollable Preview Container */}
+            <div 
+              className="relative bg-white rounded-xl overflow-hidden shadow-inner"
+              style={{ maxHeight: '55vh' }}
+            >
+              {/* Scroll Container */}
+              <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh' }}>
+                <div className="p-5 text-black">
+                  {/* Header */}
+                  <header className="mb-5">
+                    <div className="flex justify-end mb-3">
+                      <div className="text-right text-[11px] text-black space-y-0.5">
+                        {currentData.telefone && (
+                          <p><span className="font-semibold">{currentLabels.telefone}:</span> <span className="text-blue-600">{currentData.telefone}</span></p>
+                        )}
+                        {currentData.localizacao && (
+                          <p><span className="font-semibold">{currentLabels.localizacao}:</span> <span className="text-blue-600">{currentData.localizacao}</span></p>
+                        )}
+                        {currentData.email && (
+                          <p><span className="font-semibold">{currentLabels.email}:</span> <span className="text-blue-600">{currentData.email}</span></p>
+                        )}
+                        {currentData.linkedin && (
+                          <p className="max-w-[200px]"><span className="font-semibold">{currentLabels.linkedin}:</span> <span className="text-blue-600 break-all text-[10px]">{currentData.linkedin}</span></p>
+                        )}
+                        {(currentData.nacionalidade || currentData.idade) && (
+                          <p className="mt-1.5 uppercase font-semibold text-[10px]">
+                            {currentData.nacionalidade}{currentData.nacionalidade && currentData.idade ? ", " : ""}{currentData.idade ? `${currentData.idade} ANOS` : ""}.
+                          </p>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+                    </div>
+                    <div className="border-b-[3px] border-black mb-2" />
+                    <h1 className="text-xl font-light tracking-wide text-black uppercase leading-tight">
+                      {currentData.nome}
+                    </h1>
+                  </header>
 
-              {/* Educação - Compact */}
-              {currentData.educacao.length > 0 && (
-                <section className="mb-5">
-                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
-                    {currentLabels.educacao}
-                  </h2>
-                  <ul className="space-y-0.5">
-                    {currentData.educacao.map((edu, index) => (
-                      <li key={index} className="text-[10px] text-gray-700">
-                        {edu.instituicao} - {edu.curso}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+                  {/* Experiências */}
+                  {currentData.experiencias.length > 0 && (
+                    <section className="mb-5">
+                      <h2 className="text-[13px] font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase">
+                        {currentLabels.experiencias}
+                      </h2>
+                      <div className="space-y-4">
+                        {currentData.experiencias.map((exp, index) => (
+                          <div key={index}>
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 text-[11px] mb-0.5">
+                              <span className="font-bold text-black">{exp.empresa}{exp.localizacao && `, ${exp.localizacao}`}</span>
+                              <span className="text-gray-500">—</span>
+                              <span className="font-semibold text-gray-700">{exp.cargo}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500 uppercase mb-1.5">{exp.periodo}</p>
+                            {exp.bullets.length > 0 && (
+                              <ul className="space-y-1">
+                                {exp.bullets.map((bullet, bulletIndex) => (
+                                  <li key={bulletIndex} className="text-[10px] text-gray-700 pl-3 relative leading-relaxed">
+                                    <span className="absolute left-0 text-gray-400">&gt;</span>
+                                    {bullet}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
-              {/* Idiomas - Compact */}
-              {currentData.idiomas.length > 0 && (
-                <section>
-                  <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-0.5 mb-2 uppercase">
-                    {currentLabels.idiomas}
-                  </h2>
-                  <ul className="space-y-0.5">
-                    {currentData.idiomas.map((idioma, index) => (
-                      <li key={index} className="text-[10px] text-gray-700 pl-2 relative">
-                        <span className="absolute left-0">-</span>
-                        {idioma.idioma} - {idioma.nivel}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </motion.div>
-          </div>
-        </div>
+                  {/* Educação */}
+                  {currentData.educacao.length > 0 && (
+                    <section className="mb-5">
+                      <h2 className="text-[13px] font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase">
+                        {currentLabels.educacao}
+                      </h2>
+                      <ul className="space-y-1">
+                        {currentData.educacao.map((edu, index) => (
+                          <li key={index} className="text-[11px] text-gray-700">
+                            {edu.instituicao} - {edu.curso}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
 
-        {/* Fixed Bottom Actions - Always visible */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/30 p-4 print:hidden safe-area-bottom">
-          <AnimatePresence mode="wait">
-            {isEditing ? (
-              <motion.div 
-                key="editing"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="flex gap-3"
+                  {/* Idiomas */}
+                  {currentData.idiomas.length > 0 && (
+                    <section>
+                      <h2 className="text-[13px] font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase">
+                        {currentLabels.idiomas}
+                      </h2>
+                      <ul className="space-y-1">
+                        {currentData.idiomas.map((idioma, index) => (
+                          <li key={index} className="text-[11px] text-gray-700 pl-2.5 relative">
+                            <span className="absolute left-0 text-gray-400">-</span>
+                            {idioma.idioma} - {idioma.nivel}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Fade Gradient - Visual cue for more content */}
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+            </div>
+          </motion.div>
+
+          {/* Action Buttons - Outside Preview, Clean Layout */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="space-y-3 print:hidden"
+          >
+            {/* Primary Action */}
+            <Button 
+              variant="glow" 
+              onClick={handleExportPdf} 
+              disabled={isExporting} 
+              className="w-full h-14 gap-3 rounded-2xl text-base font-semibold shadow-lg"
+            >
+              {isExporting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Download className="w-5 h-5" />
+              )}
+              {isExporting ? "Exportando..." : "Exportar PDF"}
+            </Button>
+            
+            {/* Secondary Actions - Grid Layout */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={startEditing} 
+                className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
               >
+                <Pencil className="w-4 h-4" />
+                Editar
+              </Button>
+              {onSave && (
                 <Button 
                   variant="outline" 
-                  onClick={cancelEditing} 
-                  className="flex-1 h-12 gap-2 rounded-xl"
+                  onClick={onSave} 
+                  className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
                 >
+                  <Save className="w-4 h-4" />
+                  Salvar
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Editing Mode Modal Overlay */}
+        <AnimatePresence>
+          {isEditing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
+            >
+              {/* Edit Mode Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border/30">
+                <Button variant="ghost" size="sm" onClick={cancelEditing} className="gap-2">
                   <X className="w-4 h-4" />
                   Cancelar
                 </Button>
+                <span className="text-sm font-medium">Modo de Edição</span>
                 <Button 
+                  size="sm" 
                   onClick={saveEditing} 
-                  className="flex-1 h-12 gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                  className="gap-2 bg-green-600 hover:bg-green-700"
                 >
                   <Check className="w-4 h-4" />
                   Aplicar
                 </Button>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="actions"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="space-y-3"
-              >
-                {/* Primary action */}
-                <Button 
-                  variant="glow" 
-                  onClick={handleExportPdf} 
-                  disabled={isExporting} 
-                  className="w-full h-12 gap-2 rounded-xl text-base font-medium"
-                >
-                  {isExporting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  {isExporting ? "Exportando..." : "Exportar PDF"}
-                </Button>
-                
-                {/* Secondary actions */}
-                <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={startEditing} 
-                    className="flex-1 h-11 gap-2 rounded-xl"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    Editar
-                  </Button>
-                  {onSave && (
-                    <Button 
-                      variant="outline" 
-                      onClick={onSave} 
-                      className="flex-1 h-11 gap-2 rounded-xl"
-                    >
-                      <Save className="w-4 h-4" />
-                      Salvar
-                    </Button>
-                  )}
+              </div>
+
+              {/* Edit Hint */}
+              <div className="mx-4 mt-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800">
+                <strong>Toque nos textos</strong> para editar diretamente no currículo.
+              </div>
+
+              {/* Scrollable Edit View */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="bg-white rounded-xl p-5 text-black shadow-lg">
+                  {/* Editable Header */}
+                  <header className="mb-6">
+                    <div className="flex justify-end mb-3">
+                      <div className="text-right text-xs text-black space-y-1">
+                        <div className="flex items-center justify-end gap-1">
+                          <EditableText value={currentLabels.telefone} onChange={(v) => updateLabel('telefone', v)} isEditing={isEditing} className="font-semibold" />
+                          <span>:</span>
+                          <Input value={editData.telefone} onChange={(e) => updateField('telefone', e.target.value)} className="bg-yellow-50 border-yellow-300 text-blue-600 h-7 py-0.5 px-1 w-32 text-xs" placeholder="(00) 00000-0000" />
+                        </div>
+                        <div className="flex items-center justify-end gap-1">
+                          <EditableText value={currentLabels.localizacao} onChange={(v) => updateLabel('localizacao', v)} isEditing={isEditing} className="font-semibold" />
+                          <span>:</span>
+                          <Input value={editData.localizacao} onChange={(e) => updateField('localizacao', e.target.value)} className="bg-yellow-50 border-yellow-300 text-blue-600 h-7 py-0.5 px-1 w-32 text-xs" placeholder="Cidade, UF" />
+                        </div>
+                        <div className="flex items-center justify-end gap-1">
+                          <EditableText value={currentLabels.email} onChange={(v) => updateLabel('email', v)} isEditing={isEditing} className="font-semibold" />
+                          <span>:</span>
+                          <Input value={editData.email} onChange={(e) => updateField('email', e.target.value)} className="bg-yellow-50 border-yellow-300 text-blue-600 h-7 py-0.5 px-1 w-40 text-xs" placeholder="email@exemplo.com" />
+                        </div>
+                        <div className="flex items-center justify-end gap-1">
+                          <EditableText value={currentLabels.linkedin} onChange={(v) => updateLabel('linkedin', v)} isEditing={isEditing} className="font-semibold" />
+                          <span>:</span>
+                          <Input value={editData.linkedin} onChange={(e) => updateField('linkedin', e.target.value)} className="bg-yellow-50 border-yellow-300 text-blue-600 h-7 py-0.5 px-1 w-44 text-xs" placeholder="linkedin.com/in/..." />
+                        </div>
+                        <div className="flex items-center justify-end gap-1 mt-2">
+                          <Input value={editData.nacionalidade} onChange={(e) => updateField('nacionalidade', e.target.value)} className="bg-yellow-50 border-yellow-300 text-black h-7 py-0.5 px-1 w-24 text-xs uppercase" placeholder="Nacionalidade" />
+                          <span>,</span>
+                          <Input value={editData.idade} onChange={(e) => updateField('idade', e.target.value)} className="bg-yellow-50 border-yellow-300 text-black h-7 py-0.5 px-1 w-12 text-xs" placeholder="00" />
+                          <span className="text-xs">ANOS.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-b-[3px] border-black mb-2" />
+                    <Input value={editData.nome} onChange={(e) => updateField('nome', e.target.value)} className="text-xl font-light tracking-wide text-black uppercase bg-yellow-50 border-yellow-300 h-auto py-1" placeholder="SEU NOME" />
+                  </header>
+
+                  {/* Editable Experiences */}
+                  <section className="mb-6">
+                    <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase flex items-center gap-2">
+                      <EditableText value={currentLabels.experiencias} onChange={(v) => updateLabel('experiencias', v)} isEditing={isEditing} />
+                      <Button variant="ghost" size="sm" onClick={addExperiencia} className="h-6 w-6 p-0 text-green-600">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </h2>
+                    <div className="space-y-4">
+                      {editData.experiencias.map((exp, index) => (
+                        <div key={index} className="relative border border-dashed border-gray-300 p-3 rounded-lg">
+                          <Button variant="ghost" size="sm" onClick={() => removeExperiencia(index)} className="absolute -top-2 -right-2 h-6 w-6 p-0 text-red-500 bg-white rounded-full shadow">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                          <div className="space-y-2">
+                            <Input value={exp.empresa} onChange={(e) => updateExperiencia(index, 'empresa', e.target.value)} className="bg-yellow-50 border-yellow-300 text-black font-bold h-8 text-sm" placeholder="Empresa" />
+                            <Input value={exp.localizacao} onChange={(e) => updateExperiencia(index, 'localizacao', e.target.value)} className="bg-yellow-50 border-yellow-300 text-black h-8 text-sm" placeholder="Localização" />
+                            <Input value={exp.cargo} onChange={(e) => updateExperiencia(index, 'cargo', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-800 font-semibold h-8 text-sm" placeholder="Cargo" />
+                            <Input value={exp.periodo} onChange={(e) => updateExperiencia(index, 'periodo', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-600 text-xs uppercase h-7" placeholder="Jan 2020 - Presente" />
+                            <div className="space-y-2 mt-2">
+                              {exp.bullets.map((bullet, bulletIndex) => (
+                                <div key={bulletIndex} className="flex items-start gap-1">
+                                  <Textarea value={bullet} onChange={(e) => updateBullet(index, bulletIndex, e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-700 text-xs min-h-[40px] flex-1" placeholder="Conquista ou responsabilidade..." />
+                                  <Button variant="ghost" size="sm" onClick={() => removeBullet(index, bulletIndex)} className="h-6 w-6 p-0 text-red-500">
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button variant="ghost" size="sm" onClick={() => addBullet(index)} className="h-6 text-xs text-green-600 gap-1">
+                                <Plus className="w-3 h-3" />
+                                Adicionar bullet
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Editable Education */}
+                  <section className="mb-6">
+                    <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase flex items-center gap-2">
+                      <EditableText value={currentLabels.educacao} onChange={(v) => updateLabel('educacao', v)} isEditing={isEditing} />
+                      <Button variant="ghost" size="sm" onClick={addEducacao} className="h-6 w-6 p-0 text-green-600">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </h2>
+                    <div className="space-y-2">
+                      {editData.educacao.map((edu, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={edu.instituicao} onChange={(e) => updateEducacao(index, 'instituicao', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-700 h-8 text-xs flex-1" placeholder="Instituição" />
+                          <span className="text-gray-500">-</span>
+                          <Input value={edu.curso} onChange={(e) => updateEducacao(index, 'curso', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-700 h-8 text-xs flex-1" placeholder="Curso" />
+                          <Button variant="ghost" size="sm" onClick={() => removeEducacao(index)} className="h-6 w-6 p-0 text-red-500">
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Editable Languages */}
+                  <section>
+                    <h2 className="text-sm font-bold text-black border-b border-gray-300 pb-1 mb-3 uppercase flex items-center gap-2">
+                      <EditableText value={currentLabels.idiomas} onChange={(v) => updateLabel('idiomas', v)} isEditing={isEditing} />
+                      <Button variant="ghost" size="sm" onClick={addIdioma} className="h-6 w-6 p-0 text-green-600">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </h2>
+                    <div className="space-y-2">
+                      {editData.idiomas.map((idioma, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={idioma.idioma} onChange={(e) => updateIdioma(index, 'idioma', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-700 h-8 text-xs w-28" placeholder="Idioma" />
+                          <span className="text-gray-500">-</span>
+                          <Input value={idioma.nivel} onChange={(e) => updateIdioma(index, 'nivel', e.target.value)} className="bg-yellow-50 border-yellow-300 text-gray-700 h-8 text-xs w-28" placeholder="Nível" />
+                          <Button variant="ghost" size="sm" onClick={() => removeIdioma(index)} className="h-6 w-6 p-0 text-red-500">
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
