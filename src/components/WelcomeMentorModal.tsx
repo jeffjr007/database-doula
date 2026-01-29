@@ -11,18 +11,18 @@ interface WelcomeMentorModalProps {
 
 const mentorMessages = [
   "E aí, tudo certo? 👋",
-  "Cara, você acabou de dar o primeiro passo pra transformar sua carreira.",
+  "Você acabou de dar o primeiro passo pra transformar sua carreira.",
   "A partir de agora, eu vou te guiar por cada etapa desse processo...",
-  "Só precisa confiar no método e fazer o que eu disser.",
-  "Preparado pra mudar de patamar? Bora! 🚀"
+  "Agora começa a parte que separa quem tenta de quem realmente faz acontecer",
+  "Preparado pra mudar de patamar?",
 ];
 
 // Typing indicator component
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 px-4 py-3">
-    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
   </div>
 );
 
@@ -48,32 +48,41 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
 
     mentorMessages.forEach((_, index) => {
       // Show message and start typing for next
-      const timer = setTimeout(() => {
-        setVisibleMessages(index + 1);
-        // Keep typing for next message, or stop if last
-        if (index < mentorMessages.length - 1) {
-          setIsTyping(true);
-        } else {
-          setIsTyping(false);
-        }
-      }, (index + 1) * 1200); // Slightly longer delay for typing effect
+      const timer = setTimeout(
+        () => {
+          setVisibleMessages(index + 1);
+          // Keep typing for next message, or stop if last
+          if (index < mentorMessages.length - 1) {
+            setIsTyping(true);
+          } else {
+            setIsTyping(false);
+          }
+        },
+        (index + 1) * 1200,
+      ); // Slightly longer delay for typing effect
       timers.push(timer);
     });
 
     // Show typing before button
-    const typingButtonTimer = setTimeout(() => {
-      setIsTyping(true);
-    }, mentorMessages.length * 1200 + 400);
+    const typingButtonTimer = setTimeout(
+      () => {
+        setIsTyping(true);
+      },
+      mentorMessages.length * 1200 + 400,
+    );
     timers.push(typingButtonTimer);
 
     // Show button after all messages
-    const buttonTimer = setTimeout(() => {
-      setIsTyping(false);
-      setShowButton(true);
-    }, (mentorMessages.length + 1) * 1200);
+    const buttonTimer = setTimeout(
+      () => {
+        setIsTyping(false);
+        setShowButton(true);
+      },
+      (mentorMessages.length + 1) * 1200,
+    );
     timers.push(buttonTimer);
 
-    return () => timers.forEach(t => clearTimeout(t));
+    return () => timers.forEach((t) => clearTimeout(t));
   }, [open]);
 
   const handleComplete = () => {
@@ -140,9 +149,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                       transition={{ duration: 0.3 }}
                       className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
                     >
-                      <p className="text-foreground text-sm leading-relaxed">
-                        {message}
-                      </p>
+                      <p className="text-foreground text-sm leading-relaxed">{message}</p>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -174,7 +181,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
                       onClick={handleComplete}
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
                     >
-                      Começar Jornada 🎯
+                      Começar Jornada
                     </Button>
                   </motion.div>
                 )}
@@ -198,10 +205,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
               </div>
               <div className="space-y-3 mb-6">
                 {mentorMessages.map((message, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
-                  >
+                  <div key={index} className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]">
                     <p className="text-foreground text-sm leading-relaxed">{message}</p>
                   </div>
                 ))}
