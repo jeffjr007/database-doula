@@ -870,8 +870,22 @@ const Portal = () => {
               >
                 <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
 
-                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {stages.map((stage, index) => {
+                <motion.div 
+                  className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.06,
+                        delayChildren: 0.1,
+                      }
+                    }
+                  }}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {stages.map((stage) => {
                     const status = getStageStatus(stage.number);
                     const blocked = isStageBlocked(stage.number);
                     const Icon = stage.icon;
@@ -881,9 +895,14 @@ const Portal = () => {
                       <motion.button
                         key={stage.number}
                         onClick={() => handleStageClick(stage)}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.35 + index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                        variants={{
+                          hidden: { opacity: 0, y: 15 },
+                          visible: { 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+                          }
+                        }}
                         className={`
                           group/card relative p-4 text-left
                           rounded-2xl border border-white/5
@@ -937,7 +956,7 @@ const Portal = () => {
                         </motion.button>
                       );
                     })}
-                  </div>
+                  </motion.div>
 
                   {/* Quote */}
                   <motion.div 
