@@ -824,37 +824,66 @@ const Portal = () => {
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
             {isDataReady && (
-              <div className="mb-8 animate-fade-in">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
+              <motion.div 
+                className="mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <motion.div 
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                >
                   <Crown className="w-4 h-4 text-primary" />
                   <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
-                </div>
+                </motion.div>
 
                 {user && userName && (
-                  <h1 className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4">
+                  <motion.h1 
+                    className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  >
                     Olá, <span className="text-gradient">{userName}</span>
-                  </h1>
+                  </motion.h1>
                 )}
 
-                <p className="text-lg text-muted-foreground max-w-xl">{currentPhrase}</p>
-              </div>
+                <motion.p 
+                  className="text-lg text-muted-foreground max-w-xl"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {currentPhrase}
+                </motion.p>
+              </motion.div>
             )}
 
             {isDataReady && (
-              <div className="animate-fade-in">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
 
                 <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {stages.map((stage) => {
+                  {stages.map((stage, index) => {
                     const status = getStageStatus(stage.number);
                     const blocked = isStageBlocked(stage.number);
                     const Icon = stage.icon;
                     const isCompleted = status === "completed";
 
                     return (
-                      <button
+                      <motion.button
                         key={stage.number}
                         onClick={() => handleStageClick(stage)}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.35 + index * 0.05, ease: [0.22, 1, 0.36, 1] }}
                         className={`
                           group/card relative p-4 text-left
                           rounded-2xl border border-white/5
@@ -905,20 +934,30 @@ const Portal = () => {
                               <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover/card:text-primary transition-colors flex-shrink-0" />
                             )}
                           </div>
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>
 
                   {/* Quote */}
-                  <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20">
+                  <motion.div 
+                    className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  >
                     <p className="text-sm text-muted-foreground italic text-center">
                       "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                     </p>
-                  </div>
+                  </motion.div>
 
                   {/* Progress Stats */}
-                  <div className="mt-6 grid grid-cols-3 gap-4">
+                  <motion.div 
+                    className="mt-6 grid grid-cols-3 gap-4"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  >
                     <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
                       <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
                       <p className="text-xs text-muted-foreground mt-1">Etapas</p>
@@ -935,8 +974,8 @@ const Portal = () => {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">Progresso</p>
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               )}
           </div>
         </div>
