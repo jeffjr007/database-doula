@@ -38,18 +38,6 @@ import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 import { Stage3WelcomeModal } from "@/components/Stage3WelcomeModal";
 import LogoutModal from "@/components/LogoutModal";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  },
-};
-
 interface StageProgress {
   stage_number: number;
   completed: boolean;
@@ -577,7 +565,9 @@ const Portal = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex flex-col w-20 hover:w-64 transition-all duration-300 group bg-card/80 border-r border-border/50 fixed left-0 top-0 bottom-0 z-50">
+      <aside
+        className="hidden lg:flex flex-col w-20 hover:w-64 transition-all duration-300 group bg-card/80 border-r border-border/50 fixed left-0 top-0 bottom-0 z-50"
+      >
         {/* Logo */}
         <div className="p-4 flex items-center justify-center border-b border-border/30">
           <img src={logoAD} alt="AD" className="w-12 h-12 rounded-xl flex-shrink-0" />
@@ -672,9 +662,12 @@ const Portal = () => {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <div className="lg:hidden fixed inset-0 bg-background/90 z-40" onClick={() => setSidebarOpen(false)} />
+            <div
+              className="lg:hidden fixed inset-0 bg-background/90 z-40"
+              onClick={() => setSidebarOpen(false)}
+            />
             <aside
-              className={`lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col transition-transform duration-200 ease-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+              className={`lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col transition-transform duration-200 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
               <div className="p-4 flex items-center justify-between border-b border-border/30">
                 <div className="flex items-center gap-3">
@@ -813,7 +806,9 @@ const Portal = () => {
           </div>
 
           {/* Mentor Section - Now on Left (Background) */}
-          <div className="hidden lg:block w-[45%] xl:w-[40%] relative animate-fade-in">
+          <div
+            className="hidden lg:block w-[45%] xl:w-[40%] relative animate-fade-in"
+          >
             <div className="sticky top-0 h-screen">
               <img
                 src={mentorPhoto}
@@ -873,10 +868,10 @@ const Portal = () => {
                         `}
                         disabled={blocked}
                       >
-                        <div className="flex items-center gap-3">
-                          {/* Number Badge */}
-                          <div
-                            className={`
+                          <div className="flex items-center gap-3">
+                            {/* Number Badge */}
+                            <div
+                              className={`
                               w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-sm
                               transition-colors
                               ${
@@ -887,60 +882,62 @@ const Portal = () => {
                                     : "bg-primary/10 text-primary group-hover/card:bg-primary/20"
                               }
                             `}
-                          >
-                            {isCompleted ? <Check className="w-4 h-4" strokeWidth={3} /> : stage.number}
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <h3
-                              className={`text-sm font-medium ${blocked ? "text-muted-foreground/50" : "text-foreground"}`}
                             >
-                              {stage.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground/70 line-clamp-1 mt-0.5">{stage.description}</p>
+                              {isCompleted ? <Check className="w-4 h-4" strokeWidth={3} /> : stage.number}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <h3
+                                className={`text-sm font-medium ${blocked ? "text-muted-foreground/50" : "text-foreground"}`}
+                              >
+                                {stage.title}
+                              </h3>
+                              <p className="text-xs text-muted-foreground/70 line-clamp-1 mt-0.5">
+                                {stage.description}
+                              </p>
+                            </div>
+
+                            {/* Arrow */}
+                            {blocked ? (
+                              <Lock className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover/card:text-primary transition-colors flex-shrink-0" />
+                            )}
                           </div>
-
-                          {/* Arrow */}
-                          {blocked ? (
-                            <Lock className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover/card:text-primary transition-colors flex-shrink-0" />
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Quote */}
-                <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20">
-                  <p className="text-sm text-muted-foreground italic text-center">
-                    "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
-                  </p>
-                </div>
-
-                {/* Progress Stats */}
-                <div className="mt-6 grid grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
-                    <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Etapas</p>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
-                    <p className="text-2xl font-display font-bold text-accent">
-                      {progress.filter((p) => p.completed).length}
+
+                  {/* Quote */}
+                  <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20">
+                    <p className="text-sm text-muted-foreground italic text-center">
+                      "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Concluídas</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
-                    <p className="text-2xl font-display font-bold text-foreground">
-                      {Math.round((progress.filter((p) => p.completed).length / stages.length) * 100)}%
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">Progresso</p>
+
+                  {/* Progress Stats */}
+                  <div className="mt-6 grid grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Etapas</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-accent">
+                        {progress.filter((p) => p.completed).length}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Concluídas</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
+                      <p className="text-2xl font-display font-bold text-foreground">
+                        {Math.round((progress.filter((p) => p.completed).length / stages.length) * 100)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Progresso</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>
