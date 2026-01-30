@@ -274,12 +274,9 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
         {/* Content Area */}
         <div className="flex-1 px-4 pb-4 flex flex-col gap-5">
           
-          {/* Preview Card - Premium Modal Style */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative bg-card/50 backdrop-blur-sm rounded-2xl border border-border/40 p-3 shadow-lg"
+          {/* Preview Card - Premium Modal Style - optimized for mobile */}
+          <div
+            className="relative bg-card rounded-2xl border border-border/40 p-3 shadow-lg animate-scale-in"
           >
             {/* Preview Label */}
             <div className="flex items-center justify-between mb-3">
@@ -400,15 +397,10 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
               {/* Bottom Fade Gradient - Visual cue for more content */}
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
             </div>
-          </motion.div>
+          </div>
 
           {/* Action Buttons - Outside Preview, Clean Layout */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.15 }}
-            className="space-y-3 print:hidden"
-          >
+          <div className="space-y-3 print:hidden animate-fade-in">
             {/* Primary Action */}
             <Button 
               variant="glow" 
@@ -429,7 +421,7 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
               <Button 
                 variant="outline" 
                 onClick={startEditing} 
-                className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
+                className="h-12 gap-2 rounded-xl bg-card border-border/40 hover:bg-card/80"
               >
                 <Pencil className="w-4 h-4" />
                 Editar
@@ -438,41 +430,35 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
                 <Button 
                   variant="outline" 
                   onClick={onSave} 
-                  className="h-12 gap-2 rounded-xl bg-card/50 border-border/40 hover:bg-card"
+                  className="h-12 gap-2 rounded-xl bg-card border-border/40 hover:bg-card/80"
                 >
                   <Save className="w-4 h-4" />
                   Salvar
                 </Button>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Editing Mode Modal Overlay */}
-        <AnimatePresence>
-          {isEditing && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
-            >
-              {/* Edit Mode Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border/30">
-                <Button variant="ghost" size="sm" onClick={cancelEditing} className="gap-2">
-                  <X className="w-4 h-4" />
-                  Cancelar
-                </Button>
-                <span className="text-sm font-medium">Modo de Edição</span>
-                <Button 
-                  size="sm" 
-                  onClick={saveEditing} 
-                  className="gap-2 bg-green-600 hover:bg-green-700"
-                >
-                  <Check className="w-4 h-4" />
-                  Aplicar
-                </Button>
-              </div>
+        {/* Editing Mode Modal Overlay - Simplified for performance */}
+        {isEditing && (
+          <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
+            {/* Edit Mode Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border/30">
+              <Button variant="ghost" size="sm" onClick={cancelEditing} className="gap-2">
+                <X className="w-4 h-4" />
+                Cancelar
+              </Button>
+              <span className="text-sm font-medium">Modo de Edição</span>
+              <Button 
+                size="sm" 
+                onClick={saveEditing} 
+                className="gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Check className="w-4 h-4" />
+                Aplicar
+              </Button>
+            </div>
 
               {/* Edit Hint */}
               <div className="mx-4 mt-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800">
@@ -602,12 +588,11 @@ export function ATSCVPreview({ data, onReset, onSave, onDataChange }: ATSCVPrevi
                   </section>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-      </div>
-    );
-  }
+        </div>
+      );
+    }
 
   // Desktop Layout - Original
   return (

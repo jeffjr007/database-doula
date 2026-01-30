@@ -550,31 +550,14 @@ const Portal = () => {
   if (!renderGateReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          className="flex flex-col items-center gap-4"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
           <img src={logoAD} alt="AD" className="w-16 h-16 rounded-xl" />
           <div className="flex items-center gap-2">
-            <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
-            />
-            <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
-            />
-            <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
-            />
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:150ms]" />
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:300ms]" />
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -582,11 +565,8 @@ const Portal = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop */}
-      <motion.aside
-        className="hidden lg:flex flex-col w-20 hover:w-64 transition-all duration-300 group bg-card/50 backdrop-blur-xl border-r border-border/50 fixed left-0 top-0 bottom-0 z-50"
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+      <aside
+        className="hidden lg:flex flex-col w-20 hover:w-64 transition-all duration-300 group bg-card/80 border-r border-border/50 fixed left-0 top-0 bottom-0 z-50"
       >
         {/* Logo */}
         <div className="p-4 flex items-center justify-center border-b border-border/30">
@@ -602,11 +582,9 @@ const Portal = () => {
 
             const Icon = link.icon;
             return (
-              <motion.button
+              <button
                 key={index}
                 onClick={link.onClick}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 className={`
                   w-full flex items-center gap-3 p-3 rounded-xl transition-all border
                   ${
@@ -625,7 +603,7 @@ const Portal = () => {
                 {link.external && (
                   <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-50 transition-opacity" />
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </nav>
@@ -678,25 +656,18 @@ const Portal = () => {
             </Button>
           </div>
         )}
-      </motion.aside>
+      </aside>
 
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <motion.div
-              className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
+              className="lg:hidden fixed inset-0 bg-background/90 z-40"
               onClick={() => setSidebarOpen(false)}
             />
-            <motion.aside
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col"
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            <aside
+              className={`lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col transition-transform duration-200 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
               <div className="p-4 flex items-center justify-between border-b border-border/30">
                 <div className="flex items-center gap-3">
@@ -782,15 +753,15 @@ const Portal = () => {
                   </Button>
                 </div>
               )}
-            </motion.aside>
+            </aside>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-20 min-h-screen">
-        {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-3 flex items-center justify-between">
+        {/* Mobile Header - removed backdrop-blur for performance */}
+        <header className="lg:hidden sticky top-0 z-30 bg-background border-b border-border/50 px-4 py-3 flex items-center justify-between">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
           </Button>
@@ -814,25 +785,11 @@ const Portal = () => {
 
         {/* Content Grid */}
         <div className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)] lg:min-h-screen relative">
-          {/* Background Decorative Elements */}
+          {/* Background Decorative Elements - Desktop only, no animations */}
           <div className="hidden lg:block absolute inset-0 overflow-hidden pointer-events-none">
-            {/* Glowing orbs */}
-            <motion.div
-              className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl"
-              animate={{
-                scale: [1.2, 1, 1.2],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            />
+            {/* Static decorative orbs - no animations for performance */}
+            <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-40" />
+            <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl opacity-30" />
 
             {/* Geometric lines */}
             <svg
@@ -849,11 +806,8 @@ const Portal = () => {
           </div>
 
           {/* Mentor Section - Now on Left (Background) */}
-          <motion.div
-            className="hidden lg:block w-[45%] xl:w-[40%] relative"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+          <div
+            className="hidden lg:block w-[45%] xl:w-[40%] relative animate-fade-in"
           >
             <div className="sticky top-0 h-screen">
               <img
@@ -865,77 +819,55 @@ const Portal = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
             </div>
-          </motion.div>
+          </div>
 
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
-            <AnimatePresence>
-              {isDataReady && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="mb-8"
-                >
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
-                    <Crown className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
-                  </div>
+            {isDataReady && (
+              <div className="mb-8 animate-fade-in">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
+                  <Crown className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
+                </div>
 
-                  {user && userName && (
-                    <motion.h1
-                      className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      Olá, <span className="text-gradient">{userName}</span>
-                    </motion.h1>
-                  )}
+                {user && userName && (
+                  <h1 className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4">
+                    Olá, <span className="text-gradient">{userName}</span>
+                  </h1>
+                )}
 
-                  <p className="text-lg text-muted-foreground max-w-xl">{currentPhrase}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                <p className="text-lg text-muted-foreground max-w-xl">{currentPhrase}</p>
+              </div>
+            )}
 
-            <AnimatePresence>
-              {isDataReady && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                >
-                  <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
+            {isDataReady && (
+              <div className="animate-fade-in">
+                <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
 
-                  <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                    {stages.map((stage, index) => {
-                      const status = getStageStatus(stage.number);
-                      const blocked = isStageBlocked(stage.number);
-                      const Icon = stage.icon;
-                      const isCompleted = status === "completed";
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {stages.map((stage) => {
+                    const status = getStageStatus(stage.number);
+                    const blocked = isStageBlocked(stage.number);
+                    const Icon = stage.icon;
+                    const isCompleted = status === "completed";
 
-                      return (
-                        <motion.button
-                          key={stage.number}
-                          onClick={() => handleStageClick(stage)}
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: 0.2 }}
-                          whileHover={!blocked ? { scale: 1.01 } : {}}
-                          whileTap={!blocked ? { scale: 0.99 } : {}}
-                          className={`
-                            group/card relative p-4 text-left
-                            rounded-2xl border border-white/5
-                            transition-all duration-200
-                            ${
-                              blocked
-                                ? "opacity-40 cursor-not-allowed"
-                                : "cursor-pointer hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5"
-                            }
-                            ${isCompleted ? "bg-primary/5" : ""}
-                          `}
-                          disabled={blocked}
-                        >
+                    return (
+                      <button
+                        key={stage.number}
+                        onClick={() => handleStageClick(stage)}
+                        className={`
+                          group/card relative p-4 text-left
+                          rounded-2xl border border-white/5
+                          transition-all duration-150
+                          ${
+                            blocked
+                              ? "opacity-40 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-card/80 active:scale-[0.98]"
+                          }
+                          ${isCompleted ? "bg-primary/5" : ""}
+                        `}
+                        disabled={blocked}
+                      >
                           <div className="flex items-center gap-3">
                             {/* Number Badge */}
                             <div
@@ -973,30 +905,20 @@ const Portal = () => {
                               <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover/card:text-primary transition-colors flex-shrink-0" />
                             )}
                           </div>
-                        </motion.button>
+                        </button>
                       );
                     })}
                   </div>
 
                   {/* Quote */}
-                  <motion.div
-                    className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
+                  <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20">
                     <p className="text-sm text-muted-foreground italic text-center">
                       "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                     </p>
-                  </motion.div>
+                  </div>
 
                   {/* Progress Stats */}
-                  <motion.div
-                    className="mt-6 grid grid-cols-3 gap-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.4 }}
-                  >
+                  <div className="mt-6 grid grid-cols-3 gap-4">
                     <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
                       <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
                       <p className="text-xs text-muted-foreground mt-1">Etapas</p>
@@ -1013,10 +935,9 @@ const Portal = () => {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">Progresso</p>
                     </div>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
