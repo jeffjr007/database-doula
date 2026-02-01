@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Plus,
-  Trash2,
   Target,
-  Lightbulb,
   Building2,
   Sparkles,
   Check,
-  ChevronDown,
-  ChevronUp,
   Wand2,
   Loader2,
   Edit3,
@@ -31,13 +25,6 @@ export interface KeywordScript {
   company: string;
   role: string;
   script: string;
-}
-
-interface Experience {
-  id: string;
-  company: string;
-  role: string;
-  selectedKeywords: string[];
 }
 
 interface CareerIntro {
@@ -61,8 +48,8 @@ interface InterviewScriptBuilderProps {
 
 const mentorMessages = [
   "Agora vem a parte mais importante: seus ROTEIROS. 🎯",
-  "A IA vai criar um roteiro personalizado para CADA palavra-chave, baseado nas suas experiências reais.",
-  "Você só precisa informar suas experiências e selecionar as palavras-chave. A IA faz o resto!",
+  "A IA vai analisar TODAS as suas experiências e criar roteiros personalizados para CADA palavra-chave.",
+  "Clique no botão abaixo e deixe a mágica acontecer!",
 ];
 
 export const InterviewScriptBuilder = ({
@@ -75,13 +62,8 @@ export const InterviewScriptBuilder = ({
   initialScripts,
   onScriptsChange,
 }: InterviewScriptBuilderProps) => {
-  // Check if we have scripts on initial render (synchronous check to skip intro)
   const hasInitialScriptsRef = useRef((initialScripts?.length ?? 0) > 0);
   
-  const [experiences, setExperiences] = useState<Experience[]>([
-    { id: '1', company: '', role: '', selectedKeywords: [] }
-  ]);
-  const [expandedExp, setExpandedExp] = useState<string | null>('1');
   const [conversationStep, setConversationStep] = useState(hasInitialScriptsRef.current ? mentorMessages.length : 0);
   const [showBuilder, setShowBuilder] = useState(hasInitialScriptsRef.current);
   const [isGeneratingScripts, setIsGeneratingScripts] = useState(false);
@@ -94,7 +76,6 @@ export const InterviewScriptBuilder = ({
 
   const persistTimerRef = useRef<number | null>(null);
 
-  // Keep local state in sync when parent rehydrates scripts (but don't regenerate)
   useEffect(() => {
     if (initialScripts && initialScripts.length > 0) {
       setGeneratedScripts(initialScripts);
@@ -102,10 +83,8 @@ export const InterviewScriptBuilder = ({
       setShowBuilder(true);
       hasInitialScriptsRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(initialScripts || [])]);
 
-  // Persist scripts upward (debounced) so navigation won't make it "disappear"
   useEffect(() => {
     if (!onScriptsChange) return;
     if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
@@ -117,11 +96,8 @@ export const InterviewScriptBuilder = ({
     };
   }, [generatedScripts, onScriptsChange]);
 
-  // Load career intro ONLY ONCE and ONLY if we don't have scripts already
   useEffect(() => {
-    // Skip if we already have scripts - no need to load intro
     if (hasInitialScriptsRef.current) return;
-    // Skip if already loaded to prevent duplicate calls
     if (introAlreadyLoaded) return;
     
     const loadCareerIntro = async () => {
@@ -149,7 +125,6 @@ export const InterviewScriptBuilder = ({
   }, [linkedinAbout, introAlreadyLoaded]);
 
   useEffect(() => {
-    // Skip intro animation entirely if scripts exist
     if (hasInitialScriptsRef.current) return;
     if (conversationStep < mentorMessages.length) {
       const timer = setTimeout(() => {
@@ -162,112 +137,35 @@ export const InterviewScriptBuilder = ({
     }
   }, [conversationStep, showBuilder]);
 
-  const addExperience = () => {
-    if (experiences.length < 5) {
-      const newExp: Experience = {
-        id: Date.now().toString(),
-        company: '',
-        role: '',
-        selectedKeywords: []
-      };
-      setExperiences([...experiences, newExp]);
-      setExpandedExp(newExp.id);
-    }
-  };
-
-  const removeExperience = (id: string) => {
-    if (experiences.length > 1) {
-      setExperiences(experiences.filter(e => e.id !== id));
-    }
-  };
-
-  const updateExperience = (id: string, field: keyof Experience, value: any) => {
-    setExperiences(experiences.map(e =>
-      e.id === id ? { ...e, [field]: value } : e
-    ));
-  };
-
-  const toggleKeyword = (expId: string, keyword: string) => {
-    const exp = experiences.find(e => e.id === expId);
-    if (!exp) return;
-
-    const currentKeywords = exp.selectedKeywords;
-    let newKeywords: string[];
-
-    if (currentKeywords.includes(keyword)) {
-      newKeywords = currentKeywords.filter(k => k !== keyword);
-    } else if (currentKeywords.length < 5) {
-      newKeywords = [...currentKeywords, keyword];
-    } else {
-      return;
-    }
-
-    setExperiences(experiences.map(e =>
-      e.id === expId ? { ...e, selectedKeywords: newKeywords } : e
-    ));
-  };
-
-  const getUsedKeywords = () => {
-    return experiences.flatMap(e => e.selectedKeywords);
-  };
-
-  const getTotalKeywordsCount = () => {
-    return experiences.reduce((acc, exp) => acc + exp.selectedKeywords.length, 0);
-  };
-
-  const canGenerateWithAI = () => {
-    return experiences.some(exp => 
-      exp.company.trim() && 
-      exp.role.trim() && 
-      exp.selectedKeywords.length > 0
-    );
-  };
-
   const generateScriptsWithAI = async () => {
-    if (!canGenerateWithAI()) {
-      toast.error("Preencha empresa, cargo e selecione palavras-chave em pelo menos uma experiência.");
+    if (!keywords || keywords.length === 0) {
+      toast.error("Nenhuma palavra-chave disponível para gerar roteiros.");
       return;
     }
 
     setIsGeneratingScripts(true);
     
     try {
-      const experiencesForAI = experiences
-        .filter(exp => exp.company.trim() && exp.role.trim() && exp.selectedKeywords.length > 0)
-        .map(exp => ({
-          company: exp.company,
-          role: exp.role,
-          keywords: exp.selectedKeywords
-        }));
-
-      const keywordsToGenerate = experiencesForAI.flatMap(exp => 
-        exp.keywords.map(kw => ({ keyword: kw, company: exp.company, role: exp.role }))
-      );
-
       const { data: result, error } = await supabase.functions.invoke('generate-interview-scripts', {
         body: {
-          keywords: keywordsToGenerate.map(k => k.keyword),
+          keywords,
           experiences: userExperiences,
           linkedinAbout,
           companyName,
           jobDescription,
-          experiencesMapping: keywordsToGenerate
         }
       });
 
       if (error) throw error;
 
       if (result?.scripts && result.scripts.length > 0) {
-        const formattedScripts: KeywordScript[] = result.scripts.map((s: any) => {
-          const mapping = keywordsToGenerate.find(k => k.keyword.toLowerCase() === s.keyword?.toLowerCase());
-          return {
-            keyword: s.keyword,
-            experience: s.experience || `${mapping?.role} — ${mapping?.company}` || '',
-            company: s.company || mapping?.company || '',
-            role: s.role || mapping?.role || '',
-            script: s.script
-          };
-        });
+        const formattedScripts: KeywordScript[] = result.scripts.map((s: any) => ({
+          keyword: s.keyword,
+          experience: s.experience || `${s.role} — ${s.company}`,
+          company: s.company || '',
+          role: s.role || '',
+          script: s.script
+        }));
         
         setGeneratedScripts(formattedScripts);
         toast.success(`${formattedScripts.length} roteiros gerados com sucesso!`);
@@ -385,15 +283,12 @@ export const InterviewScriptBuilder = ({
               </h4>
               <div className="flex flex-wrap gap-2">
                 {keywords.map((keyword) => {
-                  const isUsed = getUsedKeywords().includes(keyword);
                   const hasScript = generatedScripts.some(s => s.keyword === keyword);
                   return (
                     <span
                       key={keyword}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                         hasScript
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                          : isUsed
                           ? 'bg-primary/20 text-primary border-primary/30'
                           : 'bg-muted text-muted-foreground border-border'
                       }`}
@@ -404,188 +299,53 @@ export const InterviewScriptBuilder = ({
                 })}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                {getUsedKeywords().length} de {keywords.length} palavras selecionadas
+                {generatedScripts.length > 0 
+                  ? `${generatedScripts.length} roteiros gerados`
+                  : `${keywords.length} palavras prontas para gerar roteiros`}
               </p>
             </Card>
 
-            {/* Experiences Selection */}
+            {/* AI Generate Button - Only show if no scripts yet */}
             {generatedScripts.length === 0 && (
-              <>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-display font-semibold flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-primary" />
-                      Suas Experiências (máx. 5)
-                    </h3>
-                    {experiences.length < 5 && (
-                      <Button variant="outline" size="sm" onClick={addExperience} className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Adicionar
-                      </Button>
-                    )}
-                  </div>
-
-                  {experiences.map((exp, index) => (
-                    <motion.div
-                      key={exp.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="border border-border rounded-xl overflow-hidden"
-                    >
-                      <div
-                        className="p-4 bg-secondary/30 flex items-center gap-4 cursor-pointer"
-                        onClick={() => setExpandedExp(expandedExp === exp.id ? null : exp.id)}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 grid grid-cols-2 gap-3">
-                          <Input
-                            value={exp.company}
-                            onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
-                            placeholder="Nome da Empresa"
-                            className="bg-background/50"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <Input
-                            value={exp.role}
-                            onChange={(e) => updateExperience(exp.id, 'role', e.target.value)}
-                            placeholder="Seu Cargo"
-                            className="bg-background/50"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {exp.selectedKeywords.length > 0 && (
-                            <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                              {exp.selectedKeywords.length} palavras
-                            </span>
-                          )}
-                          {experiences.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeExperience(exp.id);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {expandedExp === exp.id ? (
-                            <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </div>
-                      </div>
-
-                      <AnimatePresence>
-                        {expandedExp === exp.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="p-4 border-t border-border space-y-4">
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">
-                                  Selecione as palavras-chave que você usou nesta experiência:
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                  {keywords.map((keyword) => {
-                                    const isSelected = exp.selectedKeywords.includes(keyword);
-                                    const isUsedElsewhere = !isSelected && getUsedKeywords().includes(keyword);
-
-                                    return (
-                                      <button
-                                        key={keyword}
-                                        onClick={() => toggleKeyword(exp.id, keyword)}
-                                        disabled={isUsedElsewhere}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                                          isSelected
-                                            ? 'bg-primary text-primary-foreground border-primary'
-                                            : isUsedElsewhere
-                                            ? 'bg-muted/30 text-muted-foreground border-muted cursor-not-allowed opacity-40'
-                                            : 'bg-secondary text-foreground border-border hover:border-primary hover:text-primary'
-                                        }`}
-                                      >
-                                        {keyword}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              {exp.selectedKeywords.length > 0 && (
-                                <Card className="p-3 bg-primary/5 border-primary/20">
-                                  <div className="flex items-start gap-2">
-                                    <Lightbulb className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                    <p className="text-sm text-muted-foreground">
-                                      A IA vai criar roteiros para: <strong className="text-foreground">{exp.selectedKeywords.join(', ')}</strong>
-                                    </p>
-                                  </div>
-                                </Card>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* AI Generate Button */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <Card className="p-6 bg-gradient-to-br from-primary/10 via-amber-500/5 to-primary/5 border-primary/30">
-                    <div className="text-center space-y-4">
-                      <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/20 flex items-center justify-center">
-                        <Wand2 className="w-7 h-7 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-display font-semibold text-lg mb-1">
-                          Gerar Roteiros com IA
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          A IA criará roteiros personalizados para cada palavra-chave selecionada,<br />
-                          baseados nas suas experiências reais.
-                        </p>
-                      </div>
-                      <Button
-                        onClick={generateScriptsWithAI}
-                        disabled={isGeneratingScripts || !canGenerateWithAI()}
-                        size="lg"
-                        className="gap-2"
-                      >
-                        {isGeneratingScripts ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Gerando roteiros...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5" />
-                            Gerar Roteiros
-                          </>
-                        )}
-                      </Button>
-                      {!canGenerateWithAI() && getTotalKeywordsCount() === 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Preencha empresa, cargo e selecione pelo menos uma palavra-chave
-                        </p>
-                      )}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Card className="p-6 bg-gradient-to-br from-primary/10 via-secondary/50 to-primary/5 border-primary/30">
+                  <div className="text-center space-y-4">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/20 flex items-center justify-center">
+                      <Wand2 className="w-7 h-7 text-primary" />
                     </div>
-                  </Card>
-                </motion.div>
-              </>
+                    <div>
+                      <h3 className="font-display font-semibold text-lg mb-1">
+                        Gerar Roteiros com IA
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        A IA vai analisar suas experiências e criar um roteiro<br />
+                        personalizado para cada palavra-chave automaticamente.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={generateScriptsWithAI}
+                      disabled={isGeneratingScripts || keywords.length === 0}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      {isGeneratingScripts ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Gerando roteiros...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          Gerar {keywords.length} Roteiros
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
             )}
 
             {/* Generated Scripts Display */}
@@ -596,11 +356,11 @@ export const InterviewScriptBuilder = ({
                 className="space-y-6"
               >
                 {/* Success Header */}
-                <Card className="p-4 bg-gradient-to-r from-green-500/10 to-primary/10 border-green-500/30">
+                <Card className="p-4 bg-gradient-to-r from-primary/10 to-secondary/30 border-primary/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <Check className="w-5 h-5 text-green-500" />
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Check className="w-5 h-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-semibold">Roteiros Gerados!</h4>
@@ -671,7 +431,6 @@ export const InterviewScriptBuilder = ({
                 {/* Scripts List - Grouped by Company */}
                 <div className="space-y-8">
                   {(() => {
-                    // Group scripts by company
                     const scriptsByCompany: Record<string, KeywordScript[]> = {};
                     generatedScripts.forEach((script) => {
                       const companyKey = script.company || 'Outras Experiências';

@@ -1,12 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { validateAuth, corsHeaders, unauthorizedResponse } from "../_shared/auth.ts";
 
-interface ExperienceMapping {
-  keyword: string;
-  company: string;
-  role: string;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -19,19 +13,16 @@ serve(async (req) => {
       return unauthorizedResponse(authError || "Não autorizado");
     }
 
-    const { experiences, linkedinAbout, companyName, jobDescription, experiencesMapping } = await req.json();
+    const { experiences, linkedinAbout, companyName, jobDescription, keywords } = await req.json();
 
-    // CRITICAL: Use experiencesMapping which contains ONLY the selected keywords with their company/role
-    const selectedMappings: ExperienceMapping[] = experiencesMapping || [];
-    
     console.log("Generating interview scripts for user:", user.id);
-    console.log("Selected keywords with experiences:", selectedMappings.length);
-    console.log("Mappings detail:", JSON.stringify(selectedMappings));
+    console.log("Keywords count:", keywords?.length || 0);
     console.log("Target company:", companyName);
+    console.log("Experiences text length:", experiences?.length || 0);
 
-    if (selectedMappings.length === 0) {
+    if (!keywords || keywords.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Nenhuma palavra-chave selecionada", scripts: [] }),
+        JSON.stringify({ error: "Nenhuma palavra-chave fornecida", scripts: [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -41,38 +32,31 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Você é um mentor de carreira experiente e empático do Método Perfil Glorioso. Sua tarefa é criar roteiros de entrevista personalizados e autênticos para o candidato.
+    const systemPrompt = `Você é um mentor de carreira experiente do Método Perfil Glorioso. Sua tarefa é criar roteiros de entrevista personalizados.
 
 PERSONALIDADE:
 - Fale de forma natural, como se fosse o próprio candidato falando
 - Use linguagem conversacional e fluida
-- Nunca pareça robótico ou genérico
-- Mantenha a autenticidade - use apenas informações que o candidato forneceu
+- Mantenha a autenticidade - baseie-se APENAS nas informações fornecidas
 
 ESTRUTURA DOS ROTEIROS:
-Cada roteiro deve seguir a estrutura: [O QUE fez] + [COMO fez] + [RESULTADO obtido]
+Cada roteiro deve seguir: [O QUE fez] + [COMO fez] + [RESULTADO obtido]
 
 REGRAS CRÍTICAS:
-1. Crie roteiros baseados APENAS nas experiências reais fornecidas pelo candidato
-2. NÃO invente métricas, números ou resultados que não foram mencionados
-3. Se o candidato não mencionou resultados específicos, use linguagem qualitativa (ex: "aumentando significativamente", "melhorando consideravelmente")
-4. Use primeira pessoa ("Eu fiz...", "Implementei...", "Liderei...")
-5. Mantenha cada roteiro entre 50-80 palavras
+1. EXTRAIA TODAS AS EXPERIÊNCIAS do texto fornecido (cada empresa/cargo é uma experiência)
+2. Para cada palavra-chave, conecte com a experiência MAIS RELEVANTE
+3. Distribua os scripts entre TODAS as empresas mencionadas - não concentre em apenas uma
+4. Se o candidato trabalhou em 3 empresas, gere scripts para todas elas
+5. NÃO invente métricas ou resultados que não foram mencionados
+6. Use primeira pessoa ("Eu fiz...", "Implementei...", "Liderei...")
+7. Mantenha cada roteiro entre 50-100 palavras
 
-EXEMPLO DE ROTEIRO BOM:
-"Quando trabalhei na [Empresa], fui responsável por [O QUE]. Para isso, implementei [COMO - metodologia/processo/ferramenta], o que resultou em [RESULTADO - impacto concreto ou qualitativo]."
+EXEMPLO:
+Se o candidato trabalhou na Empresa A como Gerente e na Empresa B como Analista, e temos 6 palavras-chave, distribua os scripts proporcionalmente entre as empresas.`;
 
-EXEMPLO RUIM (genérico demais):
-"Tenho experiência em gestão de projetos e trabalho bem em equipe."`;
+    const userPrompt = `Analise as experiências do candidato e crie roteiros de entrevista.
 
-    // Build a precise list of what to generate
-    const keywordsWithContext = selectedMappings.map((m: ExperienceMapping) => 
-      `- Palavra-chave: "${m.keyword}" → Experiência: ${m.role} na ${m.company}`
-    ).join("\n");
-
-    const userPrompt = `Analise as informações do candidato e crie roteiros de entrevista personalizados.
-
-EMPRESA ALVO: ${companyName || "Não especificada"}
+EMPRESA ALVO DA ENTREVISTA: ${companyName || "Não especificada"}
 
 DESCRIÇÃO DA VAGA:
 ${jobDescription || "Não fornecida"}
@@ -80,27 +64,23 @@ ${jobDescription || "Não fornecida"}
 PERFIL DO CANDIDATO (Sobre do LinkedIn):
 ${linkedinAbout || "Não fornecido"}
 
-EXPERIÊNCIAS PROFISSIONAIS:
+EXPERIÊNCIAS PROFISSIONAIS DO CANDIDATO:
 ${experiences || "Não fornecidas"}
 
 ---
 
-PALAVRAS-CHAVE SELECIONADAS E EXPERIÊNCIAS ASSOCIADAS:
-${keywordsWithContext}
+PALAVRAS-CHAVE DA VAGA (${keywords.length} no total):
+${keywords.join(', ')}
 
 ---
 
 INSTRUÇÕES:
-Crie UM roteiro para CADA item da lista acima (${selectedMappings.length} roteiros no total).
-Para cada roteiro, use APENAS a experiência indicada (empresa e cargo) para aquela palavra-chave.
+1. Primeiro, identifique TODAS as empresas e cargos mencionados nas experiências
+2. Para cada palavra-chave, escolha a experiência mais relevante para criar o roteiro
+3. Distribua os scripts entre TODAS as empresas do candidato
+4. Gere UM roteiro para cada palavra-chave (${keywords.length} roteiros no total)
 
-Para cada roteiro:
-1. Use APENAS a experiência associada àquela palavra-chave
-2. Crie uma fala natural na estrutura [O QUE + COMO + RESULTADO]
-3. Use linguagem de primeira pessoa
-4. Seja específico mas autêntico às informações fornecidas
-
-Retorne os roteiros no formato estruturado.`;
+Retorne os roteiros no formato estruturado, incluindo nome da empresa e cargo para cada um.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -119,7 +99,7 @@ Retorne os roteiros no formato estruturado.`;
             type: "function",
             function: {
               name: "generate_scripts",
-              description: "Gera roteiros de entrevista personalizados para cada palavra-chave selecionada",
+              description: "Gera roteiros de entrevista personalizados distribuídos entre todas as experiências",
               parameters: {
                 type: "object",
                 properties: {
@@ -134,11 +114,11 @@ Retorne os roteiros no formato estruturado.`;
                         },
                         company: {
                           type: "string",
-                          description: "Nome da empresa da experiência"
+                          description: "Nome da empresa onde o candidato teve esta experiência"
                         },
                         role: {
                           type: "string",
-                          description: "Cargo na empresa"
+                          description: "Cargo do candidato nesta empresa"
                         },
                         script: {
                           type: "string",
@@ -148,7 +128,7 @@ Retorne os roteiros no formato estruturado.`;
                       required: ["keyword", "company", "role", "script"],
                       additionalProperties: false
                     },
-                    description: "Lista de roteiros, um para cada palavra-chave selecionada"
+                    description: "Lista de roteiros, um para cada palavra-chave, distribuídos entre as experiências"
                   }
                 },
                 required: ["scripts"],
@@ -210,24 +190,25 @@ Retorne os roteiros no formato estruturado.`;
       }
     }
 
-    // Map the response to include experience info from original mapping
-    const enhancedScripts = scripts.map((script: any) => {
-      const mapping = selectedMappings.find((m: ExperienceMapping) => 
-        m.keyword.toLowerCase() === script.keyword?.toLowerCase()
-      );
-      return {
-        keyword: script.keyword,
-        experience: mapping ? `${mapping.role} — ${mapping.company}` : script.experience || "",
-        company: mapping?.company || script.company || "",
-        role: mapping?.role || script.role || "",
-        script: script.script
-      };
-    });
+    // Format the response
+    const formattedScripts = scripts.map((script: any) => ({
+      keyword: script.keyword,
+      experience: `${script.role} — ${script.company}`,
+      company: script.company || '',
+      role: script.role || '',
+      script: script.script
+    }));
 
-    console.log("Generated scripts count:", enhancedScripts.length);
+    // Log distribution of scripts across companies
+    const companyCounts: Record<string, number> = {};
+    formattedScripts.forEach((s: any) => {
+      companyCounts[s.company] = (companyCounts[s.company] || 0) + 1;
+    });
+    console.log("Scripts distribution by company:", companyCounts);
+    console.log("Generated scripts count:", formattedScripts.length);
 
     return new Response(
-      JSON.stringify({ scripts: enhancedScripts }),
+      JSON.stringify({ scripts: formattedScripts }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
