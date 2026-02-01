@@ -3,6 +3,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Target,
   Building2,
   Sparkles,
@@ -12,7 +19,8 @@ import {
   Edit3,
   Save,
   X,
-  User
+  User,
+  Briefcase
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +43,18 @@ interface CareerIntro {
   introText: string | null;
 }
 
+interface ParsedExperience {
+  id: string;
+  company: string;
+  role: string;
+  label: string;
+}
+
+interface KeywordMapping {
+  keyword: string;
+  experienceId: string | null;
+}
+
 interface InterviewScriptBuilderProps {
   keywords: string[];
   companyName: string;
@@ -48,9 +68,106 @@ interface InterviewScriptBuilderProps {
 
 const mentorMessages = [
   "Agora vem a parte mais importante: seus ROTEIROS. 🎯",
-  "A IA vai analisar TODAS as suas experiências e criar roteiros personalizados para CADA palavra-chave.",
-  "Clique no botão abaixo e deixe a mágica acontecer!",
+  "Primeiro, atribua cada palavra-chave à experiência mais relevante.",
+  "Depois a IA vai criar roteiros personalizados para cada uma!",
 ];
+
+// Parse experiences text into structured data
+const parseExperiences = (experiencesText: string): ParsedExperience[] => {
+  if (!experiencesText || experiencesText.trim().length === 0) {
+    return [];
+  }
+
+  const experiences: ParsedExperience[] = [];
+  const lines = experiencesText.split('\n').filter(line => line.trim());
+  
+  let currentCompany = '';
+  let currentRole = '';
+  let idCounter = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Try to detect company/role patterns
+    // Pattern: "Empresa: Nome" or "Company: Name"
+    if (trimmed.toLowerCase().startsWith('empresa:') || trimmed.toLowerCase().startsWith('company:')) {
+      currentCompany = trimmed.split(':').slice(1).join(':').trim();
+      continue;
+    }
+    
+    // Pattern: "Cargo: Titulo" or "Role: Title"
+    if (trimmed.toLowerCase().startsWith('cargo:') || trimmed.toLowerCase().startsWith('role:') || trimmed.toLowerCase().startsWith('título:')) {
+      currentRole = trimmed.split(':').slice(1).join(':').trim();
+      if (currentCompany && currentRole) {
+        experiences.push({
+          id: `exp-${idCounter++}`,
+          company: currentCompany,
+          role: currentRole,
+          label: `${currentRole} — ${currentCompany}`
+        });
+      }
+      continue;
+    }
+
+    // Pattern: "Role at Company" or "Role - Company"
+    const atMatch = trimmed.match(/^(.+?)\s+(?:at|na|em|@)\s+(.+)$/i);
+    if (atMatch) {
+      experiences.push({
+        id: `exp-${idCounter++}`,
+        company: atMatch[2].trim(),
+        role: atMatch[1].trim(),
+        label: `${atMatch[1].trim()} — ${atMatch[2].trim()}`
+      });
+      continue;
+    }
+
+    const dashMatch = trimmed.match(/^(.+?)\s*[-–—]\s*(.+)$/);
+    if (dashMatch && !trimmed.includes(':')) {
+      // Assume first part is role, second is company
+      experiences.push({
+        id: `exp-${idCounter++}`,
+        company: dashMatch[2].trim(),
+        role: dashMatch[1].trim(),
+        label: `${dashMatch[1].trim()} — ${dashMatch[2].trim()}`
+      });
+      continue;
+    }
+
+    // If line looks like a job title (contains common keywords)
+    const jobKeywords = ['gerente', 'analista', 'coordenador', 'diretor', 'desenvolvedor', 'engenheiro', 'consultor', 'especialista', 'manager', 'analyst', 'developer', 'engineer', 'consultant', 'lead', 'head', 'supervisor'];
+    const lowerLine = trimmed.toLowerCase();
+    if (jobKeywords.some(kw => lowerLine.includes(kw))) {
+      if (currentCompany) {
+        experiences.push({
+          id: `exp-${idCounter++}`,
+          company: currentCompany,
+          role: trimmed,
+          label: `${trimmed} — ${currentCompany}`
+        });
+      } else {
+        // Use the line as both role and company placeholder
+        experiences.push({
+          id: `exp-${idCounter++}`,
+          company: 'Experiência Profissional',
+          role: trimmed,
+          label: trimmed
+        });
+      }
+    }
+  }
+
+  // If no experiences were parsed, create a generic one from the text
+  if (experiences.length === 0 && experiencesText.trim().length > 0) {
+    experiences.push({
+      id: 'exp-generic',
+      company: 'Experiência Profissional',
+      role: 'Experiência Geral',
+      label: 'Experiência Geral'
+    });
+  }
+
+  return experiences;
+};
 
 export const InterviewScriptBuilder = ({
   keywords,
@@ -73,8 +190,23 @@ export const InterviewScriptBuilder = ({
   const [careerIntro, setCareerIntro] = useState<CareerIntro | null>(null);
   const [isLoadingIntro, setIsLoadingIntro] = useState(false);
   const [introAlreadyLoaded, setIntroAlreadyLoaded] = useState(false);
+  
+  // Mapping state
+  const [parsedExperiences, setParsedExperiences] = useState<ParsedExperience[]>([]);
+  const [keywordMappings, setKeywordMappings] = useState<KeywordMapping[]>([]);
 
   const persistTimerRef = useRef<number | null>(null);
+
+  // Parse experiences on mount
+  useEffect(() => {
+    const parsed = parseExperiences(userExperiences);
+    setParsedExperiences(parsed);
+    
+    // Initialize mappings
+    if (keywords.length > 0 && keywordMappings.length === 0) {
+      setKeywordMappings(keywords.map(kw => ({ keyword: kw, experienceId: null })));
+    }
+  }, [userExperiences, keywords]);
 
   useEffect(() => {
     if (initialScripts && initialScripts.length > 0) {
@@ -137,18 +269,41 @@ export const InterviewScriptBuilder = ({
     }
   }, [conversationStep, showBuilder]);
 
+  const updateMapping = (keyword: string, experienceId: string) => {
+    setKeywordMappings(prev => 
+      prev.map(m => m.keyword === keyword ? { ...m, experienceId } : m)
+    );
+  };
+
+  const getMappedCount = () => {
+    return keywordMappings.filter(m => m.experienceId !== null).length;
+  };
+
   const generateScriptsWithAI = async () => {
-    if (!keywords || keywords.length === 0) {
-      toast.error("Nenhuma palavra-chave disponível para gerar roteiros.");
+    const mappedKeywords = keywordMappings.filter(m => m.experienceId !== null);
+    
+    if (mappedKeywords.length === 0) {
+      toast.error("Atribua pelo menos uma palavra-chave a uma experiência.");
       return;
     }
 
     setIsGeneratingScripts(true);
     
     try {
+      // Build the mapping data for the AI
+      const mappingData = mappedKeywords.map(m => {
+        const exp = parsedExperiences.find(e => e.id === m.experienceId);
+        return {
+          keyword: m.keyword,
+          company: exp?.company || '',
+          role: exp?.role || ''
+        };
+      });
+
       const { data: result, error } = await supabase.functions.invoke('generate-interview-scripts', {
         body: {
-          keywords,
+          keywords: mappedKeywords.map(m => m.keyword),
+          keywordMappings: mappingData,
           experiences: userExperiences,
           linkedinAbout,
           companyName,
@@ -275,77 +430,128 @@ export const InterviewScriptBuilder = ({
             transition={{ duration: 0.5 }}
             className="space-y-6"
           >
-            {/* Keywords Overview */}
-            <Card className="p-4 bg-secondary/30">
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" />
-                Suas {keywords.length} Palavras-Chave da Vaga
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {keywords.map((keyword) => {
-                  const hasScript = generatedScripts.some(s => s.keyword === keyword);
-                  return (
-                    <span
-                      key={keyword}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                        hasScript
-                          ? 'bg-primary/20 text-primary border-primary/30'
-                          : 'bg-muted text-muted-foreground border-border'
-                      }`}
-                    >
-                      {keyword} {hasScript && <Check className="w-3 h-3 inline ml-1" />}
-                    </span>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                {generatedScripts.length > 0 
-                  ? `${generatedScripts.length} roteiros gerados`
-                  : `${keywords.length} palavras prontas para gerar roteiros`}
-              </p>
-            </Card>
-
-            {/* AI Generate Button - Only show if no scripts yet */}
+            {/* Show mapping interface only if no scripts yet */}
             {generatedScripts.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
-                <Card className="p-6 bg-gradient-to-br from-primary/10 via-secondary/50 to-primary/5 border-primary/30">
-                  <div className="text-center space-y-4">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/20 flex items-center justify-center">
-                      <Wand2 className="w-7 h-7 text-primary" />
+              <>
+                {/* Experiences Available */}
+                {parsedExperiences.length > 0 && (
+                  <Card className="p-4 bg-secondary/20">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-primary" />
+                      Suas Experiências Identificadas ({parsedExperiences.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedExperiences.map((exp) => (
+                        <span
+                          key={exp.id}
+                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-secondary border border-border"
+                        >
+                          {exp.label}
+                        </span>
+                      ))}
                     </div>
-                    <div>
-                      <h3 className="font-display font-semibold text-lg mb-1">
-                        Gerar Roteiros com IA
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        A IA vai analisar suas experiências e criar um roteiro<br />
-                        personalizado para cada palavra-chave automaticamente.
-                      </p>
+                  </Card>
+                )}
+
+                {/* Keyword Mapping Section */}
+                <Card className="p-5 bg-secondary/30">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Target className="w-4 h-4 text-primary" />
+                        Atribuir Palavras-Chave às Experiências
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        {getMappedCount()}/{keywords.length} atribuídas
+                      </span>
                     </div>
-                    <Button
-                      onClick={generateScriptsWithAI}
-                      disabled={isGeneratingScripts || keywords.length === 0}
-                      size="lg"
-                      className="gap-2"
-                    >
-                      {isGeneratingScripts ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Gerando roteiros...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5" />
-                          Gerar {keywords.length} Roteiros
-                        </>
-                      )}
-                    </Button>
+                    
+                    <p className="text-sm text-muted-foreground">
+                      Para cada palavra-chave, selecione a experiência onde você mais demonstrou essa competência.
+                    </p>
+
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                      {keywordMappings.map((mapping, idx) => {
+                        const selectedExp = parsedExperiences.find(e => e.id === mapping.experienceId);
+                        return (
+                          <motion.div
+                            key={mapping.keyword}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
+                          >
+                            <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                              {mapping.keyword}
+                            </span>
+                            <span className="text-muted-foreground text-sm">→</span>
+                            <Select
+                              value={mapping.experienceId || ''}
+                              onValueChange={(value) => updateMapping(mapping.keyword, value)}
+                            >
+                              <SelectTrigger className="flex-1 h-9 text-sm">
+                                <SelectValue placeholder="Selecione a experiência..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {parsedExperiences.map((exp) => (
+                                  <SelectItem key={exp.id} value={exp.id}>
+                                    {exp.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {selectedExp && (
+                              <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </Card>
-              </motion.div>
+
+                {/* Generate Button */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <Card className="p-6 bg-gradient-to-br from-primary/10 via-secondary/50 to-primary/5 border-primary/30">
+                    <div className="text-center space-y-4">
+                      <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/20 flex items-center justify-center">
+                        <Wand2 className="w-7 h-7 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-display font-semibold text-lg mb-1">
+                          Gerar Roteiros com IA
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {getMappedCount() > 0 
+                            ? `${getMappedCount()} palavra${getMappedCount() > 1 ? 's' : ''}-chave atribuída${getMappedCount() > 1 ? 's' : ''} e pronta${getMappedCount() > 1 ? 's' : ''} para gerar roteiros`
+                            : 'Atribua as palavras-chave acima para continuar'}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={generateScriptsWithAI}
+                        disabled={isGeneratingScripts || getMappedCount() === 0}
+                        size="lg"
+                        className="gap-2"
+                      >
+                        {isGeneratingScripts ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Gerando roteiros...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            Gerar {getMappedCount()} Roteiros
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+              </>
             )}
 
             {/* Generated Scripts Display */}
@@ -370,16 +576,11 @@ export const InterviewScriptBuilder = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={generateScriptsWithAI}
-                      disabled={isGeneratingScripts}
+                      onClick={() => setGeneratedScripts([])}
                       className="gap-2"
                     >
-                      {isGeneratingScripts ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      Gerar Novamente
+                      <Edit3 className="w-4 h-4" />
+                      Refazer Mapeamento
                     </Button>
                   </div>
                 </Card>
@@ -456,83 +657,83 @@ export const InterviewScriptBuilder = ({
                           <h3 className="text-xl font-display font-semibold text-foreground">
                             {company}
                           </h3>
+                          <span className="text-sm text-muted-foreground">
+                            ({scripts.length} roteiro{scripts.length > 1 ? 's' : ''})
+                          </span>
                         </div>
 
                         {/* Scripts for this company */}
                         <div className="space-y-3 pl-2">
                           {scripts.map((script) => {
-                            const originalIndex = generatedScripts.findIndex(
+                            const globalIndex = generatedScripts.findIndex(
                               s => s.keyword === script.keyword && s.company === script.company
                             );
+                            const isEditing = editingIndex === globalIndex;
+
                             return (
-                              <motion.div
-                                key={`${script.company}-${script.keyword}`}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.05 }}
+                              <Card 
+                                key={`${script.keyword}-${script.company}`} 
+                                className="p-4 bg-background/50 border-border/50"
                               >
-                                <Card className="overflow-hidden border-border/50 hover:border-primary/30 transition-all">
-                                  <div className="p-4">
-                                    <div className="flex items-start justify-between gap-4 mb-3">
-                                      <div className="space-y-1">
-                                        <span className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-bold">
-                                          {script.keyword}
+                                <div className="space-y-3">
+                                  {/* Keyword + Role Header */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                        {script.keyword}
+                                      </span>
+                                      {script.role && (
+                                        <span className="text-xs text-muted-foreground">
+                                          • {script.role}
                                         </span>
-                                        {script.role && (
-                                          <p className="text-xs text-muted-foreground pl-1">
-                                            {script.role}
-                                          </p>
-                                        )}
-                                      </div>
-                                      {editingIndex !== originalIndex && (
+                                      )}
+                                    </div>
+                                    {!isEditing ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => startEditing(globalIndex)}
+                                        className="h-7 px-2"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    ) : (
+                                      <div className="flex gap-1">
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          onClick={() => startEditing(originalIndex)}
-                                          className="gap-2 text-muted-foreground hover:text-foreground h-8"
+                                          onClick={saveEdit}
+                                          className="h-7 px-2 text-primary"
                                         >
-                                          <Edit3 className="w-3.5 h-3.5" />
-                                          Editar
+                                          <Save className="w-3.5 h-3.5" />
                                         </Button>
-                                      )}
-                                    </div>
-
-                                    {editingIndex === originalIndex ? (
-                                      <div className="space-y-3">
-                                        <Textarea
-                                          value={editValue}
-                                          onChange={(e) => setEditValue(e.target.value)}
-                                          className="min-h-[120px] text-sm"
-                                          placeholder="Edite seu roteiro aqui..."
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={cancelEdit}
-                                            className="gap-2"
-                                          >
-                                            <X className="w-4 h-4" />
-                                            Cancelar
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            onClick={saveEdit}
-                                            className="gap-2"
-                                          >
-                                            <Save className="w-4 h-4" />
-                                            Salvar
-                                          </Button>
-                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={cancelEdit}
+                                          className="h-7 px-2"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </Button>
                                       </div>
-                                    ) : (
-                                      <p className="text-sm leading-relaxed text-foreground/90">
-                                        {script.script}
-                                      </p>
                                     )}
                                   </div>
-                                </Card>
-                              </motion.div>
+
+                                  {/* Script Content */}
+                                  {isEditing ? (
+                                    <Textarea
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      className="min-h-[100px] text-sm"
+                                      placeholder="Edite seu roteiro..."
+                                    />
+                                  ) : (
+                                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                                      {script.script}
+                                    </p>
+                                  )}
+                                </div>
+                              </Card>
                             );
                           })}
                         </div>
@@ -542,21 +743,12 @@ export const InterviewScriptBuilder = ({
                 </div>
 
                 {/* Complete Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex justify-center pt-4"
-                >
-                  <Button
-                    size="lg"
-                    onClick={handleComplete}
-                    className="gap-2"
-                  >
+                <div className="flex justify-end pt-4">
+                  <Button onClick={handleComplete} size="lg" className="gap-2">
                     <Check className="w-5 h-5" />
-                    Concluir Roteiros para {companyName}
+                    Concluir Roteiros
                   </Button>
-                </motion.div>
+                </div>
               </motion.div>
             )}
           </motion.div>

@@ -13,10 +13,11 @@ serve(async (req) => {
       return unauthorizedResponse(authError || "Não autorizado");
     }
 
-    const { experiences, linkedinAbout, companyName, jobDescription, keywords } = await req.json();
+    const { experiences, linkedinAbout, companyName, jobDescription, keywords, keywordMappings } = await req.json();
 
     console.log("Generating interview scripts for user:", user.id);
     console.log("Keywords count:", keywords?.length || 0);
+    console.log("Keyword mappings:", keywordMappings?.length || 0);
     console.log("Target company:", companyName);
     console.log("Experiences text length:", experiences?.length || 0);
 
@@ -32,6 +33,11 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Build the mapping context if provided
+    const mappingContext = keywordMappings && keywordMappings.length > 0
+      ? keywordMappings.map((m: any) => `- "${m.keyword}" → ${m.role} na ${m.company}`).join('\n')
+      : null;
+
     const systemPrompt = `Você é um mentor de carreira experiente do Método Perfil Glorioso. Sua tarefa é criar roteiros de entrevista personalizados.
 
 PERSONALIDADE:
@@ -43,18 +49,14 @@ ESTRUTURA DOS ROTEIROS:
 Cada roteiro deve seguir: [O QUE fez] + [COMO fez] + [RESULTADO obtido]
 
 REGRAS CRÍTICAS:
-1. EXTRAIA TODAS AS EXPERIÊNCIAS do texto fornecido (cada empresa/cargo é uma experiência)
-2. Para cada palavra-chave, conecte com a experiência MAIS RELEVANTE
-3. Distribua os scripts entre TODAS as empresas mencionadas - não concentre em apenas uma
-4. Se o candidato trabalhou em 3 empresas, gere scripts para todas elas
-5. NÃO invente métricas ou resultados que não foram mencionados
-6. Use primeira pessoa ("Eu fiz...", "Implementei...", "Liderei...")
-7. Mantenha cada roteiro entre 50-100 palavras
+1. USE EXATAMENTE o mapeamento fornecido - cada palavra-chave já foi atribuída a uma empresa/cargo específico pelo usuário
+2. NÃO mude o mapeamento - respeite a escolha do usuário
+3. NÃO invente métricas ou resultados que não foram mencionados
+4. Use primeira pessoa ("Eu fiz...", "Implementei...", "Liderei...")
+5. Mantenha cada roteiro entre 50-100 palavras
+6. Baseie o roteiro nas experiências reais do candidato`;
 
-EXEMPLO:
-Se o candidato trabalhou na Empresa A como Gerente e na Empresa B como Analista, e temos 6 palavras-chave, distribua os scripts proporcionalmente entre as empresas.`;
-
-    const userPrompt = `Analise as experiências do candidato e crie roteiros de entrevista.
+    const userPrompt = `Crie roteiros de entrevista para o candidato baseado no mapeamento fornecido.
 
 EMPRESA ALVO DA ENTREVISTA: ${companyName || "Não especificada"}
 
@@ -69,18 +71,17 @@ ${experiences || "Não fornecidas"}
 
 ---
 
-PALAVRAS-CHAVE DA VAGA (${keywords.length} no total):
-${keywords.join(', ')}
+MAPEAMENTO PALAVRA-CHAVE → EXPERIÊNCIA (definido pelo usuário):
+${mappingContext || keywords.map((k: string) => `- "${k}" → usar experiência mais relevante`).join('\n')}
 
 ---
 
 INSTRUÇÕES:
-1. Primeiro, identifique TODAS as empresas e cargos mencionados nas experiências
-2. Para cada palavra-chave, escolha a experiência mais relevante para criar o roteiro
-3. Distribua os scripts entre TODAS as empresas do candidato
-4. Gere UM roteiro para cada palavra-chave (${keywords.length} roteiros no total)
+1. Para CADA mapeamento acima, crie um roteiro específico
+2. Use a empresa e cargo exatamente como mapeado pelo usuário
+3. Gere UM roteiro para cada palavra-chave (${keywords.length} roteiros no total)
 
-Retorne os roteiros no formato estruturado, incluindo nome da empresa e cargo para cada um.`;
+Retorne os roteiros no formato estruturado.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
