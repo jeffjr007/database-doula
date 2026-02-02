@@ -342,16 +342,16 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                 </div>
               </div>
 
-              {/* Campo de texto */}
+              {/* Campo de texto - Mobile otimizado */}
               <div className="relative">
                 <Textarea
                   value={generatedScript}
                   onChange={(e) => setGeneratedScript(e.target.value)}
                   readOnly={!isEditing}
-                  className={`min-h-[280px] text-sm leading-relaxed resize-none transition-colors ${
+                  className={`min-h-[200px] sm:min-h-[280px] text-sm leading-relaxed resize-none transition-colors ${
                     isEditing 
                       ? "bg-background border-primary/50 focus:border-primary" 
-                      : "bg-muted/30 border-transparent cursor-default"
+                      : "bg-muted/30 border-border/50"
                   }`}
                 />
                 {isEditing && (
@@ -364,13 +364,13 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
               </div>
             </div>
 
-            {/* Ações Minimalistas */}
-            <div className="flex gap-2 pt-2">
+            {/* Ações - Layout mobile otimizado */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowForm(true)}
-                className="gap-1.5 flex-1"
+                className="gap-1.5 h-10 sm:flex-1"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Editar Dados
@@ -380,7 +380,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
                 size="sm"
                 onClick={generateScript}
                 disabled={isGenerating}
-                className="gap-1.5 flex-1"
+                className="gap-1.5 h-10 sm:flex-1"
               >
                 {isGenerating ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -392,7 +392,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
               <Button
                 size="sm"
                 onClick={handleComplete}
-                className="gap-1.5 flex-1"
+                className="gap-1.5 h-10 sm:flex-1"
               >
                 <Check className="w-3.5 h-3.5" />
                 Continuar

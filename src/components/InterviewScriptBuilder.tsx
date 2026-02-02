@@ -430,44 +430,51 @@ export const InterviewScriptBuilder = ({
                   </div>
                 </Card>
 
-                {/* Keyword Mapping Section */}
-                <Card className="p-5 bg-secondary/30">
+                {/* Keyword Mapping Section - Mobile Optimized */}
+                <Card className="p-4 sm:p-5 bg-secondary/30">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Target className="w-4 h-4 text-primary" />
-                        Atribuir Palavras-Chave às Experiências
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <h4 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+                        <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span className="leading-tight">Atribuir Palavras-Chave</span>
                       </h4>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground pl-6 sm:pl-0">
                         {getMappedCount()}/{keywords.length} atribuídas
                       </span>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Para cada palavra-chave, selecione a experiência onde você mais demonstrou essa competência.
                     </p>
 
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[400px] overflow-y-auto overscroll-contain -mx-1 px-1">
                       {keywordMappings.map((mapping, idx) => {
                         const selectedExp = manualExperiences.find(e => e.id === mapping.experienceId);
                         return (
                           <motion.div
                             key={mapping.keyword}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="p-3 rounded-xl bg-background/50 border border-border/50 space-y-2.5"
                           >
-                            <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                              {mapping.keyword}
-                            </span>
-                            <span className="text-muted-foreground text-sm">→</span>
+                            {/* Keyword Badge + Check */}
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[85%]">
+                                {mapping.keyword}
+                              </span>
+                              {selectedExp && (
+                                <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                              )}
+                            </div>
+                            
+                            {/* Select - Full width */}
                             <Select
                               value={mapping.experienceId || ''}
                               onValueChange={(value) => updateMapping(mapping.keyword, value)}
                               disabled={manualExperiences.length === 0}
                             >
-                              <SelectTrigger className="flex-1 h-9 text-sm">
+                              <SelectTrigger className="w-full h-10 text-sm">
                                 <SelectValue
                                   placeholder={manualExperiences.length === 0 ? "Adicione cargos acima" : "Selecione o cargo..."}
                                 />
@@ -480,9 +487,6 @@ export const InterviewScriptBuilder = ({
                                 ))}
                               </SelectContent>
                             </Select>
-                            {selectedExp && (
-                              <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                            )}
                           </motion.div>
                         );
                       })}
