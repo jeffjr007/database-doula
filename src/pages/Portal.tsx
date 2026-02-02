@@ -682,18 +682,26 @@ const Portal = () => {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <div
-              className="lg:hidden fixed inset-0 bg-background/90 z-40"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden fixed inset-0 bg-black/80 z-40"
               onClick={() => setSidebarOpen(false)}
             />
-            <aside
-              className={`lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 flex flex-col transition-transform duration-200 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-black z-50 flex flex-col"
             >
-              <div className="p-4 flex items-center justify-between border-b border-border/30">
+              <div className="p-4 flex items-center justify-between border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="text-white/70 hover:text-white hover:bg-white/10">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
@@ -701,7 +709,7 @@ const Portal = () => {
               <nav className="flex-1 py-6 px-4 space-y-2">
                 {sidebarLinks.map((link, index) => {
                   if ("divider" in link) {
-                    return <div key={index} className="h-px bg-border/30 my-4" />;
+                    return <div key={index} className="h-px bg-white/10 my-4" />;
                   }
 
                   const Icon = link.icon;
@@ -716,8 +724,8 @@ const Portal = () => {
                         w-full flex items-center gap-3 p-3 rounded-xl transition-all
                         ${
                           link.active
-                            ? "bg-primary/15 text-primary"
-                            : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                            ? "bg-primary/20 text-primary"
+                            : "text-white/70 hover:bg-white/10 hover:text-white"
                         }
                       `}
                     >
@@ -730,30 +738,30 @@ const Portal = () => {
               </nav>
 
               {user ? (
-                <div className="p-4 border-t border-border/30">
+                <div className="p-4 border-t border-white/10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
                       <User className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{userName || "Usuário"}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium text-white">{userName || "Usuário"}</p>
+                      <p className="text-xs text-white/50">{user.email}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2">
+                  <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2 border-white/20 text-white/80 hover:bg-white/10 hover:text-white">
                     <LogOut className="w-4 h-4" /> Sair
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 border-t border-border/30">
+                <div className="p-4 border-t border-white/10">
                   <button
                     onClick={() => {
                       window.location.href = "/auth";
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
                   >
-                    <LogIn className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Entrar</span>
+                    <LogIn className="w-5 h-5 text-white/60" />
+                    <span className="text-sm text-white/60">Entrar</span>
                   </button>
                 </div>
               )}
@@ -773,7 +781,7 @@ const Portal = () => {
                   </Button>
                 </div>
               )}
-            </aside>
+            </motion.aside>
           </>
         )}
       </AnimatePresence>
