@@ -158,6 +158,16 @@ const Auth = () => {
                 </div>
 
                 <div className="relative">
+                  <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    className="pl-10"
+                    placeholder="Nacionalidade"
+                    value={nacionalidade}
+                    onChange={(e) => setNacionalidade(e.target.value)}
+                  />
+                </div>
+
+                <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     className="pl-10"
@@ -192,15 +202,6 @@ const Auth = () => {
                   />
                 </div>
 
-                <div className="relative">
-                  <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    className="pl-10"
-                    placeholder="Nacionalidade"
-                    value={nacionalidade}
-                    onChange={(e) => setNacionalidade(e.target.value)}
-                  />
-                </div>
                 <Button type="button" disabled={!isStep1Valid} onClick={goNextStep} className="w-full">
                   Continuar <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
