@@ -95,45 +95,30 @@ const CANVA_TEMPLATE_URL = "https://www.canva.com/design/DAGwntg9Gqo/aSlyTmQIhVL
 const mentorMessages = [
   {
     id: 1,
-    text: "E aí! Chegou a hora de falar com os GESTORES. 🎯",
+    text: "E aí! Chegou a hora de falar com os GESTORES. O gestor não quer saber só O QUE você fez... ele quer saber COMO você fez. 🎯",
     delay: 0
   },
   {
     id: 2,
-    text: "Sabe qual a diferença entre recrutador e gestor? O recrutador te filtra. O gestor vai TRABALHAR com você todo dia.",
-    delay: 2.2
+    text: "E aqui vem o segredo que vai te diferenciar de 99% dos candidatos...",
+    delay: 2.5
   },
   {
     id: 3,
-    text: "Por isso, gestor não quer saber só O QUE você fez... ele quer saber COMO você fez. Ele precisa ver que você tem MÉTODO.",
-    delay: 4.8
-  },
-  {
-    id: 4,
-    text: "E aqui vem o segredo que vai te diferenciar de 99% dos candidatos... 👀",
-    delay: 7.4
-  },
-  {
-    id: 5,
-    text: "Você vai LEVAR UMA APRESENTAÇÃO VISUAL pro gestor. Isso mesmo. Enquanto todo mundo só fala, você MOSTRA.",
-    delay: 9.8,
+    text: "Você vai LEVAR UMA APRESENTAÇÃO VISUAL pro gestor. Enquanto todo mundo só fala, você MOSTRA.",
+    delay: 5,
     highlight: true
   },
   {
-    id: 6,
-    text: "Imagina a cena: você entra na sala, e ao invés de só responder perguntas...",
-    delay: 12.4
-  },
-  {
-    id: 7,
-    text: '"Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho pra facilitar nossa conversa..."',
-    delay: 14.8,
+    id: 4,
+    text: '"Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho..."',
+    delay: 7.5,
     quote: true
   },
   {
-    id: 8,
-    text: "O gestor vai PIRAR. Ninguém faz isso. Você está mostrando iniciativa, organização, e que leva a oportunidade a sério.",
-    delay: 17.4
+    id: 5,
+    text: "O gestor vai PIRAR. Ninguém faz isso. Você está mostrando iniciativa e organização! 🚀",
+    delay: 10
   }
 ];
 
@@ -337,22 +322,15 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       }, delay);
 
       return () => clearTimeout(timer);
-    } else if (visibleMessages >= mentorMessages.length && !showBenefits && !messagesExiting && currentStep === 2) {
-      const timer = setTimeout(() => {
-        setMessagesExiting(true);
-      }, 1500);
-      return () => clearTimeout(timer);
     }
-  }, [currentStep, visibleMessages, showBenefits, messagesExiting]);
+  }, [currentStep, visibleMessages, messagesExiting]);
 
-  useEffect(() => {
-    if (messagesExiting && !showBenefits) {
-      const timer = setTimeout(() => {
-        setShowBenefits(true);
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [messagesExiting, showBenefits]);
+  const handleAdvanceFromMessages = () => {
+    setMessagesExiting(true);
+    setTimeout(() => {
+      setShowBenefits(true);
+    }, 600);
+  };
 
   // Auto-intensify scripts when entering step 3
   useEffect(() => {
@@ -802,6 +780,19 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                       </Card>
                     </motion.div>
                   )}
+
+                  {visibleMessages >= mentorMessages.length && !messagesExiting && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex justify-center pt-4"
+                    >
+                      <Button onClick={handleAdvanceFromMessages} size="lg" className="gap-2">
+                        Avançar <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
 
@@ -888,7 +879,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               </p>
               {selectedInterview && (
                 <Badge variant="outline" className="mt-2">
-                  {selectedInterview.name} • {selectedInterview.company_name}
+                  {selectedInterview.name.toLowerCase().includes(selectedInterview.company_name.toLowerCase())
+                    ? selectedInterview.name
+                    : `${selectedInterview.name} • ${selectedInterview.company_name}`}
                 </Badge>
               )}
             </motion.div>
