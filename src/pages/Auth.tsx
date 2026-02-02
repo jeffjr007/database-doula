@@ -233,15 +233,42 @@ const Auth = () => {
                   />
                 </div>
 
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    className="pl-10"
-                    placeholder="Senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      className="pl-10"
+                      placeholder="Senha"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  {!isLogin && password && (
+                    <div className="space-y-1">
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            requirementsMet <= 1
+                              ? "bg-destructive"
+                              : requirementsMet <= 3
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
+                          }`}
+                          style={{ width: `${(requirementsMet / 5) * 100}%` }}
+                        />
+                      </div>
+                      <p className={`text-xs ${
+                        requirementsMet <= 1
+                          ? "text-destructive"
+                          : requirementsMet <= 3
+                          ? "text-yellow-500"
+                          : "text-green-500"
+                      }`}>
+                        {requirementsMet <= 1 ? "Fraca" : requirementsMet <= 3 ? "Média" : "Forte"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {!isLogin && (
