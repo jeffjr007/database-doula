@@ -547,25 +547,14 @@ export const InterviewScriptBuilder = ({
               >
                 {/* Success Header */}
                 <Card className="p-4 bg-gradient-to-r from-primary/10 to-secondary/30 border-primary/30">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Check className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Roteiros Gerados!</h4>
-                        <p className="text-sm text-muted-foreground">Clique em editar para personalizar cada roteiro</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-primary" />
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setGeneratedScripts([])}
-                      className="gap-2"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      Refazer Mapeamento
-                    </Button>
+                    <div>
+                      <h4 className="font-semibold">Roteiros Gerados!</h4>
+                      <p className="text-sm text-muted-foreground">Clique em editar para personalizar cada roteiro</p>
+                    </div>
                   </div>
                 </Card>
 
