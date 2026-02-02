@@ -163,7 +163,11 @@ export const Stage4Guide = ({ stageNumber }: Stage4GuideProps) => {
       if (cachedDataRaw) {
         const cached = JSON.parse(cachedDataRaw) as StepData;
         setData(prev => mergeStepData(prev, cached));
-        setShowIntroduction(false);
+        // Only hide intro if user actually started (STAGE4_STARTED_KEY is set)
+        // This prevents race condition where cached data hides intro prematurely
+        if (sessionStorage.getItem(STAGE4_STARTED_KEY) === 'true') {
+          setShowIntroduction(false);
+        }
       }
       if (cachedScriptsRaw) {
         const cachedScripts = JSON.parse(cachedScriptsRaw) as KeywordScript[];
@@ -1204,6 +1208,7 @@ Exemplo:
           sessionStorage.removeItem(STAGE4_DATA_CACHE_KEY);
           sessionStorage.removeItem(STAGE4_SCRIPTS_CACHE_KEY);
           sessionStorage.removeItem(STAGE4_INTRO_KEY);
+          sessionStorage.removeItem('stage4_step9_intro_seen');
 
           setShowSaveModal(false);
           toast({
