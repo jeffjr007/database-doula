@@ -21,6 +21,7 @@ import {
   Copy,
   Info,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { GupyInfoBox } from "./GupyInfoBox";
 import {
   Dialog,
@@ -2161,8 +2162,32 @@ export const GupyGuide = () => {
         </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="px-4 py-4 border-b border-border overflow-x-auto">
+      {/* Mobile: Compact step indicator */}
+      <div className="md:hidden px-4 py-3 border-b border-border">
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            {(() => {
+              const CurrentIcon = STEPS[currentStep - 1]?.icon;
+              return CurrentIcon ? <CurrentIcon className="w-4 h-4 text-primary-foreground" /> : null;
+            })()}
+          </div>
+          <div className="flex flex-col">
+            <Badge variant="outline" className="text-xs">Passo {currentStep} de {STEPS.length}</Badge>
+            <p className="text-sm font-medium mt-1">{STEPS[currentStep - 1]?.title}</p>
+          </div>
+        </div>
+        <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-primary rounded-full" 
+            initial={false}
+            animate={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          />
+        </div>
+      </div>
+
+      {/* Desktop: Full progress steps */}
+      <div className="hidden md:block px-4 py-4 border-b border-border overflow-x-auto">
         <div className="flex items-center justify-center gap-1 min-w-max">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
