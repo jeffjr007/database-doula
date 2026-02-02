@@ -297,17 +297,6 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Cargos (separados por |)</label>
-                  <input
-                    type="text"
-                    value={formData.cargos}
-                    onChange={(e) => handleChange("cargos", e.target.value)}
-                    placeholder="Gerente | Especialista | Coordenador"
-                    className={mobileInputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">Telefone</label>
                   <input
                     type="text"
@@ -341,6 +330,18 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
                     readOnly={!!personalData.linkedinUrl}
                     className={personalData.linkedinUrl ? `${mobileInputClass} opacity-70` : mobileInputClass}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Títulos do LinkedIn (separados por |)</label>
+                  <input
+                    type="text"
+                    value={formData.cargos}
+                    onChange={(e) => handleChange("cargos", e.target.value)}
+                    placeholder="Gerente | Especialista | Coordenador"
+                    className={mobileInputClass}
+                  />
+                  <p className="text-xs text-muted-foreground/70">Copie os títulos exibidos abaixo do seu nome no LinkedIn</p>
                 </div>
               </div>
 
@@ -517,31 +518,12 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
           />
         </motion.div>
 
-        <motion.div 
-          className="space-y-1.5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Briefcase className="w-3 h-3" />
-            Cargos (separados por |)
-          </label>
-          <input
-            type="text"
-            value={formData.cargos}
-            onChange={(e) => handleChange("cargos", e.target.value)}
-            placeholder="Gerente de Marketing | Especialista em Branding | Coordenador"
-            className={normalInputClass}
-          />
-        </motion.div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <motion.div 
             className="space-y-1.5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0.1 }}
           >
             <label className="flex items-center gap-2 text-xs text-muted-foreground h-4">
               <Phone className="w-3 h-3" />
@@ -562,7 +544,7 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
             className="space-y-1.5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.15 }}
           >
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground h-4">
               Email
@@ -582,7 +564,7 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
             className="space-y-1.5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.2 }}
           >
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground h-4">
               LinkedIn
@@ -598,6 +580,26 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
             />
           </motion.div>
         </div>
+
+        <motion.div 
+          className="space-y-1.5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+        >
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Briefcase className="w-3 h-3" />
+            Títulos do LinkedIn (separados por |)
+          </label>
+          <input
+            type="text"
+            value={formData.cargos}
+            onChange={(e) => handleChange("cargos", e.target.value)}
+            placeholder="Gerente de Marketing | Especialista em Branding | Coordenador"
+            className={normalInputClass}
+          />
+          <p className="text-xs text-muted-foreground/60 mt-1">Copie os títulos exibidos abaixo do seu nome no LinkedIn</p>
+        </motion.div>
       </div>
 
       {/* PDF Upload Section */}

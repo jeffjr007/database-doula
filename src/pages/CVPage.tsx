@@ -365,18 +365,36 @@ const CVPage = () => {
         className="flex items-center justify-between py-4 px-4 md:px-6 print:hidden"
       >
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => !isLoading && navigate('/')}
+            disabled={isLoading}
+            className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <img src={logoAd} alt="AD Logo" className="h-14 w-auto" />
           {/* Buttons always visible for logged users - no data dependency */}
           {user && (
             <>
-              <Button variant="outline" size="sm" onClick={() => navigate('/meus-cvs')} className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => !isLoading && navigate('/meus-cvs')} 
+                disabled={isLoading}
+                className={`gap-2 ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Meus CVs</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate('/minhas-cartas')} className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => !isLoading && navigate('/minhas-cartas')} 
+                disabled={isLoading}
+                className={`gap-2 ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
                 <Mail className="w-4 h-4" />
                 <span className="hidden sm:inline">Minhas Cartas</span>
               </Button>
@@ -387,8 +405,9 @@ const CVPage = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/suporte')}
-            className="text-muted-foreground hover:text-primary"
+            onClick={() => !isLoading && navigate('/suporte')}
+            disabled={isLoading}
+            className={`text-muted-foreground hover:text-primary ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <HelpCircle className="w-5 h-5" />
           </Button>
@@ -397,7 +416,13 @@ const CVPage = () => {
               <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
                 <User className="w-3 h-3" />{user.email}
               </span>
-              <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => !isLoading && signOut()} 
+                disabled={isLoading}
+                className={`gap-2 ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
                 <LogOut className="w-4 h-4" /><span className="hidden sm:inline">Sair</span>
               </Button>
             </>
