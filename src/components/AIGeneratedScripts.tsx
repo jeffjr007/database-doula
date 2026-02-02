@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +60,7 @@ export const AIGeneratedScripts = ({
   const [showContent, setShowContent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Animate conversation intro
   useEffect(() => {
@@ -74,6 +76,7 @@ export const AIGeneratedScripts = ({
   }, [conversationStep, showContent]);
 
   const generateScripts = async () => {
+    startGeneration();
     setIsGenerating(true);
     setError(null);
 
@@ -88,6 +91,7 @@ export const AIGeneratedScripts = ({
         },
       });
 
+      if (!isMounted()) return;
       if (fnError) throw fnError;
 
       if (data?.scripts && data.scripts.length > 0) {
@@ -103,15 +107,20 @@ export const AIGeneratedScripts = ({
         throw new Error("Não foi possível gerar os roteiros. Tente novamente.");
       }
     } catch (err: any) {
-      console.error('Error generating scripts:', err);
-      setError(err.message || "Erro ao gerar roteiros. Tente novamente.");
-      toast({
-        title: "Erro ao gerar roteiros",
-        description: err.message || "Tente novamente.",
-        variant: "destructive",
-      });
+      if (isMounted()) {
+        console.error('Error generating scripts:', err);
+        setError(err.message || "Erro ao gerar roteiros. Tente novamente.");
+        toast({
+          title: "Erro ao gerar roteiros",
+          description: err.message || "Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setIsGenerating(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGenerating(false);
+      }
     }
   };
 

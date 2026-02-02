@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -429,6 +430,7 @@ export const GupyGuide = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Scroll to top when step changes or after AI generation
   const scrollToTop = () => {
@@ -584,6 +586,7 @@ export const GupyGuide = () => {
 
   const confirmAndGenerateDescriptions = async () => {
     setShowAchievementModal(false);
+    startGeneration();
     setIsGeneratingDescriptions(true);
 
     try {
@@ -597,6 +600,8 @@ export const GupyGuide = () => {
           conquistas: validCertificados
         }
       });
+
+      if (!isMounted()) return;
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -613,14 +618,19 @@ export const GupyGuide = () => {
         description: "Revise e copie para a Gupy."
       });
     } catch (error) {
-      console.error("Error generating descriptions:", error);
-      toast({ 
-        title: "Erro ao gerar descrições", 
-        description: error instanceof Error ? error.message : "Tente novamente.",
-        variant: "destructive"
-      });
+      if (isMounted()) {
+        console.error("Error generating descriptions:", error);
+        toast({ 
+          title: "Erro ao gerar descrições", 
+          description: error instanceof Error ? error.message : "Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsGeneratingDescriptions(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGeneratingDescriptions(false);
+      }
     }
   };
 
@@ -640,6 +650,7 @@ export const GupyGuide = () => {
 
   const confirmAndFormat = async () => {
     setShowExplanationModal(false);
+    startGeneration();
     setIsFormatting(true);
 
     try {
@@ -648,6 +659,8 @@ export const GupyGuide = () => {
       const response = await supabase.functions.invoke('format-gupy-experiences', {
         body: { experiencias: validExperiences }
       });
+
+      if (!isMounted()) return;
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -664,14 +677,19 @@ export const GupyGuide = () => {
         description: "Revise e copie para a Gupy."
       });
     } catch (error) {
-      console.error("Error formatting:", error);
-      toast({ 
-        title: "Erro ao formatar", 
-        description: error instanceof Error ? error.message : "Tente novamente.",
-        variant: "destructive"
-      });
+      if (isMounted()) {
+        console.error("Error formatting:", error);
+        toast({ 
+          title: "Erro ao formatar", 
+          description: error instanceof Error ? error.message : "Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsFormatting(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsFormatting(false);
+      }
     }
   };
 
@@ -696,12 +714,15 @@ export const GupyGuide = () => {
 
   const confirmAndFormatSobre = async () => {
     setShowSobreModal(false);
+    startGeneration();
     setIsFormattingSobre(true);
 
     try {
       const response = await supabase.functions.invoke('format-gupy-about', {
         body: { sobre: data.sobre }
       });
+
+      if (!isMounted()) return;
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -719,14 +740,19 @@ export const GupyGuide = () => {
         description: `Reduzido de ${response.data.original_length} para ${response.data.formatted_length} caracteres.`
       });
     } catch (error) {
-      console.error("Error formatting sobre:", error);
-      toast({ 
-        title: "Erro ao formatar", 
-        description: error instanceof Error ? error.message : "Tente novamente.",
-        variant: "destructive"
-      });
+      if (isMounted()) {
+        console.error("Error formatting sobre:", error);
+        toast({ 
+          title: "Erro ao formatar", 
+          description: error instanceof Error ? error.message : "Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsFormattingSobre(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsFormattingSobre(false);
+      }
     }
   };
 
