@@ -48,7 +48,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import mentorPhoto from "@/assets/mentor-photo.png";
 import { KeywordScript } from "./InterviewScriptBuilder";
 import { format } from "date-fns";
@@ -620,12 +619,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     switch (currentStep) {
       case 1:
         return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="max-w-2xl mx-auto space-y-6"
-          >
+          <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <FileText className="w-8 h-8 text-primary" />
@@ -638,11 +632,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
             <div className="space-y-3">
               {interviews.map((interview, index) => (
-                <motion.div
+                <div
                   key={interview.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <Card 
                     className={`p-4 cursor-pointer transition-all hover:border-primary/50 ${
@@ -681,205 +674,124 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                       )}
                     </div>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {selectedInterview && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center pt-4"
-              >
+              <div className="flex justify-center pt-4 animate-fade-in">
                 <Button onClick={() => selectInterview(selectedInterview)} size="lg" className="gap-2 px-8">
                   Continuar com esta entrevista <ArrowRight className="w-4 h-4" />
                 </Button>
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
         );
 
       case 2:
         return (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="max-w-2xl mx-auto"
-          >
-            <AnimatePresence mode="wait">
-              {!showBenefits && (
-                <motion.div
-                  key="messages"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, y: -30 }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                  className="space-y-4"
-                >
-                  <AnimatePresence>
-                    {mentorMessages.slice(0, visibleMessages).map((msg, idx) => (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{
-                          opacity: messagesExiting ? 0 : 1,
-                          y: messagesExiting ? -20 : 0,
-                          scale: 1
-                        }}
-                        transition={{
-                          duration: messagesExiting ? 0.4 : 0.4,
-                          ease: "easeOut",
-                          delay: messagesExiting ? idx * 0.05 : 0
-                        }}
-                        className="flex gap-3"
-                      >
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30">
-                            <img
-                              src={mentorPhoto}
-                              alt="Mentor"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        </div>
-
-                        <Card className={`p-4 flex-1 ${
-                          msg.highlight
-                            ? 'bg-gradient-to-r from-primary/20 to-amber-500/20 border-primary/40'
-                            : msg.quote
-                            ? 'bg-amber-500/10 border-amber-500/30 italic'
-                            : 'bg-secondary/50'
-                        }`}>
-                          <p className={`text-sm leading-relaxed ${msg.highlight ? 'font-medium' : ''}`}>
-                            {msg.text}
-                          </p>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-
-                  {visibleMessages < mentorMessages.length && !messagesExiting && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex gap-3"
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0">
-                        <img src={mentorPhoto} alt="Mentor" className="w-full h-full object-cover" />
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            {!showBenefits && (
+              <div className={`space-y-4 transition-all duration-500 ${messagesExiting ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                {mentorMessages.slice(0, visibleMessages).map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="flex gap-3 animate-fade-in"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30">
+                        <img
+                          src={mentorPhoto}
+                          alt="Mentor"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <Card className="p-4 bg-secondary/30">
-                        <div className="flex gap-1">
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
-                          />
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
-                          />
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
-                          />
+                    </div>
+
+                    <Card className={`p-4 flex-1 ${
+                      msg.highlight
+                        ? 'bg-gradient-to-r from-primary/20 to-amber-500/20 border-primary/40'
+                        : msg.quote
+                        ? 'bg-amber-500/10 border-amber-500/30 italic'
+                        : 'bg-secondary/50'
+                    }`}>
+                      <p className={`text-sm leading-relaxed ${msg.highlight ? 'font-medium' : ''}`}>
+                        {msg.text}
+                      </p>
+                    </Card>
+                  </div>
+                ))}
+
+                {visibleMessages < mentorMessages.length && !messagesExiting && (
+                  <div className="flex gap-3 animate-fade-in">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0">
+                      <img src={mentorPhoto} alt="Mentor" className="w-full h-full object-cover" />
+                    </div>
+                    <Card className="p-4 bg-secondary/30">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                {visibleMessages >= mentorMessages.length && !messagesExiting && (
+                  <div className="flex justify-center pt-4 animate-fade-in">
+                    <Button onClick={handleAdvanceFromMessages} size="lg" className="gap-2">
+                      Avançar <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showBenefits && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center mb-3 animate-scale-in">
+                    <Trophy className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold">Por que isso é TÃO poderoso?</h3>
+                </div>
+
+                <div className="grid gap-3">
+                  {benefitsCards.map((benefit, idx) => (
+                    <div
+                      key={idx}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <Card className="p-4 bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                        <div className="flex gap-3">
+                          <div className={`flex-shrink-0 ${benefit.color}`}>
+                            <benefit.icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{benefit.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{benefit.description}</p>
+                          </div>
                         </div>
                       </Card>
-                    </motion.div>
-                  )}
+                    </div>
+                  ))}
+                </div>
 
-                  {visibleMessages >= mentorMessages.length && !messagesExiting && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="flex justify-center pt-4"
-                    >
-                      <Button onClick={handleAdvanceFromMessages} size="lg" className="gap-2">
-                        Avançar <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-
-              {showBenefits && (
-                <motion.div
-                  key="benefits"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="space-y-6"
-                >
-                  <div className="text-center">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", delay: 0.2 }}
-                      className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center mb-3"
-                    >
-                      <Trophy className="w-8 h-8 text-primary" />
-                    </motion.div>
-                    <h3 className="font-display text-xl font-bold">Por que isso é TÃO poderoso?</h3>
-                  </div>
-
-                  <div className="grid gap-3">
-                    {benefitsCards.map((benefit, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 + idx * 0.15, duration: 0.4 }}
-                      >
-                        <Card className="p-4 bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                          <div className="flex gap-3">
-                            <div className={`flex-shrink-0 ${benefit.color}`}>
-                              <benefit.icon className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{benefit.title}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{benefit.description}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1 }}
-                    className="flex justify-center pt-2"
-                  >
-                    <Button onClick={nextStep} size="lg" className="gap-2 px-8">
-                      Bora intensificar! <Rocket className="w-4 h-4" />
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                <div className="flex justify-center pt-2 animate-fade-in" style={{ animationDelay: '500ms' }}>
+                  <Button onClick={nextStep} size="lg" className="gap-2 px-8">
+                    Bora intensificar! <Rocket className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         );
 
       case 3:
         return (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-center space-y-2 mb-6"
-            >
+          <div className="space-y-6 animate-fade-in">
+            <div className="text-center space-y-2 mb-6">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Zap className="w-8 h-8 text-primary" />
               </div>
@@ -894,14 +806,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                     : `${selectedInterview.name} • ${selectedInterview.company_name}`}
                 </Badge>
               )}
-            </motion.div>
+            </div>
 
             {isIntensifying && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center py-12"
-              >
+              <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
                 <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                   <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 </div>
@@ -909,16 +817,12 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 <p className="text-sm text-muted-foreground text-center max-w-md">
                   A IA está adicionando detalhes técnicos sobre ferramentas, metodologias e métricas aos seus roteiros.
                 </p>
-              </motion.div>
+              </div>
             )}
 
             {!isIntensifying && (
               <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
+                <div className="animate-fade-in">
                   <Card className="p-4 bg-green-500/10 border-green-500/30 max-w-2xl mx-auto mb-6">
                     <div className="flex gap-3">
                       <Sparkles className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -931,16 +835,14 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                       </div>
                     </div>
                   </Card>
-                </motion.div>
+                </div>
 
                 <div className="space-y-6 max-w-2xl mx-auto">
                   {Object.entries(scriptsByExperience).map(([experience, scripts], expIdx) => (
-                    <motion.div
+                    <div
                       key={experience}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + expIdx * 0.1 }}
-                      className="space-y-3"
+                      className="space-y-3 animate-fade-in"
+                      style={{ animationDelay: `${expIdx * 100}ms` }}
                     >
                       <div className="flex items-center gap-2 px-1">
                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
@@ -978,52 +880,41 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                               )}
                             </button>
 
-                            <AnimatePresence>
-                              {expandedKeyword === `${experience}-${script.keyword}` && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: "auto", opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="border-t border-border"
-                                >
-                                  <div className="p-4 space-y-4">
+                            {expandedKeyword === `${experience}-${script.keyword}` && (
+                              <div className="border-t border-border animate-accordion-down">
+                                <div className="p-4 space-y-4">
+                                  <div>
+                                    <label className="text-sm font-medium text-muted-foreground">
+                                      Roteiro Original (Etapa 4):
+                                    </label>
+                                    <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-sm italic">
+                                      "{script.originalScript || "Nenhum roteiro encontrado"}"
+                                    </div>
+                                  </div>
+
+                                  {script.intensifiedHow && (
                                     <div>
-                                      <label className="text-sm font-medium text-muted-foreground">
-                                        Roteiro Original (Etapa 4):
+                                      <label className="text-sm font-medium flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <Zap className="w-4 h-4" />
+                                        Intensificação (O COMO):
                                       </label>
-                                      <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-sm italic">
-                                        "{script.originalScript || "Nenhum roteiro encontrado"}"
+                                      <div className="mt-1 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-sm">
+                                        {script.intensifiedHow}
                                       </div>
                                     </div>
-
-                                    {script.intensifiedHow && (
-                                      <div>
-                                        <label className="text-sm font-medium flex items-center gap-2 text-green-600 dark:text-green-400">
-                                          <Zap className="w-4 h-4" />
-                                          Intensificação (O COMO):
-                                        </label>
-                                        <div className="mt-1 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-sm">
-                                          {script.intensifiedHow}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </Card>
                         ))}
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
 
                 {!data.intensifiedScripts.some(s => s.intensifiedHow?.trim()) && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex justify-center pt-4"
-                  >
+                  <div className="flex justify-center pt-4 animate-fade-in">
                     <Button 
                       onClick={intensifyScriptsWithAI} 
                       disabled={isIntensifying}
@@ -1032,28 +923,17 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                       <RefreshCw className="w-4 h-4" />
                       Tentar intensificar novamente
                     </Button>
-                  </motion.div>
+                  </div>
                 )}
               </>
             )}
-          </motion.div>
+          </div>
         );
 
       case 4:
         return (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-8 max-w-3xl mx-auto"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-center space-y-2"
-            >
+          <div className="space-y-8 max-w-3xl mx-auto animate-fade-in">
+            <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Presentation className="w-8 h-8 text-primary" />
               </div>
@@ -1061,16 +941,11 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               <p className="text-muted-foreground max-w-lg mx-auto">
                 Use o template pronto e siga a estrutura abaixo para criar uma apresentação que vai impressionar o gestor.
               </p>
-            </motion.div>
+            </div>
 
             <div className="space-y-8">
               {/* Template Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/5 border border-primary/20"
-              >
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/5 border border-primary/20">
                 <div className="text-center space-y-4">
                   <div className="w-12 h-12 mx-auto rounded-xl bg-primary/20 flex items-center justify-center">
                     <Presentation className="w-6 h-6 text-primary" />
@@ -1089,15 +964,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                     Abrir Template no Canva
                   </Button>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Structure Guide */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4">
                 <h3 className="font-display font-semibold text-lg flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
                   Estrutura da Apresentação
@@ -1105,12 +975,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
                 <div className="space-y-4">
                   {presentationSlides.map((slide, idx) => (
-                    <motion.div
+                    <div
                       key={slide.number}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35 + idx * 0.08 }}
-                      className="p-5 rounded-xl bg-card/50 border border-border/30 space-y-4"
+                      className="p-5 rounded-xl bg-card/50 border border-border/30 space-y-4 animate-fade-in"
+                      style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       {/* Slide Header */}
                       <div className="flex items-center gap-3">
@@ -1145,18 +1013,13 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                           </div>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
 
               {/* How to present */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="p-5 rounded-xl bg-secondary/30 border border-border/30"
-              >
+              <div className="p-5 rounded-xl bg-secondary/30 border border-border/30">
                 <div className="flex gap-3">
                   <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
@@ -1166,15 +1029,10 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                     </p>
                   </div>
               </div>
-              </motion.div>
+              </div>
 
               {/* Complete Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="pt-2 flex flex-col gap-3"
-              >
+              <div className="pt-2 flex flex-col gap-3">
                 <Button onClick={completeStage} className="gap-2 w-full">
                   <Save className="w-4 h-4" />
                   Salvar e Finalizar
@@ -1186,9 +1044,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 >
                   Voltar ao Portal
                 </Button>
-              </motion.div>
+              </div>
             </div>
-          </motion.div>
+          </div>
         );
 
       default:
@@ -1260,11 +1118,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
         
         {/* Progress bar */}
         <div className="mt-3 h-1 bg-muted rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-primary rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${(currentStep / STEPS.length) * 100}%` }}
-            transition={{ duration: 0.3 }}
+          <div 
+            className="h-full bg-primary rounded-full transition-all duration-300"
+            style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
           />
         </div>
       </div>
@@ -1315,9 +1171,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <AnimatePresence mode="wait">
-          {renderStepContent()}
-        </AnimatePresence>
+        {renderStepContent()}
       </div>
 
       {/* Footer Navigation - only for step 3 */}

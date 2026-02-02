@@ -106,29 +106,12 @@ const LogoutModal = ({ open, onComplete }: LogoutModalProps) => {
                 </div>
               </motion.div>
 
-              {/* Loading dots */}
-              <motion.div
-                className="mt-6 flex justify-center gap-1.5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 rounded-full bg-primary/50"
-                    animate={{
-                      opacity: [0.3, 1, 0.3],
-                      scale: [0.8, 1, 0.8],
-                    }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: i * 0.15,
-                    }}
-                  />
-                ))}
-              </motion.div>
+              {/* Loading dots - CSS animation for better mobile performance */}
+              <div className="mt-6 flex justify-center gap-1.5 animate-fade-in [animation-delay:600ms]">
+                <div className="w-2 h-2 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
             </motion.div>
           </motion.div>
         </>

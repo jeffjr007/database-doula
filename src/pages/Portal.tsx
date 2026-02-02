@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
 
 import logoAD from "@/assets/logo-ad.png";
 import mentorPhoto from "@/assets/mentor-photo.png";
@@ -680,25 +679,16 @@ const Portal = () => {
         )}
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="lg:hidden fixed inset-0 bg-black/80 z-40"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-black z-50 flex flex-col"
-            >
+      {/* Mobile Sidebar Overlay - CSS transitions for performance */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 bg-black/80 z-40 animate-fade-in"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-black z-50 flex flex-col transition-transform duration-300 ease-out translate-x-0"
+          >
               <div className="p-4 flex items-center justify-between border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
@@ -783,10 +773,9 @@ const Portal = () => {
                   </Button>
                 </div>
               )}
-            </motion.aside>
+            </aside>
           </>
         )}
-      </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-20 min-h-screen">
@@ -854,58 +843,29 @@ const Portal = () => {
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
             {isDataReady && (
-              <motion.div 
-                className="mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <motion.div 
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                >
+              <div className="mb-8 animate-fade-in">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
                   <Crown className="w-4 h-4 text-primary" />
                   <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
-                </motion.div>
+                </div>
 
                 {user && userName && (
-                  <motion.h1 
-                    className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                  >
+                  <h1 className="text-3xl lg:text-4xl xl:text-5xl font-display font-bold mb-4">
                     Olá, <span className="text-gradient">{userName}</span>
-                  </motion.h1>
+                  </h1>
                 )}
 
-                <motion.p 
-                  className="text-lg text-muted-foreground max-w-xl"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                >
+                <p className="text-lg text-muted-foreground max-w-xl">
                   {currentPhrase}
-                </motion.p>
-              </motion.div>
+                </p>
+              </div>
             )}
 
             {isDataReady && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              >
+              <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
                 <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
 
-                <motion.div 
-                  className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                >
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                   {stages.map((stage) => {
                     const status = getStageStatus(stage.number);
                     const blocked = isStageBlocked(stage.number);
@@ -969,27 +929,17 @@ const Portal = () => {
                         </button>
                       );
                     })}
-                  </motion.div>
+                  </div>
 
                   {/* Quote */}
-                  <motion.div 
-                    className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                  >
+                  <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20">
                     <p className="text-sm text-muted-foreground italic text-center">
                       "Cada etapa foi desenvolvida para te guiar passo a passo na sua recolocação profissional."
                     </p>
-                  </motion.div>
+                  </div>
 
                   {/* Progress Stats */}
-                  <motion.div 
-                    className="mt-6 grid grid-cols-3 gap-4"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  >
+                  <div className="mt-6 grid grid-cols-3 gap-4">
                     <div className="p-4 rounded-xl bg-card/40 border border-border/30 text-center">
                       <p className="text-2xl font-display font-bold text-primary">{stages.length}</p>
                       <p className="text-xs text-muted-foreground mt-1">Etapas</p>
@@ -1006,8 +956,8 @@ const Portal = () => {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">Progresso</p>
                     </div>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               )}
           </div>
         </div>
