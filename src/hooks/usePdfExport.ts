@@ -11,7 +11,9 @@ export type PdfTextBlock =
   | { type: "bullet"; text: string }
   | { type: "spacer"; size?: number }
   | { type: "separator" }
-  | { type: "right-align"; lines: string[] };
+  | { type: "right-align"; lines: string[] }
+  | { type: "contact-line"; text: string }
+  | { type: "three-columns"; columns: { title: string; items: string[] }[] };
 
 interface UsePdfExportOptions {
   filename?: string;
@@ -96,46 +98,111 @@ export function usePdfExport(options: UsePdfExportOptions = {}) {
           continue;
         }
 
+        if (block.type === "contact-line") {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(10);
+          pdf.setTextColor(...blue);
+          const lines = pdf.splitTextToSize(block.text.trim(), maxWidth);
+          writeLines(lines, 4.5);
+          y += 2;
+          continue;
+        }
+
+        if (block.type === "three-columns") {
+          // Render three columns side by side (SISTEMAS | SKILLS | COMPETÊNCIAS)
+          y += 4;
+          ensureSpace(50); // Reserve space for the 3-column section
+          
+          const columnWidth = (maxWidth - 8) / 3; // 8mm gap total between columns
+          const startY = y;
+          
+          // Draw each column
+          block.columns.forEach((col, colIndex) => {
+            const colX = margin + colIndex * (columnWidth + 4);
+            let colY = startY;
+            
+            // Column heading (blue, bold)
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(11);
+            pdf.setTextColor(...blue);
+            pdf.text(col.title.toUpperCase(), colX, colY);
+            colY += 6;
+            
+            // Column items (bullets)
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(9);
+            pdf.setTextColor(...black);
+            
+            for (const item of col.items) {
+              const bulletLines = pdf.splitTextToSize(item, columnWidth - 4);
+              for (let i = 0; i < bulletLines.length; i++) {
+                if (i === 0) {
+                  pdf.text("•", colX, colY);
+                  pdf.text(bulletLines[i], colX + 3, colY);
+                } else {
+                  pdf.text(bulletLines[i], colX + 3, colY);
+                }
+                colY += 4;
+              }
+            }
+          });
+          
+          // Calculate max height used by columns
+          const maxColHeight = Math.max(
+            ...block.columns.map(col => {
+              let h = 6; // heading height
+              col.items.forEach(item => {
+                const lines = pdf.splitTextToSize(item, columnWidth - 4);
+                h += lines.length * 4;
+              });
+              return h;
+            })
+          );
+          
+          y = startY + maxColHeight + 2;
+          continue;
+        }
+
         if (!("text" in block) || !block.text?.trim()) continue;
 
         if (block.type === "title") {
-          pdf.setFont("helvetica", "normal");
-          pdf.setFontSize(22);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(18);
           pdf.setTextColor(...black);
-          const lines = pdf.splitTextToSize(block.text.trim(), maxWidth);
-          writeLines(lines, 9);
-          y += 3;
+          const lines = pdf.splitTextToSize(block.text.trim().toUpperCase(), maxWidth);
+          writeLines(lines, 7);
+          y += 1;
           continue;
         }
 
         if (block.type === "subtitle") {
           pdf.setFont("helvetica", "normal");
           pdf.setFontSize(11);
-          pdf.setTextColor(...gray);
+          pdf.setTextColor(...black);
           const lines = pdf.splitTextToSize(block.text.trim(), maxWidth);
           writeLines(lines, 5);
-          y += 2;
+          y += 1;
           continue;
         }
 
         if (block.type === "heading") {
-          y += 6; // Space before heading
+          y += 5; // Space before heading
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(12);
-          pdf.setTextColor(...black);
+          pdf.setTextColor(...blue); // Blue headings like in the model
           const lines = pdf.splitTextToSize(block.text.trim().toUpperCase(), maxWidth);
           writeLines(lines, 6);
-          y += 2;
+          y += 1;
           continue;
         }
 
         if (block.type === "subheading") {
-          y += 5; // Space before subheading (experience header)
-          pdf.setFont("helvetica", "bold");
-          pdf.setFontSize(11);
+          y += 4; // Space before subheading (experience header)
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(10);
           pdf.setTextColor(...black);
           const lines = pdf.splitTextToSize(block.text.trim(), maxWidth);
-          writeLines(lines, 5.5);
+          writeLines(lines, 5);
           continue;
         }
 

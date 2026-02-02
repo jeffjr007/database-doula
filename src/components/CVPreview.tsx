@@ -27,15 +27,17 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
 
     const blocks: PdfTextBlock[] = [];
 
-    // Header
+    // Header - Nome em negrito uppercase
     blocks.push({ type: "title", text: data.nome });
+    // Cargos abaixo do nome
     blocks.push({ type: "subtitle", text: data.cargos });
+    // Linha de contato com links em azul
     blocks.push({
-      type: "paragraph",
+      type: "contact-line",
       text: [data.telefone, data.email, data.linkedin].filter(Boolean).join(" | "),
     });
 
-    // Sumário
+    // Sumário - Cabeçalho azul + parágrafos + bullets
     blocks.push({ type: "heading", text: "Sumário" });
     for (const p of data.sumario.paragrafos) {
       blocks.push({ type: "paragraph", text: p });
@@ -44,25 +46,17 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
       blocks.push({ type: "bullet", text: b });
     }
 
-    // Sistemas
-    blocks.push({ type: "heading", text: "Sistemas" });
-    for (const s of data.sistemas) {
-      blocks.push({ type: "bullet", text: s });
-    }
+    // SISTEMAS | SKILLS | COMPETÊNCIAS - 3 colunas lado a lado
+    blocks.push({
+      type: "three-columns",
+      columns: [
+        { title: "Sistemas", items: data.sistemas },
+        { title: "Skills", items: data.skills },
+        { title: "Competências", items: data.competencias },
+      ],
+    });
 
-    // Skills
-    blocks.push({ type: "heading", text: "Skills" });
-    for (const s of data.skills) {
-      blocks.push({ type: "bullet", text: s });
-    }
-
-    // Competências
-    blocks.push({ type: "heading", text: "Competências" });
-    for (const s of data.competencias) {
-      blocks.push({ type: "bullet", text: s });
-    }
-
-    // Realizações
+    // Realizações - Full width com bullets
     blocks.push({ type: "heading", text: "Realizações" });
     for (const s of data.realizacoes) {
       blocks.push({ type: "bullet", text: s });
@@ -78,9 +72,10 @@ export function CVPreview({ data, onReset, onUpdate, onSave }: CVPreviewProps) {
       });
     }
 
-    // Experiências
+    // Experiências Profissionais
     blocks.push({ type: "heading", text: "Experiências Profissionais" });
     for (const exp of data.experiencias) {
+      // Empresa em azul + cargo em negrito
       blocks.push({
         type: "subheading",
         text: `${exp.empresa} — ${exp.cargo}`,
