@@ -596,7 +596,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
