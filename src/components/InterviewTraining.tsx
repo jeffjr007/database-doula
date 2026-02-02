@@ -20,7 +20,7 @@ interface InterviewTrainingProps {
   onComplete: () => void;
 }
 
-type TrainingStep = 'intro' | 'about' | 'experiences' | 'done';
+type TrainingStep = 'intro' | 'about' | 'experiences';
 
 export const InterviewTraining = ({
   companyName,
@@ -30,6 +30,16 @@ export const InterviewTraining = ({
   onComplete,
 }: InterviewTrainingProps) => {
   const [step, setStep] = useState<TrainingStep>('intro');
+
+  // Group scripts by company
+  const scriptsByCompany = experienceScripts.reduce((acc, script) => {
+    const key = script.company || 'Outras';
+    if (!acc[key]) {
+      acc[key] = { role: script.role, scripts: [] };
+    }
+    acc[key].scripts.push(script);
+    return acc;
+  }, {} as Record<string, { role: string; scripts: KeywordScript[] }>);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -141,30 +151,50 @@ export const InterviewTraining = ({
               </Card>
             )}
 
-            {/* Experience Scripts */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-muted-foreground">
+            {/* Grouped Scripts by Company */}
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
                 Depois, conecte suas experiências com as palavras-chave da vaga:
-              </h4>
-              
-              {experienceScripts.map((script, index) => (
-                <Card key={script.keyword} className="p-4 bg-secondary/20">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                        {script.keyword}
-                      </span>
-                      {script.company && (
-                        <span className="text-xs text-muted-foreground">
-                          • {script.role} — {script.company}
-                        </span>
-                      )}
+              </p>
+
+              {Object.entries(scriptsByCompany).map(([company, { role, scripts }]) => (
+                <div key={company} className="space-y-3">
+                  {/* Company Header */}
+                  <div className="flex items-center gap-3 px-1">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Briefcase className="w-4 h-4 text-primary" />
                     </div>
-                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                      {script.script}
-                    </p>
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {role} na {company}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {scripts.length} {scripts.length === 1 ? 'roteiro' : 'roteiros'}
+                      </p>
+                    </div>
                   </div>
-                </Card>
+
+                  {/* Scripts for this company */}
+                  <div className="space-y-3">
+                    {scripts.map((script) => (
+                      <Card key={script.keyword} className="p-4 bg-secondary/20">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                              {script.keyword}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              • {script.role} — {script.company}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                            {script.script}
+                          </p>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
@@ -184,7 +214,7 @@ export const InterviewTraining = ({
             <div className="flex justify-end pt-4">
               <Button onClick={onComplete} className="gap-2">
                 <Check className="w-4 h-4" />
-                Finalizar
+                Finalizar Treinamento
               </Button>
             </div>
           </motion.div>

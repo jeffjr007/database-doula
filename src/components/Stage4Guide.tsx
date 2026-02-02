@@ -58,7 +58,7 @@ const STEPS = [
   { id: 6, title: "Palavras-Chave", icon: Target, description: "Análise da IA" },
   { id: 7, title: "Roteiro", icon: Sparkles, description: "Roteiros de experiências" },
   { id: 8, title: "Treinamento", icon: Sparkles, description: "Material de preparação" },
-  { id: 9, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
+  { id: 9, title: "Salvar", icon: Check, description: "Salvar preparação" },
 ];
 
 const STAGE4_STARTED_KEY = 'stage4_started';
@@ -902,66 +902,22 @@ Exemplo:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="space-y-6"
+            className="text-center space-y-6 py-12"
           >
-            <div className="text-center space-y-2 mb-8">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
-                <Check className="w-8 h-8 text-accent-foreground" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">Seus Roteiros Prontos!</h2>
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Check className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-3 max-w-md mx-auto">
+              <h2 className="font-display text-2xl font-bold">
+                Preparação Concluída!
+              </h2>
               <p className="text-muted-foreground">
-                Revise seus roteiros abaixo. Eles serão usados na Etapa 5 para impressionar gestores.
+                Você finalizou o treinamento para a entrevista com a {data.companyName}. 
+                Salve essa preparação para consultar depois ou criar novas.
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto space-y-6">
-              {/* Roteiro "Me fale sobre você" */}
-              {data.aboutMeScript && (
-                <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">"Me fale sobre você"</h3>
-                        <p className="text-sm text-muted-foreground">Resposta pessoal</p>
-                      </div>
-                    </div>
-                    <div className="p-3 bg-background rounded-lg text-sm whitespace-pre-wrap border border-border">
-                      "{data.aboutMeScript}"
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {/* Roteiros de palavras-chave */}
-              {savedScripts.map((script, index) => (
-                <Card key={script.keyword} className="p-4 bg-secondary/30">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{script.keyword}</h3>
-                        {script.experience && (
-                          <p className="text-sm text-muted-foreground">{script.experience}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {script.script && (
-                      <div className="p-3 bg-background rounded-lg text-sm whitespace-pre-wrap border border-border">
-                        "{script.script}"
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <div className="max-w-2xl mx-auto pt-4 flex flex-col gap-3">
+            <div className="max-w-sm mx-auto space-y-3 pt-4">
               {isReviewMode ? (
                 <Button
                   onClick={() => {
@@ -977,10 +933,11 @@ Exemplo:
                     setSavedScripts([]);
                     setCurrentStep(1);
                   }}
+                  variant="outline"
                   className="gap-2 w-full"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Voltar ao Início
+                  Criar Nova Preparação
                 </Button>
               ) : (
                 <>
@@ -989,14 +946,14 @@ Exemplo:
                     className="gap-2 w-full"
                   >
                     <Check className="w-4 h-4" />
-                    Finalizar Etapa 4
+                    Salvar e Finalizar
                   </Button>
                   <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep(5)}
-                    className="w-full"
+                    variant="ghost"
+                    onClick={() => setCurrentStep(8)}
+                    className="w-full text-muted-foreground"
                   >
-                    Voltar e Editar "Sobre Você"
+                    Voltar ao Treinamento
                   </Button>
                 </>
               )}
