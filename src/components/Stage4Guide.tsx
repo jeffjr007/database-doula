@@ -65,6 +65,7 @@ const STAGE4_STARTED_KEY = 'stage4_started';
 const STAGE4_VISITED_STEPS_KEY = 'stage4_visited_steps';
 const STAGE4_DATA_CACHE_KEY = 'stage4_data_cache_v1';
 const STAGE4_SCRIPTS_CACHE_KEY = 'stage4_scripts_cache_v1';
+const STAGE4_INTRO_KEY = 'stage4_intro_seen';
 
 // Helper to get visited steps from sessionStorage
 const getVisitedSteps = (): number[] => {
@@ -1167,6 +1168,7 @@ Exemplo:
           sessionStorage.removeItem(STAGE4_VISITED_STEPS_KEY);
           sessionStorage.removeItem(STAGE4_DATA_CACHE_KEY);
           sessionStorage.removeItem(STAGE4_SCRIPTS_CACHE_KEY);
+          sessionStorage.removeItem(STAGE4_INTRO_KEY);
 
           setShowSaveModal(false);
           toast({
