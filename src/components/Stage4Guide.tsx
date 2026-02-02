@@ -18,8 +18,7 @@ import {
   ChevronDown,
   Target,
   Lightbulb,
-  MessageSquare,
-  Mic
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +30,7 @@ import { AboutMeGenerator } from "./AboutMeGenerator";
 import { HelpCircle } from 'lucide-react';
 import { Stage4Introduction } from "./Stage4Introduction";
 import { StepConversationIntro } from "./StepConversationIntro";
-import { InterviewSimulator } from "./InterviewSimulator";
+import { InterviewTraining } from "./InterviewTraining";
 import { SaveInterviewModal } from "./SaveInterviewModal";
 import { InterviewHistoryList } from "./InterviewHistoryList";
 import { MentorAvatar } from "./MentorAvatar";
@@ -58,7 +57,7 @@ const STEPS = [
   { id: 5, title: "Sobre Você", icon: MessageSquare, description: "Me fale sobre você" },
   { id: 6, title: "Palavras-Chave", icon: Target, description: "Análise da IA" },
   { id: 7, title: "Roteiro", icon: Sparkles, description: "Roteiros de experiências" },
-  { id: 8, title: "Simulador", icon: Mic, description: "Treine sua entrevista" },
+  { id: 8, title: "Treinamento", icon: Sparkles, description: "Material de preparação" },
   { id: 9, title: "Resumo", icon: Check, description: "Seus roteiros prontos" },
 ];
 
@@ -847,7 +846,8 @@ Exemplo:
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <InterviewSimulator
+            <InterviewTraining
+              companyName={data.companyName}
               aboutMeScript={data.aboutMeScript || ''}
               experienceScripts={savedScripts}
               onComplete={() => setCurrentStep(9)}
