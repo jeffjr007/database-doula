@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 export interface AuthResult {
@@ -11,13 +11,14 @@ export interface AuthResult {
 }
 
 /**
- * Validates the user's authentication from the request headers.
+ * Validates the user's authentication from the request headers using getClaims().
+ * This is more reliable than getUser() as it validates the JWT locally.
  * Returns the user if authenticated, or an error message if not.
  */
 export async function validateAuth(req: Request): Promise<AuthResult> {
   const authHeader = req.headers.get("Authorization");
   
-  if (!authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return { user: null, error: "Não autorizado" };
   }
 
@@ -30,13 +31,19 @@ export async function validateAuth(req: Request): Promise<AuthResult> {
     },
   });
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  // Use getClaims() instead of getUser() for better reliability
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error } = await supabase.auth.getClaims(token);
 
-  if (error || !user) {
+  if (error || !data?.claims) {
+    console.error("Auth validation failed:", error);
     return { user: null, error: "Sessão inválida ou expirada" };
   }
 
-  return { user: { id: user.id, email: user.email }, error: null };
+  const userId = data.claims.sub as string;
+  const email = data.claims.email as string | undefined;
+
+  return { user: { id: userId, email }, error: null };
 }
 
 /**
