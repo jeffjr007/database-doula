@@ -413,12 +413,13 @@ const Portal = () => {
     // TEMPORARY: Block all stages except 2 for non-admin users
     // Admins and dev users have full access
     if (effectiveIsAdmin || effectiveIsDev) {
-      // Original logic for admin/dev
+      // Admin/Dev: Stage 2 is ALWAYS unlocked
+      if (stageNumber === 2) {
+        return false;
+      }
+      // Original logic for admin/dev for other stages
       if (stageNumber === 1) {
         return linkedinDiagnostic?.status !== "published";
-      }
-      if (stageNumber === 2) {
-        return !stage2Unlocked;
       }
       if (stageNumber === 3) {
         return !stage2Completed;
