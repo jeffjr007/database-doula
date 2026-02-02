@@ -81,8 +81,27 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
   const currentModel = data.modelos.find((m) => m.tipo === activeTab);
   const currentIndex = data.modelos.findIndex((m) => m.tipo === activeTab);
 
+  const goToPrevModel = () => {
+    const currentIdx = data.modelos.findIndex((m) => m.tipo === activeTab);
+    if (currentIdx > 0) {
+      setActiveTab(data.modelos[currentIdx - 1].tipo);
+    }
+  };
+
+  const goToNextModel = () => {
+    const currentIdx = data.modelos.findIndex((m) => m.tipo === activeTab);
+    if (currentIdx < data.modelos.length - 1) {
+      setActiveTab(data.modelos[currentIdx + 1].tipo);
+    }
+  };
+
   // Mobile Layout - Fluid and Premium
   if (isMobile) {
+    const currentIdx = data.modelos.findIndex((m) => m.tipo === activeTab);
+    const hasPrev = currentIdx > 0;
+    const hasNext = currentIdx < data.modelos.length - 1;
+    const CurrentIcon = currentModel ? modelIcons[currentModel.tipo] : FileText;
+
     return (
       <div className="min-h-screen flex flex-col">
         {/* Header */}
@@ -97,27 +116,57 @@ export function CoverLetterPreview({ data, onBack, onSave }: CoverLetterPreviewP
 
         {/* Content */}
         <div className="flex-1 px-4 pb-6 flex flex-col">
-          {/* Model Selector - Pill Style */}
-          <div className="flex gap-2 mb-5 overflow-x-auto pb-2">
-            {data.modelos.map((model) => {
-              const Icon = modelIcons[model.tipo];
-              const isActive = activeTab === model.tipo;
-              return (
-                <button
-                  key={model.tipo}
-                  onClick={() => setActiveTab(model.tipo)}
-                  className={`
-                    flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground shadow-lg' 
-                      : 'bg-muted/50 text-muted-foreground hover:bg-muted'}
-                  `}
-                >
-                  <Icon className="w-4 h-4" />
-                  {modelLabels[model.tipo]}
-                </button>
-              );
-            })}
+          {/* Model Navigator - Arrow Style */}
+          <div className="flex items-center justify-between mb-5 bg-muted/30 rounded-2xl p-2">
+            {/* Previous Arrow */}
+            <button
+              onClick={goToPrevModel}
+              disabled={!hasPrev}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                hasPrev 
+                  ? 'bg-card text-foreground hover:bg-primary/10 active:scale-95' 
+                  : 'text-muted-foreground/30 cursor-not-allowed'
+              }`}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            {/* Current Model Indicator */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CurrentIcon className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-semibold text-base">{currentModel ? modelLabels[currentModel.tipo] : ''}</span>
+              </div>
+              {/* Dots Indicator */}
+              <div className="flex gap-1.5">
+                {data.modelos.map((model, idx) => (
+                  <button
+                    key={model.tipo}
+                    onClick={() => setActiveTab(model.tipo)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      idx === currentIdx 
+                        ? 'bg-primary w-4' 
+                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Next Arrow */}
+            <button
+              onClick={goToNextModel}
+              disabled={!hasNext}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                hasNext 
+                  ? 'bg-card text-foreground hover:bg-primary/10 active:scale-95' 
+                  : 'text-muted-foreground/30 cursor-not-allowed'
+              }`}
+            >
+              <ArrowLeft className="w-5 h-5 rotate-180" />
+            </button>
           </div>
 
           {/* Current Model Card - Fluid Content */}
