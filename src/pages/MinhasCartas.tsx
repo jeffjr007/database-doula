@@ -176,46 +176,44 @@ const MinhasCartas = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {coverLetters.map((coverLetter, index) => (
               <div
                 key={coverLetter.id}
-                className="bg-card rounded-xl p-4 md:p-5 border border-border shadow-sm hover:border-primary/30 transition-all duration-300 animate-fade-in group"
+                className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 animate-fade-in group"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                {/* Mobile: Stack layout */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  {/* Info Section */}
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                    <div className="p-2.5 sm:p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
-                      <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                <div className="flex items-center gap-3">
+                  {/* Icon */}
+                  <div className="p-2.5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                    <Mail className="w-5 h-5 text-primary" />
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground text-sm truncate">
+                        {coverLetter.name}
+                      </h3>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/20 text-primary flex-shrink-0">
+                        Carta
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-foreground text-sm sm:text-base truncate max-w-[180px] sm:max-w-none">
-                          {coverLetter.name}
-                        </h3>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary flex-shrink-0">
-                          Carta
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">Atualizado em {formatDate(coverLetter.updated_at)}</span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                      <Calendar className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">Atualizado em {formatDate(coverLetter.updated_at)}</span>
                     </div>
                   </div>
 
-                  {/* Actions - Always visible, responsive sizing */}
-                  <div className="flex items-center gap-2 justify-end">
+                  {/* Actions - Compact icons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
-                      variant="secondary"
+                      variant="ghost"
                       size="icon"
                       onClick={() => handleView(coverLetter)}
-                      className="h-9 w-9 sm:h-10 sm:w-auto sm:px-3 sm:gap-2"
+                      className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
                     >
                       <Eye className="w-4 h-4" />
-                      <span className="hidden sm:inline">Visualizar</span>
                     </Button>
 
                     <AlertDialog>
@@ -223,7 +221,7 @@ const MinhasCartas = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 sm:h-10 sm:w-10 text-muted-foreground hover:text-destructive"
+                          className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
