@@ -505,7 +505,10 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
     );
   }
 
-  // Desktop Layout - Original dialog content (without Dialog wrapper)
+  // Desktop Layout - Loose style matching mobile
+  const desktopInputClass = "h-11 rounded-xl bg-muted/20 border-transparent focus:border-primary/30 focus:bg-muted/30 placeholder:text-muted-foreground/50";
+  const desktopTextareaClass = "rounded-xl bg-muted/20 border-transparent focus:border-primary/30 focus:bg-muted/30 placeholder:text-muted-foreground/50 resize-none";
+
   return (
     <div className="space-y-6 py-4">
       {/* Row 1: Nome e Idade */}
@@ -516,29 +519,27 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
           animate={{ opacity: 1 }}
           transition={{ delay: 0.05 }}
         >
-          <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+          <label className="text-sm text-muted-foreground mb-2 block">
             Nome Completo *
-            {formData.nome && personalData.fullName && <Lock className="w-3 h-3 text-muted-foreground/60" />}
           </label>
           <Input
             value={formData.nome}
             onChange={(e) => handleChange("nome", e.target.value)}
             placeholder="Seu nome completo"
             readOnly={!!personalData.fullName}
-            className={personalData.fullName ? "opacity-70" : undefined}
+            className={personalData.fullName ? `${desktopInputClass} opacity-70` : desktopInputClass}
           />
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-          <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+          <label className="text-sm text-muted-foreground mb-2 block">
             Idade
-            {formData.idade && personalData.age && <Lock className="w-3 h-3 text-muted-foreground/60" />}
           </label>
           <Input
             value={formData.idade}
             onChange={(e) => handleChange("idade", e.target.value)}
             placeholder="Ex: 28 anos"
             readOnly={!!personalData.age}
-            className={personalData.age ? "opacity-70" : undefined}
+            className={personalData.age ? `${desktopInputClass} opacity-70` : desktopInputClass}
           />
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}></motion.div>
@@ -547,24 +548,24 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
       {/* Row 2: Localização e Profissão */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-          <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+          <label className="text-sm text-muted-foreground mb-2 block">
             Localização
-            {formData.localizacao && personalData.location && <Lock className="w-3 h-3 text-muted-foreground/60" />}
           </label>
           <Input
             value={formData.localizacao}
             onChange={(e) => handleChange("localizacao", e.target.value)}
             placeholder="Cidade, Estado"
             readOnly={!!personalData.location}
-            className={personalData.location ? "opacity-70" : undefined}
+            className={personalData.location ? `${desktopInputClass} opacity-70` : desktopInputClass}
           />
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
-          <label className="text-sm font-medium mb-2 block">Profissão *</label>
+          <label className="text-sm text-muted-foreground mb-2 block">Profissão *</label>
           <Input
             value={formData.profissao}
             onChange={(e) => handleChange("profissao", e.target.value)}
             placeholder="Sua área de atuação"
+            className={desktopInputClass}
           />
         </motion.div>
       </div>
@@ -572,19 +573,21 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
       {/* Row 3: Cargos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium mb-2 block">Seu Último Cargo</label>
+          <label className="text-sm text-muted-foreground mb-2 block">Seu Último Cargo</label>
           <Input
             value={formData.ultimoCargo}
             onChange={(e) => handleChange("ultimoCargo", e.target.value)}
             placeholder="Cargo atual ou mais recente"
+            className={desktopInputClass}
           />
         </div>
         <div>
-          <label className="text-sm font-medium mb-2 block">Cargos de Interesse</label>
+          <label className="text-sm text-muted-foreground mb-2 block">Cargos de Interesse</label>
           <Input
             value={formData.cargosInteresse}
             onChange={(e) => handleChange("cargosInteresse", e.target.value)}
             placeholder="Cargos que você busca"
+            className={desktopInputClass}
           />
         </div>
       </div>
@@ -593,7 +596,7 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <label className="text-sm font-medium">Soft Skills</label>
+            <label className="text-sm text-muted-foreground">Soft Skills</label>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -611,12 +614,12 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
             value={formData.softSkills}
             onChange={(e) => handleChange("softSkills", e.target.value)}
             placeholder="Ex: Comunicação, Liderança, Resolução de problemas..."
-            className="min-h-[60px]"
+            className={`min-h-[70px] ${desktopTextareaClass}`}
           />
         </div>
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <label className="text-sm font-medium">Hard Skills</label>
+            <label className="text-sm text-muted-foreground">Hard Skills</label>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -634,19 +637,19 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
             value={formData.hardSkills}
             onChange={(e) => handleChange("hardSkills", e.target.value)}
             placeholder="Ex: Excel avançado, SAP, Python, Scrum..."
-            className="min-h-[60px]"
+            className={`min-h-[70px] ${desktopTextareaClass}`}
           />
         </div>
       </div>
 
       {/* Row 5: Interesses */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Interesses Profissionais</label>
+        <label className="text-sm text-muted-foreground mb-2 block">Interesses Profissionais</label>
         <Textarea
           value={formData.interesses}
           onChange={(e) => handleChange("interesses", e.target.value)}
           placeholder="Áreas, setores ou tipos de projetos que te interessam..."
-          className="min-h-[60px]"
+          className={`min-h-[70px] ${desktopTextareaClass}`}
         />
       </div>
 

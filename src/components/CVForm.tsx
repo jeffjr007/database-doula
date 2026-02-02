@@ -38,9 +38,9 @@ interface CVFormProps {
   isLoading: boolean;
 }
 
-// Locked/readonly input style for auto-filled fields
-const lockedInputClass = "w-full h-10 px-4 rounded-lg border border-muted-foreground/20 bg-muted/50 text-sm text-foreground cursor-default opacity-90";
-const normalInputClass = "w-full h-10 px-4 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200";
+// Locked/readonly input style for auto-filled fields - consistent loose style
+const lockedInputClass = "w-full h-11 px-4 rounded-xl border-transparent bg-muted/30 text-sm text-foreground cursor-default opacity-80";
+const normalInputClass = "w-full h-11 px-4 rounded-xl border-transparent bg-muted/20 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200";
 
 export function CVForm({ onGenerate, isLoading }: CVFormProps) {
   const { personalData, isLoading: isLoadingProfile } = useUserProfile();
@@ -664,7 +664,7 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
           value={formData.jobDescription}
           onChange={(e) => handleChange("jobDescription", e.target.value)}
           placeholder="Título da Vaga\n\nResponsabilidades:\n• Desenvolver e implementar...\n\nRequisitos:\n• Experiência em...\n• Conhecimento em..."
-          className="min-h-[180px] bg-card"
+          className="min-h-[180px] bg-muted/20 border-transparent rounded-xl focus:border-primary/30 focus:bg-muted/30"
         />
       </div>
 

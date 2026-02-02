@@ -44,8 +44,8 @@ interface FormData {
   idiomas: IdiomaItem[];
 }
 
-// Locked/readonly input style for auto-filled fields - softer on mobile
-const lockedInputClass = "h-10 text-sm rounded-lg bg-muted/30 border-border/40 cursor-default";
+// Locked/readonly input style for auto-filled fields - consistent loose style
+const lockedInputClass = "h-11 text-sm rounded-xl bg-muted/30 border-transparent cursor-default opacity-80";
 
 // Mobile-optimized collapsible section component
 interface CollapsibleSectionProps {
@@ -282,14 +282,14 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
     );
   }
 
-  // Mobile: lighter, more breathable input styles
+  // Consistent loose input styles for both mobile and desktop
   const inputClass = isMobile 
     ? "h-12 text-base rounded-xl bg-muted/20 border-transparent focus:border-primary/40 focus:bg-muted/30 placeholder:text-muted-foreground/40" 
-    : "h-10 text-sm rounded-lg border-border/50 focus:border-primary/50";
+    : "h-11 text-sm rounded-xl bg-muted/20 border-transparent focus:border-primary/30 focus:bg-muted/30 placeholder:text-muted-foreground/50";
 
   const textareaClass = isMobile
     ? "text-base rounded-xl bg-muted/20 border-transparent focus:border-primary/40 focus:bg-muted/30 placeholder:text-muted-foreground/40 resize-none"
-    : "text-sm rounded-lg border-border/50 resize-none";
+    : "text-sm rounded-xl bg-muted/20 border-transparent focus:border-primary/30 focus:bg-muted/30 placeholder:text-muted-foreground/50 resize-none";
 
   // Check if step 1 is complete (has name and email at minimum)
   const isStep1Valid = formData.nome.trim().length > 0 && formData.email.trim().length > 0;
@@ -694,7 +694,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           <Briefcase className="w-4 h-4 text-primary" />
           Experiências Profissionais
         </div>
-        <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/30 border border-border/30">
+        <div className="flex items-start gap-2 p-2.5 rounded-xl bg-muted/20 border-transparent">
           <Linkedin className="w-3.5 h-3.5 text-[#0A66C2] mt-0.5 shrink-0" />
           <p className="text-xs text-muted-foreground leading-relaxed">
             Copie suas experiências do LinkedIn e cole aqui
@@ -704,7 +704,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           value={formData.experiencias}
           onChange={(e) => handleChange("experiencias", e.target.value)}
           placeholder="Cole aqui suas experiências..."
-          className="min-h-[180px] text-sm rounded-lg p-3 border-border/50 resize-none"
+          className={`min-h-[180px] p-4 ${textareaClass}`}
         />
       </div>
 
@@ -714,7 +714,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           <GraduationCap className="w-4 h-4 text-primary" />
           Formação Acadêmica
         </div>
-        <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/30 border border-border/30">
+        <div className="flex items-start gap-2 p-2.5 rounded-xl bg-muted/20 border-transparent">
           <Linkedin className="w-3.5 h-3.5 text-[#0A66C2] mt-0.5 shrink-0" />
           <p className="text-xs text-muted-foreground leading-relaxed">
             Copie sua formação acadêmica e certificados
@@ -724,7 +724,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           value={formData.educacao}
           onChange={(e) => handleChange("educacao", e.target.value)}
           placeholder="Cole sua formação..."
-          className="min-h-[140px] text-sm rounded-lg p-3 border-border/50 resize-none"
+          className={`min-h-[140px] p-4 ${textareaClass}`}
         />
       </div>
 
@@ -767,7 +767,7 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
             variant="ghost"
             size="sm"
             onClick={addIdioma}
-            className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground w-full justify-center border border-dashed border-border/50 hover:border-border"
+            className="gap-1.5 text-xs h-9 text-muted-foreground hover:text-foreground w-full justify-center rounded-xl bg-muted/10 hover:bg-muted/20 border-transparent"
           >
             <Plus className="w-3.5 h-3.5" />
             Adicionar idioma
