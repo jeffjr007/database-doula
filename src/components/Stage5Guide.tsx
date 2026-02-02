@@ -1034,7 +1034,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="space-y-8"
+            className="space-y-8 max-w-3xl mx-auto"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
