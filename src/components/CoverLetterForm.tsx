@@ -512,9 +512,8 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
   return (
     <div className="space-y-6 py-4">
       {/* Row 1: Nome e Idade */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <motion.div
-          className="col-span-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.05 }}
@@ -542,7 +541,6 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
             className={personalData.age ? `${desktopInputClass} opacity-70` : desktopInputClass}
           />
         </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}></motion.div>
       </div>
 
       {/* Row 2: Localização e Profissão */}
