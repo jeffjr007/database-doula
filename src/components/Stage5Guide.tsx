@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -25,7 +24,12 @@ import {
   RotateCcw,
   Building2,
   Clock,
-  FileText
+  FileText,
+  Image,
+  MessageSquare,
+  BarChart3,
+  Quote,
+  RefreshCw
 } from "lucide-react";
 import {
   AlertDialog,
@@ -56,6 +60,7 @@ interface InterviewHistory {
   id: string;
   name: string;
   company_name: string;
+  job_title?: string;
   created_at: string;
   data_content: {
     savedScripts?: KeywordScript[];
@@ -157,6 +162,71 @@ const benefitsCards = [
   }
 ];
 
+// Presentation template slides structure
+const presentationSlides = [
+  {
+    number: 1,
+    title: "Capa",
+    icon: Image,
+    description: "Sua primeira impressão",
+    items: [
+      "Frase impactante que resuma você",
+      "Sua foto profissional",
+      "Seu nome completo"
+    ],
+    tip: 'Ex: "Transformando dados em decisões estratégicas"'
+  },
+  {
+    number: 2,
+    title: "Apresentação",
+    icon: Users,
+    description: "Match com a vaga",
+    items: [
+      "3 atividades + resultados alinhados à vaga",
+      'Texto "demos match" para mostrar conexão',
+      "Use ícones visuais para cada atividade"
+    ],
+    tip: "Mostre que suas experiências são exatamente o que eles procuram"
+  },
+  {
+    number: "3-6",
+    title: "Diagnóstico",
+    icon: Target,
+    description: "Desafios e soluções",
+    items: [
+      "Problema/desafio que você enfrentou",
+      "Sua solução (pode ser print, vídeo, gráfico)",
+      "Resultados obtidos com métricas",
+      "Use 1 slide por experiência relevante"
+    ],
+    tip: "Aqui você mostra o COMO - metodologias, ferramentas, processos"
+  },
+  {
+    number: "7-8",
+    title: "Resultados",
+    icon: BarChart3,
+    description: "Impacto consolidado",
+    items: [
+      "Tabela com áreas/ações realizadas",
+      "O que foi feito + como foi feito",
+      "Métricas e números de impacto"
+    ],
+    tip: "Gestores AMAM números. Seja específico: %, R$, tempo economizado"
+  },
+  {
+    number: 9,
+    title: "Fechamento",
+    icon: Quote,
+    description: "Encerramento memorável",
+    items: [
+      "Sua foto novamente",
+      "Frase de fechamento impactante",
+      "Opcional: contatos ou QR code do LinkedIn"
+    ],
+    tip: 'Ex: "Pronto para transformar desafios em resultados"'
+  }
+];
+
 export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -166,6 +236,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const [visibleMessages, setVisibleMessages] = useState(0);
   const [showBenefits, setShowBenefits] = useState(false);
   const [messagesExiting, setMessagesExiting] = useState(false);
+  const [isIntensifying, setIsIntensifying] = useState(false);
+  const [expandedSlide, setExpandedSlide] = useState<number | string | null>(null);
+  const hasIntensifiedRef = useRef(false);
 
   const [data, setData] = useState<Stage5Data>({
     selectedInterviewId: null,
@@ -220,16 +293,20 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
           setData(s5Data);
 
+          // Check if we already have intensified scripts
+          const hasIntensified = s5Data.intensifiedScripts.some(s => s?.intensifiedHow?.trim());
+          if (hasIntensified) {
+            hasIntensifiedRef.current = true;
+          }
+
           // If there's a selected interview, find it
           if (s5Data.selectedInterviewId) {
             const found = loadedInterviews.find(i => i.id === s5Data.selectedInterviewId);
             if (found) {
               setSelectedInterview(found);
               // Determine which step to show
-              if (isStageCompleted) {
-                setCurrentStep(2); // Show intro
-              } else if (s5Data.intensifiedScripts.some(s => s?.intensifiedHow?.trim())) {
-                setCurrentStep(3); // Show intensify step
+              if (isStageCompleted || hasIntensified) {
+                setCurrentStep(3); // Show intensified results
               } else {
                 setCurrentStep(2); // Show intro
               }
@@ -274,19 +351,99 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     }
   }, [messagesExiting, showBenefits]);
 
-  // Initialize intensified scripts when interview is selected
+  // Auto-intensify scripts when entering step 3
   useEffect(() => {
-    if (selectedInterview && data.intensifiedScripts.length === 0) {
+    if (currentStep === 3 && selectedInterview && !hasIntensifiedRef.current && !isIntensifying) {
       const scripts = selectedInterview.data_content?.savedScripts || [];
-      const initialized: IntensifiedScript[] = scripts.map(script => ({
-        keyword: script.keyword,
-        originalScript: script.script,
+      if (scripts.length > 0 && data.intensifiedScripts.every(s => !s.intensifiedHow?.trim())) {
+        intensifyScriptsWithAI();
+      }
+    }
+  }, [currentStep, selectedInterview]);
+
+  const intensifyScriptsWithAI = async () => {
+    if (!selectedInterview || isIntensifying || hasIntensifiedRef.current) return;
+
+    const scripts = selectedInterview.data_content?.savedScripts || [];
+    if (scripts.length === 0) return;
+
+    setIsIntensifying(true);
+
+    try {
+      const scriptsToIntensify = scripts.map((s: KeywordScript) => ({
+        keyword: s.keyword,
+        originalScript: s.script,
+        experience: s.experience || `${s.role} — ${s.company}`
+      }));
+
+      const { data: session } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intensify-scripts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+        },
+        body: JSON.stringify({
+          scripts: scriptsToIntensify,
+          companyName: selectedInterview.company_name,
+          jobTitle: selectedInterview.job_title || selectedInterview.name
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao intensificar roteiros');
+      }
+
+      const result = await response.json();
+      
+      if (result.intensifiedScripts && result.intensifiedScripts.length > 0) {
+        // Merge intensified results with existing data
+        const updatedScripts: IntensifiedScript[] = scripts.map((s: KeywordScript) => {
+          const intensified = result.intensifiedScripts.find((i: any) => i.keyword === s.keyword);
+          return {
+            keyword: s.keyword,
+            originalScript: s.script,
+            intensifiedHow: intensified?.intensifiedHow || '',
+            experience: s.experience || `${s.role} — ${s.company}`
+          };
+        });
+
+        const newData: Stage5Data = {
+          ...data,
+          intensifiedScripts: updatedScripts
+        };
+
+        setData(newData);
+        await saveProgress(newData);
+        hasIntensifiedRef.current = true;
+
+        toast({
+          title: "Roteiros intensificados! 🚀",
+          description: "A IA adicionou detalhes técnicos aos seus roteiros.",
+        });
+      }
+    } catch (error) {
+      console.error('Error intensifying scripts:', error);
+      toast({
+        title: "Erro ao intensificar",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      });
+
+      // Initialize scripts without intensification so user can continue
+      const scripts = selectedInterview.data_content?.savedScripts || [];
+      const initialized: IntensifiedScript[] = scripts.map((s: KeywordScript) => ({
+        keyword: s.keyword,
+        originalScript: s.script,
         intensifiedHow: "",
-        experience: script.experience || ""
+        experience: s.experience || `${s.role} — ${s.company}`
       }));
       setData(prev => ({ ...prev, intensifiedScripts: initialized }));
+    } finally {
+      setIsIntensifying(false);
     }
-  }, [selectedInterview, data.intensifiedScripts.length]);
+  };
 
   const scriptsByExperience = data.intensifiedScripts.reduce((acc, script) => {
     const expKey = script.experience || "Experiência não especificada";
@@ -318,11 +475,11 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     setSelectedInterview(interview);
     
     const scripts = interview.data_content?.savedScripts || [];
-    const initialized: IntensifiedScript[] = scripts.map(script => ({
+    const initialized: IntensifiedScript[] = scripts.map((script: KeywordScript) => ({
       keyword: script.keyword,
       originalScript: script.script,
       intensifiedHow: "",
-      experience: script.experience || ""
+      experience: script.experience || `${script.role} — ${script.company}`
     }));
     
     const newData: Stage5Data = {
@@ -332,17 +489,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     };
     
     setData(newData);
+    hasIntensifiedRef.current = false;
     await saveProgress(newData);
     setCurrentStep(2);
-  };
-
-  const updateScript = (keyword: string, value: string) => {
-    const updated = data.intensifiedScripts.map(s =>
-      s.keyword === keyword ? { ...s, intensifiedHow: value } : s
-    );
-    const newData = { ...data, intensifiedScripts: updated };
-    setData(newData);
-    saveProgress(newData);
   };
 
   const canProceed = () => {
@@ -402,6 +551,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       setVisibleMessages(0);
       setShowBenefits(false);
       setMessagesExiting(false);
+      hasIntensifiedRef.current = false;
     } catch (error) {
       console.error('Error resetting stage:', error);
       toast({
@@ -723,9 +873,9 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Zap className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="font-display text-2xl font-bold">Intensifique o COMO</h2>
+              <h2 className="font-display text-2xl font-bold">Roteiros Intensificados</h2>
               <p className="text-muted-foreground max-w-lg mx-auto">
-                Para cada roteiro, adicione mais detalhes técnicos: ferramentas, metodologias e métricas.
+                A IA adicionou detalhes técnicos sobre o COMO: ferramentas, metodologias e métricas.
               </p>
               {selectedInterview && (
                 <Badge variant="outline" className="mt-2">
@@ -734,115 +884,146 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               )}
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="p-4 bg-amber-500/10 border-amber-500/30 max-w-2xl mx-auto mb-6">
-                <div className="flex gap-3">
-                  <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-700 dark:text-amber-300">Dica para intensificar:</p>
-                    <p className="text-muted-foreground mt-1">
-                      Gestor quer ver MÉTODO. Ao invés de "automatizei processos", diga: <span className="font-medium">"Automatizei usando Python + Pandas, reduzindo 8h/semana de trabalho manual."</span>
-                    </p>
-                  </div>
+            {isIntensifying && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-12"
+              >
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 </div>
-              </Card>
-            </motion.div>
+                <h3 className="font-display text-lg font-semibold mb-2">Intensificando roteiros...</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  A IA está adicionando detalhes técnicos sobre ferramentas, metodologias e métricas aos seus roteiros.
+                </p>
+              </motion.div>
+            )}
 
-            <div className="space-y-6 max-w-2xl mx-auto">
-              {Object.entries(scriptsByExperience).map(([experience, scripts], expIdx) => (
+            {!isIntensifying && (
+              <>
                 <motion.div
-                  key={experience}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + expIdx * 0.1 }}
-                  className="space-y-3"
+                  transition={{ delay: 0.2 }}
                 >
-                  <div className="flex items-center gap-2 px-1">
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Users className="w-3 h-3 text-primary" />
+                  <Card className="p-4 bg-green-500/10 border-green-500/30 max-w-2xl mx-auto mb-6">
+                    <div className="flex gap-3">
+                      <Sparkles className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-green-700 dark:text-green-300">Roteiros intensificados pela IA</p>
+                        <p className="text-muted-foreground mt-1">
+                          Cada roteiro agora inclui detalhes técnicos que mostram seu MÉTODO ao gestor.
+                          Use essas informações na sua apresentação!
+                        </p>
+                      </div>
                     </div>
-                    <h4 className="font-medium text-sm text-muted-foreground">
-                      {experience}
-                    </h4>
-                    <div className="flex-1 border-t border-border/50" />
-                    <span className="text-xs text-muted-foreground">
-                      {scripts.filter(s => s.intensifiedHow?.trim()).length}/{scripts.length} intensificados
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                    {scripts.map((script, idx) => (
-                      <Card key={`${experience}-${script.keyword}`} className="overflow-hidden">
-                        <button
-                          onClick={() => setExpandedKeyword(
-                            expandedKeyword === `${experience}-${script.keyword}` ? null : `${experience}-${script.keyword}`
-                          )}
-                          className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                              script.intensifiedHow?.trim()
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-primary/20 text-primary'
-                            }`}>
-                              {script.intensifiedHow?.trim() ? <Check className="w-4 h-4" /> : idx + 1}
-                            </div>
-                            <span className="font-medium text-left">{script.keyword}</span>
-                          </div>
-                          {expandedKeyword === `${experience}-${script.keyword}` ? (
-                            <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </button>
-
-                        <AnimatePresence>
-                          {expandedKeyword === `${experience}-${script.keyword}` && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="border-t border-border"
-                            >
-                              <div className="p-4 space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium text-muted-foreground">
-                                    Roteiro Original (Etapa 4):
-                                  </label>
-                                  <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-sm italic">
-                                    "{script.originalScript || "Nenhum roteiro encontrado"}"
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <label className="text-sm font-medium flex items-center gap-2">
-                                    <Zap className="w-4 h-4 text-primary" />
-                                    Intensifique o COMO:
-                                  </label>
-                                  <p className="text-xs text-muted-foreground mb-2">
-                                    Adicione: ferramentas específicas, metodologias usadas, métricas de resultado.
-                                  </p>
-                                  <Textarea
-                                    value={script.intensifiedHow}
-                                    onChange={(e) => updateScript(script.keyword, e.target.value)}
-                                    placeholder="Ex: Utilizei metodologia Scrum com sprints de 2 semanas, ferramenta Jira para gestão, alcançando 95% de entregas no prazo e redução de 30% no tempo de desenvolvimento."
-                                    className="min-h-[120px]"
-                                  />
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </Card>
-                    ))}
-                  </div>
+                  </Card>
                 </motion.div>
-              ))}
-            </div>
+
+                <div className="space-y-6 max-w-2xl mx-auto">
+                  {Object.entries(scriptsByExperience).map(([experience, scripts], expIdx) => (
+                    <motion.div
+                      key={experience}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + expIdx * 0.1 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Building2 className="w-3 h-3 text-primary" />
+                        </div>
+                        <h4 className="font-medium text-sm text-muted-foreground">
+                          {experience}
+                        </h4>
+                        <div className="flex-1 border-t border-border/50" />
+                      </div>
+
+                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                        {scripts.map((script, idx) => (
+                          <Card key={`${experience}-${script.keyword}`} className="overflow-hidden">
+                            <button
+                              onClick={() => setExpandedKeyword(
+                                expandedKeyword === `${experience}-${script.keyword}` ? null : `${experience}-${script.keyword}`
+                              )}
+                              className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                                  script.intensifiedHow?.trim()
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'bg-primary/20 text-primary'
+                                }`}>
+                                  {script.intensifiedHow?.trim() ? <Check className="w-4 h-4" /> : idx + 1}
+                                </div>
+                                <span className="font-medium text-left">{script.keyword}</span>
+                              </div>
+                              {expandedKeyword === `${experience}-${script.keyword}` ? (
+                                <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                              )}
+                            </button>
+
+                            <AnimatePresence>
+                              {expandedKeyword === `${experience}-${script.keyword}` && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="border-t border-border"
+                                >
+                                  <div className="p-4 space-y-4">
+                                    <div>
+                                      <label className="text-sm font-medium text-muted-foreground">
+                                        Roteiro Original (Etapa 4):
+                                      </label>
+                                      <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-sm italic">
+                                        "{script.originalScript || "Nenhum roteiro encontrado"}"
+                                      </div>
+                                    </div>
+
+                                    {script.intensifiedHow && (
+                                      <div>
+                                        <label className="text-sm font-medium flex items-center gap-2 text-green-600 dark:text-green-400">
+                                          <Zap className="w-4 h-4" />
+                                          Intensificação (O COMO):
+                                        </label>
+                                        <div className="mt-1 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-sm">
+                                          {script.intensifiedHow}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </Card>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {!data.intensifiedScripts.some(s => s.intensifiedHow?.trim()) && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-center pt-4"
+                  >
+                    <Button 
+                      onClick={intensifyScriptsWithAI} 
+                      disabled={isIntensifying}
+                      className="gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Tentar intensificar novamente
+                    </Button>
+                  </motion.div>
+                )}
+              </>
+            )}
           </motion.div>
         );
 
@@ -864,13 +1045,14 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Presentation className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="font-display text-2xl font-bold">Sua Apresentação Visual</h2>
+              <h2 className="font-display text-2xl font-bold">Monte Sua Apresentação</h2>
               <p className="text-muted-foreground max-w-lg mx-auto">
-                Uma apresentação visual te diferencia de 99% dos candidatos e mostra iniciativa.
+                Use o template pronto e siga a estrutura abaixo para criar uma apresentação que vai impressionar o gestor.
               </p>
             </motion.div>
 
-            <div className="max-w-xl mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Template Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -884,8 +1066,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                     <div>
                       <h3 className="font-display font-semibold mb-2">Template no Canva</h3>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Use o modelo pronto para criar sua apresentação profissional.
-                        Basta duplicar e preencher com suas informações.
+                        Duplique o modelo e preencha com suas informações seguindo a estrutura abaixo.
                       </p>
                     </div>
                     <Button
@@ -899,28 +1080,107 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 </Card>
               </motion.div>
 
+              {/* Structure Guide */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
+                className="space-y-3"
+              >
+                <h3 className="font-display font-semibold text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Estrutura da Apresentação
+                </h3>
+
+                {presentationSlides.map((slide, idx) => (
+                  <motion.div
+                    key={slide.number}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + idx * 0.08 }}
+                  >
+                    <Card className="overflow-hidden">
+                      <button
+                        onClick={() => setExpandedSlide(expandedSlide === slide.number ? null : slide.number)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <slide.icon className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="text-left">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                Slide {slide.number}
+                              </Badge>
+                              <span className="font-medium">{slide.title}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{slide.description}</p>
+                          </div>
+                        </div>
+                        {expandedSlide === slide.number ? (
+                          <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </button>
+
+                      <AnimatePresence>
+                        {expandedSlide === slide.number && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="border-t border-border"
+                          >
+                            <div className="p-4 space-y-3">
+                              <div className="space-y-2">
+                                {slide.items.map((item, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-sm">
+                                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                    <span>{item}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                                <div className="flex gap-2">
+                                  <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs text-muted-foreground">{slide.tip}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* How to present */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
               >
                 <Card className="p-4 bg-secondary/50">
                   <div className="flex gap-3">
-                    <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium">Dica para apresentar:</p>
-                      <p className="text-muted-foreground mt-1">
-                        "Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho para facilitar nossa conversa..."
+                      <p className="font-medium">Como introduzir a apresentação:</p>
+                      <p className="text-muted-foreground mt-1 italic">
+                        "Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho para facilitar nossa conversa e mostrar na prática como trabalho..."
                       </p>
                     </div>
                   </div>
                 </Card>
               </motion.div>
 
+              {/* Complete Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.7 }}
                 className="pt-4 flex flex-col gap-3"
               >
                 <Button onClick={completeStage} className="gap-2 w-full">
@@ -1035,7 +1295,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       </div>
 
       {/* Footer Navigation - only for step 3 */}
-      {currentStep === 3 && (
+      {currentStep === 3 && !isIntensifying && (
         <div className="p-4 border-t border-border bg-background">
           <div className="flex justify-between max-w-2xl mx-auto">
             <Button variant="outline" onClick={prevStep} className="gap-2">
