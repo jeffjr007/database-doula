@@ -312,18 +312,23 @@ const GiftPage = () => {
       {/* Header - only show back button for returning users, hide for first-time activation */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          {!isFromActivation ? (
-            <button 
-              onClick={handleGoToPortal} 
-              disabled={step === 'reveal' && !isPathReady}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Voltar ao Portal</span>
-            </button>
-          ) : (
-            <div /> 
-          )}
+          <button 
+            onClick={handleGoToPortal} 
+            disabled={step === 'reveal' && !isPathReady}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFromActivation ? (
+              <>
+                <span className="hidden sm:inline">Acessar Portal</span>
+                <ArrowRight className="w-5 h-5" />
+              </>
+            ) : (
+              <>
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline">Voltar ao Portal</span>
+              </>
+            )}
+          </button>
           <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
         </div>
       </header>
@@ -614,7 +619,7 @@ const GiftPage = () => {
                   >
                     {isFromActivation ? (
                       <>
-                        Ir para o Portal
+                        Acessar Portal
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </>
                     ) : (
