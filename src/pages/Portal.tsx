@@ -843,7 +843,7 @@ const Portal = () => {
           {/* Stages Section - Now on Right */}
           <div className="flex-1 p-6 lg:p-8 xl:p-12 relative z-10">
             {isDataReady && (
-              <div className="mb-8 animate-fade-in">
+              <div className="mb-8 opacity-0 animate-slide-up" style={{ animationFillMode: 'forwards' }}>
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 mb-6">
                   <Crown className="w-4 h-4 text-primary" />
                   <span className="text-sm font-display font-semibold text-primary">Método Perfil Glorioso</span>
@@ -862,11 +862,11 @@ const Portal = () => {
             )}
 
             {isDataReady && (
-              <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+              <div className="opacity-0 animate-slide-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
                 <h2 className="text-xl font-display font-bold text-foreground mb-6">Suas Etapas</h2>
 
                 <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {stages.map((stage) => {
+                  {stages.map((stage, index) => {
                     const status = getStageStatus(stage.number);
                     const blocked = isStageBlocked(stage.number);
                     const Icon = stage.icon;
@@ -879,14 +879,15 @@ const Portal = () => {
                         className={`
                           group/card relative p-4 text-left
                           rounded-2xl border border-white/5
-                          transition-all duration-150
+                          transition-all duration-150 opacity-0 animate-slide-up
                           ${
                             blocked
-                              ? "opacity-40 cursor-not-allowed"
+                              ? "!opacity-40 cursor-not-allowed"
                               : "cursor-pointer hover:bg-card/80 active:scale-[0.98]"
                           }
                           ${isCompleted ? "bg-primary/5" : ""}
                         `}
+                        style={{ animationDelay: `${150 + index * 50}ms`, animationFillMode: 'forwards' }}
                         disabled={blocked}
                       >
                           <div className="flex items-center gap-3">

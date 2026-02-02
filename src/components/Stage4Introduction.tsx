@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { ArrowRight, Target, Brain, Sparkles, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MentorAvatar } from "@/components/MentorAvatar";
@@ -71,13 +70,9 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
       <div className="w-full max-w-lg mx-auto flex flex-col items-center gap-8">
         
         {/* Mentor Avatar */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="opacity-0 animate-slide-up" style={{ animationFillMode: 'forwards' }}>
           <MentorAvatar size="xxl" />
-        </motion.div>
+        </div>
 
         {/* Messages */}
         <div className="w-full space-y-3">
@@ -86,16 +81,14 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
             const isLast = index === visibleMessages - 1;
             
             return (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className={`flex items-start gap-3 p-4 rounded-xl border ${
+                className={`flex items-start gap-3 p-4 rounded-xl border opacity-0 animate-slide-up ${
                   message.highlight && isLast
                     ? "bg-primary/10 border-primary/30"
                     : "bg-secondary/40 border-border/50"
                 }`}
+                style={{ animationDelay: `${100 + index * 100}ms`, animationFillMode: 'forwards' }}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   message.highlight && isLast
@@ -113,53 +106,33 @@ export const Stage4Introduction = ({ onStart }: Stage4IntroductionProps) => {
                 }`}>
                   {message.text}
                 </p>
-              </motion.div>
+              </div>
             );
           })}
 
           {/* Typing Indicator */}
           {isTyping && visibleMessages < messages.length && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center gap-3 p-4"
-            >
+            <div className="flex items-center gap-3 p-4 opacity-0 animate-fade-in" style={{ animationFillMode: 'forwards' }}>
               <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center">
                 <div className="flex gap-1">
-                  <motion.span
-                    className="w-1.5 h-1.5 bg-primary rounded-full"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                  />
-                  <motion.span
-                    className="w-1.5 h-1.5 bg-primary rounded-full"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                  />
-                  <motion.span
-                    className="w-1.5 h-1.5 bg-primary rounded-full"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                  />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
               <span className="text-sm text-muted-foreground">digitando...</span>
-            </motion.div>
+            </div>
           )}
         </div>
 
         {/* Continue Button */}
         {showButton && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div className="opacity-0 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
             <Button onClick={handleContinue} size="lg" className="gap-2">
               Começar Preparação
               <ArrowRight className="w-4 h-4" />
             </Button>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

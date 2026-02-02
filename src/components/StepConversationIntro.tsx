@@ -92,9 +92,9 @@ export const StepConversationIntro = ({
   }, [JSON.stringify(messages)]);
 
   return (
-    <div className="flex flex-col items-center justify-center py-8 px-4 animate-fade-in">
+    <div className="flex flex-col items-center justify-center py-8 px-4 opacity-0 animate-slide-up" style={{ animationFillMode: 'forwards' }}>
       {/* Mentor Avatar */}
-      <div className="mb-6 animate-enter">
+      <div className="mb-6">
         <MentorAvatar size="md" />
       </div>
 
@@ -103,11 +103,12 @@ export const StepConversationIntro = ({
         {messages.slice(0, visibleCount).map((message, idx) => (
           <div
             key={`${idx}-${message.text.slice(0, 16)}`}
-            className={`px-6 py-5 rounded-2xl animate-fade-in ${
+            className={`px-6 py-5 rounded-2xl opacity-0 animate-slide-up ${
               message.highlight
                 ? "bg-primary/10 border border-primary/20"
                 : "bg-secondary/50"
             }`}
+            style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'forwards' }}
           >
             <p
               className={`text-base leading-relaxed ${
@@ -143,11 +144,12 @@ export const StepConversationIntro = ({
       {/* Continue Button with slide-up animation */}
       {showButton && (
         <div 
-          className={`mt-8 transition-all duration-500 ease-out ${
+          className={`mt-8 transition-all duration-300 ease-out opacity-0 animate-slide-up ${
             buttonVisible 
-              ? "opacity-100 translate-y-0" 
-              : "opacity-0 translate-y-4"
+              ? "" 
+              : ""
           }`}
+          style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}
         >
           <Button
             onClick={onContinue}

@@ -619,7 +619,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+          <div className="max-w-2xl mx-auto space-y-6 opacity-0 animate-slide-up" style={{ animationFillMode: 'forwards' }}>
             <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <FileText className="w-8 h-8 text-primary" />
@@ -634,8 +634,8 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               {interviews.map((interview, index) => (
                 <div
                   key={interview.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="opacity-0 animate-slide-up"
+                  style={{ animationDelay: `${100 + index * 50}ms`, animationFillMode: 'forwards' }}
                 >
                   <Card 
                     className={`p-4 cursor-pointer transition-all hover:border-primary/50 ${
@@ -679,7 +679,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
             </div>
 
             {selectedInterview && (
-              <div className="flex justify-center pt-4 animate-fade-in">
+              <div className="flex justify-center pt-4 opacity-0 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
                 <Button onClick={() => selectInterview(selectedInterview)} size="lg" className="gap-2 px-8">
                   Continuar com esta entrevista <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -690,13 +690,14 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
 
       case 2:
         return (
-          <div className="max-w-2xl mx-auto animate-fade-in">
+          <div className="max-w-2xl mx-auto opacity-0 animate-slide-up" style={{ animationFillMode: 'forwards' }}>
             {!showBenefits && (
               <div className={`space-y-4 transition-all duration-500 ${messagesExiting ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                {mentorMessages.slice(0, visibleMessages).map((msg) => (
+                {mentorMessages.slice(0, visibleMessages).map((msg, idx) => (
                   <div
                     key={msg.id}
-                    className="flex gap-3 animate-fade-in"
+                    className="flex gap-3 opacity-0 animate-slide-up"
+                    style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'forwards' }}
                   >
                     <div className="flex-shrink-0">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30">
@@ -738,7 +739,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 )}
 
                 {visibleMessages >= mentorMessages.length && !messagesExiting && (
-                  <div className="flex justify-center pt-4 animate-fade-in">
+                  <div className="flex justify-center pt-4 opacity-0 animate-slide-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
                     <Button onClick={handleAdvanceFromMessages} size="lg" className="gap-2">
                       Avançar <ArrowRight className="w-4 h-4" />
                     </Button>
