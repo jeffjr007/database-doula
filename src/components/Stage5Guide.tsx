@@ -29,7 +29,8 @@ import {
   MessageSquare,
   BarChart3,
   Quote,
-  RefreshCw
+  RefreshCw,
+  Save
 } from "lucide-react";
 import {
   AlertDialog,
@@ -51,6 +52,7 @@ import mentorPhoto from "@/assets/mentor-photo.png";
 import { KeywordScript } from "./InterviewScriptBuilder";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { SaveIntensifiedModal } from "./SaveIntensifiedModal";
 
 interface Stage5GuideProps {
   stageNumber: number;
@@ -238,6 +240,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const [messagesExiting, setMessagesExiting] = useState(false);
   const [isIntensifying, setIsIntensifying] = useState(false);
   const [expandedSlide, setExpandedSlide] = useState<number | string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const hasIntensifiedRef = useRef(false);
 
   const [data, setData] = useState<Stage5Data>({
@@ -562,7 +565,11 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     }
   };
 
-  const completeStage = async () => {
+  const completeStage = () => {
+    setShowSaveModal(true);
+  };
+
+  const handleSaveComplete = async () => {
     const newData = { ...data, completed: true };
     await saveProgress(newData);
 
@@ -578,12 +585,14 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
       });
     }
 
+    setShowSaveModal(false);
     toast({
       title: "Parabéns! 🎉",
       description: "Você está pronto para impressionar o gestor!",
     });
     navigate('/');
   };
+
 
   if (isLoading) {
     return (
@@ -1153,7 +1162,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                       "Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho para facilitar nossa conversa e mostrar na prática como trabalho..."
                     </p>
                   </div>
-                </div>
+              </div>
               </motion.div>
 
               {/* Complete Button */}
@@ -1164,8 +1173,8 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 className="pt-2 flex flex-col gap-3"
               >
                 <Button onClick={completeStage} className="gap-2 w-full">
-                  <Check className="w-4 h-4" />
-                  Finalizar Etapa 5
+                  <Save className="w-4 h-4" />
+                  Salvar e Finalizar
                 </Button>
                 <Button
                   variant="outline"
@@ -1292,6 +1301,19 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Save Intensified Modal */}
+      {selectedInterview && (
+        <SaveIntensifiedModal
+          open={showSaveModal}
+          onOpenChange={setShowSaveModal}
+          interviewId={selectedInterview.id}
+          interviewName={selectedInterview.name}
+          companyName={selectedInterview.company_name}
+          intensifiedScripts={data.intensifiedScripts}
+          onSaveComplete={handleSaveComplete}
+        />
       )}
     </div>
   );
