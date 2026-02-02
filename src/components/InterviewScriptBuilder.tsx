@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -43,11 +44,10 @@ interface CareerIntro {
   introText: string | null;
 }
 
-interface ParsedExperience {
+interface ManualExperience {
   id: string;
   company: string;
   role: string;
-  label: string;
 }
 
 interface KeywordMapping {
@@ -72,102 +72,8 @@ const mentorMessages = [
   "Depois a IA vai criar roteiros personalizados para cada uma!",
 ];
 
-// Parse experiences text into structured data
-const parseExperiences = (experiencesText: string): ParsedExperience[] => {
-  if (!experiencesText || experiencesText.trim().length === 0) {
-    return [];
-  }
-
-  const experiences: ParsedExperience[] = [];
-  const lines = experiencesText.split('\n').filter(line => line.trim());
-  
-  let currentCompany = '';
-  let currentRole = '';
-  let idCounter = 0;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Try to detect company/role patterns
-    // Pattern: "Empresa: Nome" or "Company: Name"
-    if (trimmed.toLowerCase().startsWith('empresa:') || trimmed.toLowerCase().startsWith('company:')) {
-      currentCompany = trimmed.split(':').slice(1).join(':').trim();
-      continue;
-    }
-    
-    // Pattern: "Cargo: Titulo" or "Role: Title"
-    if (trimmed.toLowerCase().startsWith('cargo:') || trimmed.toLowerCase().startsWith('role:') || trimmed.toLowerCase().startsWith('título:')) {
-      currentRole = trimmed.split(':').slice(1).join(':').trim();
-      if (currentCompany && currentRole) {
-        experiences.push({
-          id: `exp-${idCounter++}`,
-          company: currentCompany,
-          role: currentRole,
-          label: `${currentRole} — ${currentCompany}`
-        });
-      }
-      continue;
-    }
-
-    // Pattern: "Role at Company" or "Role - Company"
-    const atMatch = trimmed.match(/^(.+?)\s+(?:at|na|em|@)\s+(.+)$/i);
-    if (atMatch) {
-      experiences.push({
-        id: `exp-${idCounter++}`,
-        company: atMatch[2].trim(),
-        role: atMatch[1].trim(),
-        label: `${atMatch[1].trim()} — ${atMatch[2].trim()}`
-      });
-      continue;
-    }
-
-    const dashMatch = trimmed.match(/^(.+?)\s*[-–—]\s*(.+)$/);
-    if (dashMatch && !trimmed.includes(':')) {
-      // Assume first part is role, second is company
-      experiences.push({
-        id: `exp-${idCounter++}`,
-        company: dashMatch[2].trim(),
-        role: dashMatch[1].trim(),
-        label: `${dashMatch[1].trim()} — ${dashMatch[2].trim()}`
-      });
-      continue;
-    }
-
-    // If line looks like a job title (contains common keywords)
-    const jobKeywords = ['gerente', 'analista', 'coordenador', 'diretor', 'desenvolvedor', 'engenheiro', 'consultor', 'especialista', 'manager', 'analyst', 'developer', 'engineer', 'consultant', 'lead', 'head', 'supervisor'];
-    const lowerLine = trimmed.toLowerCase();
-    if (jobKeywords.some(kw => lowerLine.includes(kw))) {
-      if (currentCompany) {
-        experiences.push({
-          id: `exp-${idCounter++}`,
-          company: currentCompany,
-          role: trimmed,
-          label: `${trimmed} — ${currentCompany}`
-        });
-      } else {
-        // Use the line as both role and company placeholder
-        experiences.push({
-          id: `exp-${idCounter++}`,
-          company: 'Experiência Profissional',
-          role: trimmed,
-          label: trimmed
-        });
-      }
-    }
-  }
-
-  // If no experiences were parsed, create a generic one from the text
-  if (experiences.length === 0 && experiencesText.trim().length > 0) {
-    experiences.push({
-      id: 'exp-generic',
-      company: 'Experiência Profissional',
-      role: 'Experiência Geral',
-      label: 'Experiência Geral'
-    });
-  }
-
-  return experiences;
-};
+const makeExperienceLabel = (exp: Pick<ManualExperience, 'role' | 'company'>) =>
+  `${exp.role.trim()} — ${exp.company.trim()}`;
 
 export const InterviewScriptBuilder = ({
   keywords,
@@ -192,21 +98,20 @@ export const InterviewScriptBuilder = ({
   const [introAlreadyLoaded, setIntroAlreadyLoaded] = useState(false);
   
   // Mapping state
-  const [parsedExperiences, setParsedExperiences] = useState<ParsedExperience[]>([]);
+  const [manualExperiences, setManualExperiences] = useState<ManualExperience[]>([]);
+  const [newCompany, setNewCompany] = useState('');
+  const [newRole, setNewRole] = useState('');
   const [keywordMappings, setKeywordMappings] = useState<KeywordMapping[]>([]);
 
   const persistTimerRef = useRef<number | null>(null);
 
-  // Parse experiences on mount
+  // Initialize + keep mappings in sync with keywords (no auto-assign)
   useEffect(() => {
-    const parsed = parseExperiences(userExperiences);
-    setParsedExperiences(parsed);
-    
-    // Initialize mappings
-    if (keywords.length > 0 && keywordMappings.length === 0) {
-      setKeywordMappings(keywords.map(kw => ({ keyword: kw, experienceId: null })));
-    }
-  }, [userExperiences, keywords]);
+    setKeywordMappings((prev) => {
+      const prevByKeyword = new Map(prev.map((m) => [m.keyword, m] as const));
+      return keywords.map((kw) => prevByKeyword.get(kw) ?? { keyword: kw, experienceId: null });
+    });
+  }, [keywords.join('|')]);
 
   useEffect(() => {
     if (initialScripts && initialScripts.length > 0) {
@@ -275,6 +180,24 @@ export const InterviewScriptBuilder = ({
     );
   };
 
+  const addManualExperience = () => {
+    const company = newCompany.trim();
+    const role = newRole.trim();
+    if (!company || !role) {
+      toast.error("Preencha empresa e cargo para adicionar.");
+      return;
+    }
+    const id = `manual-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setManualExperiences((prev) => [...prev, { id, company, role }]);
+    setNewCompany('');
+    setNewRole('');
+  };
+
+  const removeManualExperience = (id: string) => {
+    setManualExperiences((prev) => prev.filter((e) => e.id !== id));
+    setKeywordMappings((prev) => prev.map((m) => (m.experienceId === id ? { ...m, experienceId: null } : m)));
+  };
+
   const getMappedCount = () => {
     return keywordMappings.filter(m => m.experienceId !== null).length;
   };
@@ -292,7 +215,7 @@ export const InterviewScriptBuilder = ({
     try {
       // Build the mapping data for the AI
       const mappingData = mappedKeywords.map(m => {
-        const exp = parsedExperiences.find(e => e.id === m.experienceId);
+        const exp = manualExperiences.find(e => e.id === m.experienceId);
         return {
           keyword: m.keyword,
           company: exp?.company || '',
@@ -433,25 +356,74 @@ export const InterviewScriptBuilder = ({
             {/* Show mapping interface only if no scripts yet */}
             {generatedScripts.length === 0 && (
               <>
-                {/* Experiences Available */}
-                {parsedExperiences.length > 0 && (
-                  <Card className="p-4 bg-secondary/20">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-primary" />
-                      Suas Experiências Identificadas ({parsedExperiences.length})
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedExperiences.map((exp) => (
-                        <span
-                          key={exp.id}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-secondary border border-border"
-                        >
-                          {exp.label}
-                        </span>
-                      ))}
+                {/* Manual experiences (user-provided). We DO NOT infer or display experiences from the experiences text. */}
+                <Card className="p-5 bg-secondary/20">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-primary" />
+                        Seus cargos (você cadastra)
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        {manualExperiences.length} cadastrado{manualExperiences.length === 1 ? "" : "s"}
+                      </span>
                     </div>
-                  </Card>
-                )}
+
+                    <p className="text-sm text-muted-foreground">
+                      Adicione aqui apenas as empresas e cargos que você quer usar para atribuir as palavras‑chave.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Empresa</label>
+                        <Input
+                          value={newCompany}
+                          onChange={(e) => setNewCompany(e.target.value)}
+                          placeholder="Ex: Nubank"
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Cargo</label>
+                        <Input
+                          value={newRole}
+                          onChange={(e) => setNewRole(e.target.value)}
+                          placeholder="Ex: Product Manager"
+                          className="h-10"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button type="button" variant="secondary" onClick={addManualExperience} className="gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Adicionar cargo
+                      </Button>
+                    </div>
+
+                    {manualExperiences.length > 0 && (
+                      <div className="space-y-2">
+                        {manualExperiences.map((exp) => (
+                          <div
+                            key={exp.id}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/50 px-3 py-2"
+                          >
+                            <p className="text-sm font-medium truncate">{makeExperienceLabel(exp)}</p>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeManualExperience(exp.id)}
+                              className="h-8 px-2"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
 
                 {/* Keyword Mapping Section */}
                 <Card className="p-5 bg-secondary/30">
@@ -472,7 +444,7 @@ export const InterviewScriptBuilder = ({
 
                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                       {keywordMappings.map((mapping, idx) => {
-                        const selectedExp = parsedExperiences.find(e => e.id === mapping.experienceId);
+                        const selectedExp = manualExperiences.find(e => e.id === mapping.experienceId);
                         return (
                           <motion.div
                             key={mapping.keyword}
@@ -488,14 +460,17 @@ export const InterviewScriptBuilder = ({
                             <Select
                               value={mapping.experienceId || ''}
                               onValueChange={(value) => updateMapping(mapping.keyword, value)}
+                              disabled={manualExperiences.length === 0}
                             >
                               <SelectTrigger className="flex-1 h-9 text-sm">
-                                <SelectValue placeholder="Selecione a experiência..." />
+                                <SelectValue
+                                  placeholder={manualExperiences.length === 0 ? "Adicione cargos acima" : "Selecione o cargo..."}
+                                />
                               </SelectTrigger>
                               <SelectContent>
-                                {parsedExperiences.map((exp) => (
+                                {manualExperiences.map((exp) => (
                                   <SelectItem key={exp.id} value={exp.id}>
-                                    {exp.label}
+                                    {makeExperienceLabel(exp)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
