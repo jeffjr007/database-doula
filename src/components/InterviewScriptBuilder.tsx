@@ -565,36 +565,32 @@ export const InterviewScriptBuilder = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                   >
-                    <Card className="p-6 bg-secondary/20 border-border/50">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Card className="p-4 sm:p-6 bg-secondary/20 border-border/50">
+                      <div className="space-y-2.5 sm:space-y-4">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <User className="w-4 h-4 text-primary" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <h4 className="font-medium text-sm">Sua Introdução</h4>
-                            <p className="text-xs text-muted-foreground">Comece sua apresentação assim</p>
+                            <p className="text-xs text-muted-foreground truncate">Comece sua apresentação assim</p>
                           </div>
                         </div>
                         
                         {isLoadingIntro ? (
-                          <div className="flex items-center gap-2 py-4">
+                          <div className="flex items-center gap-2 py-3 sm:py-4">
                             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">Gerando introdução...</span>
                           </div>
                         ) : (
                           <>
-                            <div className="pl-12">
-                              <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
-                                {careerIntro?.introText}
-                              </p>
-                            </div>
+                            <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
+                              {careerIntro?.introText}
+                            </p>
                             
-                            <div className="pl-12 pt-2">
-                              <p className="text-xs text-muted-foreground/70 italic">
-                                Após essa introdução, comece a falar sobre suas experiências usando os roteiros abaixo.
-                              </p>
-                            </div>
+                            <p className="text-xs text-muted-foreground/70 italic pt-1 sm:pt-2">
+                              Após essa introdução, comece a falar sobre suas experiências usando os roteiros abaixo.
+                            </p>
                           </>
                         )}
                       </div>
