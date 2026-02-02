@@ -1034,13 +1034,13 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="space-y-6"
+            className="space-y-8"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-center space-y-2 mb-8"
+              className="text-center space-y-2"
             >
               <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Presentation className="w-8 h-8 text-primary" />
@@ -1051,33 +1051,32 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
               </p>
             </motion.div>
 
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="space-y-8">
               {/* Template Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
+                className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/5 border border-primary/20"
               >
-                <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/5 border-primary/30">
-                  <div className="text-center space-y-4">
-                    <div className="w-12 h-12 mx-auto rounded-xl bg-primary/20 flex items-center justify-center">
-                      <Presentation className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-semibold mb-2">Template no Canva</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Duplique o modelo e preencha com suas informações seguindo a estrutura abaixo.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => window.open(CANVA_TEMPLATE_URL, '_blank')}
-                      className="gap-2 w-full"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Abrir Template no Canva
-                    </Button>
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 mx-auto rounded-xl bg-primary/20 flex items-center justify-center">
+                    <Presentation className="w-6 h-6 text-primary" />
                   </div>
-                </Card>
+                  <div>
+                    <h3 className="font-display font-semibold mb-2">Template no Canva</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Duplique o modelo e preencha com suas informações seguindo a estrutura abaixo.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => window.open(CANVA_TEMPLATE_URL, '_blank')}
+                    className="gap-2 w-full max-w-sm mx-auto"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Abrir Template no Canva
+                  </Button>
+                </div>
               </motion.div>
 
               {/* Structure Guide */}
@@ -1085,76 +1084,58 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 <h3 className="font-display font-semibold text-lg flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
                   Estrutura da Apresentação
                 </h3>
 
-                {presentationSlides.map((slide, idx) => (
-                  <motion.div
-                    key={slide.number}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 + idx * 0.08 }}
-                  >
-                    <Card className="overflow-hidden">
-                      <button
-                        onClick={() => setExpandedSlide(expandedSlide === slide.number ? null : slide.number)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <slide.icon className="w-5 h-5 text-primary" />
+                <div className="space-y-4">
+                  {presentationSlides.map((slide, idx) => (
+                    <motion.div
+                      key={slide.number}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 + idx * 0.08 }}
+                      className="p-5 rounded-xl bg-card/50 border border-border/30 space-y-4"
+                    >
+                      {/* Slide Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <slide.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs bg-background">
+                              Slide {slide.number}
+                            </Badge>
+                            <span className="font-semibold">{slide.title}</span>
                           </div>
-                          <div className="text-left">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                Slide {slide.number}
-                              </Badge>
-                              <span className="font-medium">{slide.title}</span>
+                          <p className="text-sm text-muted-foreground">{slide.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Slide Content - Always Visible */}
+                      <div className="pl-[52px] space-y-3">
+                        <div className="space-y-2">
+                          {slide.items.map((item, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm">
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span>{item}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">{slide.description}</p>
+                          ))}
+                        </div>
+                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <div className="flex gap-2">
+                            <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-muted-foreground">{slide.tip}</p>
                           </div>
                         </div>
-                        {expandedSlide === slide.number ? (
-                          <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </button>
-
-                      <AnimatePresence>
-                        {expandedSlide === slide.number && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-border"
-                          >
-                            <div className="p-4 space-y-3">
-                              <div className="space-y-2">
-                                {slide.items.map((item, i) => (
-                                  <div key={i} className="flex items-start gap-2 text-sm">
-                                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                    <span>{item}</span>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                                <div className="flex gap-2">
-                                  <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                                  <p className="text-xs text-muted-foreground">{slide.tip}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </Card>
-                  </motion.div>
-                ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </motion.div>
 
               {/* How to present */}
@@ -1162,18 +1143,17 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
+                className="p-5 rounded-xl bg-secondary/30 border border-border/30"
               >
-                <Card className="p-4 bg-secondary/50">
-                  <div className="flex gap-3">
-                    <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium">Como introduzir a apresentação:</p>
-                      <p className="text-muted-foreground mt-1 italic">
-                        "Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho para facilitar nossa conversa e mostrar na prática como trabalho..."
-                      </p>
-                    </div>
+                <div className="flex gap-3">
+                  <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">Como introduzir a apresentação:</p>
+                    <p className="text-muted-foreground mt-1 italic">
+                      "Trouxe algo especial pra vocês. Preparei uma apresentação visual do meu trabalho para facilitar nossa conversa e mostrar na prática como trabalho..."
+                    </p>
                   </div>
-                </Card>
+                </div>
               </motion.div>
 
               {/* Complete Button */}
@@ -1181,7 +1161,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="pt-4 flex flex-col gap-3"
+                className="pt-2 flex flex-col gap-3"
               >
                 <Button onClick={completeStage} className="gap-2 w-full">
                   <Check className="w-4 h-4" />
