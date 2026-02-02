@@ -44,6 +44,16 @@ const ActivatePlatform = () => {
         return;
       }
 
+      // Check if welcome flow is pending (user just activated but hasn't clicked "Começar Jornada")
+      const welcomePending = sessionStorage.getItem("welcome_flow_pending");
+      if (welcomePending === "true") {
+        // User activated but flow not complete - show modal again
+        setCheckingActivation(false);
+        setSuccess(true);
+        setShowWelcomeModal(true);
+        return;
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("platform_activated")
@@ -120,6 +130,9 @@ const ActivatePlatform = () => {
       setSuccess(true);
       toast.success("Plataforma ativada com sucesso!");
 
+      // Mark welcome flow as pending - prevents redirect on tab switch
+      sessionStorage.setItem("welcome_flow_pending", "true");
+
       setTimeout(() => {
         setShowWelcomeModal(true);
       }, 800);
@@ -132,6 +145,9 @@ const ActivatePlatform = () => {
   };
 
   const handleWelcomeComplete = async () => {
+    // Clear the pending flag - flow is complete
+    sessionStorage.removeItem("welcome_flow_pending");
+    
     setShowWelcomeModal(false);
     
     // Navigate to gift/learning path animation
