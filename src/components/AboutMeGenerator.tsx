@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +55,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
   const [showForm, setShowForm] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Auto-fill personal data from profile (only if no initialData)
   useEffect(() => {
@@ -92,6 +94,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
       return;
     }
 
+    startGeneration();
     setIsGenerating(true);
 
     try {
@@ -99,6 +102,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
         body: data,
       });
 
+      if (!isMounted()) return;
       if (error) throw error;
 
       if (response?.script) {
@@ -111,6 +115,7 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
         });
       }
     } catch (error: any) {
+      if (!isMounted()) return;
       console.error('Error generating script:', error);
       
       if (error.message?.includes('429') || error.status === 429) {
@@ -133,7 +138,10 @@ export const AboutMeGenerator = ({ onComplete, initialData }: AboutMeGeneratorPr
         });
       }
     } finally {
-      setIsGenerating(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGenerating(false);
+      }
     }
   };
 

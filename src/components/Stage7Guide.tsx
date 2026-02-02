@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ArrowRight, Sparkles, Copy, Check, 
@@ -123,6 +124,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Scroll to top when step changes
   const scrollToTop = () => {
@@ -254,6 +256,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
       return;
     }
 
+    startGeneration();
     setIsGenerating(true);
     
     try {
@@ -266,6 +269,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
         },
       });
 
+      if (!isMounted()) return;
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Erro ao gerar conteúdo');
 
@@ -289,20 +293,26 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
         description: 'Seu conteúdo está pronto para publicar no LinkedIn.',
       });
     } catch (error: any) {
-      console.error('Error generating post:', error);
-      toast({
-        title: 'Erro ao gerar',
-        description: error.message || 'Tente novamente.',
-        variant: 'destructive',
-      });
+      if (isMounted()) {
+        console.error('Error generating post:', error);
+        toast({
+          title: 'Erro ao gerar',
+          description: error.message || 'Tente novamente.',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setIsGenerating(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGenerating(false);
+      }
     }
   };
 
   const generatePost = async () => {
     if (!selectedTheme || !selectedType) return;
 
+    startGeneration();
     setIsGenerating(true);
     
     try {
@@ -315,6 +325,7 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
         },
       });
 
+      if (!isMounted()) return;
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Erro ao gerar conteúdo');
 
@@ -338,14 +349,19 @@ export const Stage7Guide = ({ stageNumber }: Stage7GuideProps) => {
         description: 'Seu conteúdo está pronto para publicar no LinkedIn.',
       });
     } catch (error: any) {
-      console.error('Error generating post:', error);
-      toast({
-        title: 'Erro ao gerar',
-        description: error.message || 'Tente novamente.',
-        variant: 'destructive',
-      });
+      if (isMounted()) {
+        console.error('Error generating post:', error);
+        toast({
+          title: 'Erro ao gerar',
+          description: error.message || 'Tente novamente.',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setIsGenerating(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGenerating(false);
+      }
     }
   };
 

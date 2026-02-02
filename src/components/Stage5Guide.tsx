@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -237,6 +238,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Load saved interviews and existing progress
   useEffect(() => {
@@ -348,6 +350,7 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
     const scripts = selectedInterview.data_content?.savedScripts || [];
     if (scripts.length === 0) return;
 
+    startGeneration();
     setIsIntensifying(true);
 
     try {
@@ -370,6 +373,8 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
           jobTitle: selectedInterview.job_title || selectedInterview.name
         })
       });
+
+      if (!isMounted()) return;
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -405,24 +410,29 @@ export const Stage5Guide = ({ stageNumber }: Stage5GuideProps) => {
         });
       }
     } catch (error) {
-      console.error('Error intensifying scripts:', error);
-      toast({
-        title: "Erro ao intensificar",
-        description: error instanceof Error ? error.message : "Tente novamente.",
-        variant: "destructive",
-      });
+      if (isMounted()) {
+        console.error('Error intensifying scripts:', error);
+        toast({
+          title: "Erro ao intensificar",
+          description: error instanceof Error ? error.message : "Tente novamente.",
+          variant: "destructive",
+        });
 
-      // Initialize scripts without intensification so user can continue
-      const scripts = selectedInterview.data_content?.savedScripts || [];
-      const initialized: IntensifiedScript[] = scripts.map((s: KeywordScript) => ({
-        keyword: s.keyword,
-        originalScript: s.script,
-        intensifiedHow: "",
-        experience: s.experience || `${s.role} — ${s.company}`
-      }));
-      setData(prev => ({ ...prev, intensifiedScripts: initialized }));
+        // Initialize scripts without intensification so user can continue
+        const scripts = selectedInterview.data_content?.savedScripts || [];
+        const initialized: IntensifiedScript[] = scripts.map((s: KeywordScript) => ({
+          keyword: s.keyword,
+          originalScript: s.script,
+          intensifiedHow: "",
+          experience: s.experience || `${s.role} — ${s.company}`
+        }));
+        setData(prev => ({ ...prev, intensifiedScripts: initialized }));
+      }
     } finally {
-      setIsIntensifying(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsIntensifying(false);
+      }
     }
   };
 

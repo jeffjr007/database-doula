@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useGenerationAbort } from "@/hooks/useGenerationAbort";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,6 +107,7 @@ export const InterviewScriptBuilder = ({
 
   const persistTimerRef = useRef<number | null>(null);
   const hasHydratedRef = useRef(hasScripts);
+  const { startGeneration, endGeneration, isMounted } = useGenerationAbort();
 
   // Initialize + keep mappings in sync with keywords (no auto-assign)
   useEffect(() => {
@@ -215,6 +217,7 @@ export const InterviewScriptBuilder = ({
       return;
     }
 
+    startGeneration();
     setIsGeneratingScripts(true);
     
     try {
@@ -239,6 +242,7 @@ export const InterviewScriptBuilder = ({
         }
       });
 
+      if (!isMounted()) return;
       if (error) throw error;
 
       if (result?.scripts && result.scripts.length > 0) {
@@ -256,10 +260,15 @@ export const InterviewScriptBuilder = ({
         throw new Error("Nenhum roteiro foi gerado");
       }
     } catch (error) {
-      console.error("Erro ao gerar roteiros:", error);
-      toast.error("Erro ao gerar roteiros. Tente novamente.");
+      if (isMounted()) {
+        console.error("Erro ao gerar roteiros:", error);
+        toast.error("Erro ao gerar roteiros. Tente novamente.");
+      }
     } finally {
-      setIsGeneratingScripts(false);
+      endGeneration();
+      if (isMounted()) {
+        setIsGeneratingScripts(false);
+      }
     }
   };
 
