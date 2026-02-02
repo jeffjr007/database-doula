@@ -444,9 +444,9 @@ const Portal = () => {
       return !stage2Completed;
     }
     
-    // Stage 4: Blocked until stage 3 funnel is published
+    // Stage 4: Always unlocked for all authenticated users
     if (stageNumber === 4) {
-      return opportunityFunnel?.status !== "published";
+      return false;
     }
     
     // Stage 5: Blocked until user has interview history
@@ -454,9 +454,14 @@ const Portal = () => {
       return savedInterviews.length === 0;
     }
     
-    // Stages 6 and 7: Blocked by default for regular users
-    if ([6, 7].includes(stageNumber)) {
-      return true;
+    // Stage 6: Always unlocked for all authenticated users
+    if (stageNumber === 6) {
+      return false;
+    }
+    
+    // Stage 7: Always unlocked for all authenticated users
+    if (stageNumber === 7) {
+      return false;
     }
 
     return false;
