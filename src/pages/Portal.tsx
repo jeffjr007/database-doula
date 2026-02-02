@@ -575,13 +575,10 @@ const Portal = () => {
   if (!renderGateReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <img src={logoAD} alt="AD" className="w-16 h-16 rounded-xl" />
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:150ms]" />
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:300ms]" />
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:150ms]" />
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:300ms]" />
         </div>
       </div>
     );
