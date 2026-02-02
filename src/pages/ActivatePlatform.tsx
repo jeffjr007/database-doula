@@ -134,9 +134,8 @@ const ActivatePlatform = () => {
   const handleWelcomeComplete = async () => {
     setShowWelcomeModal(false);
     
-    // TEMPORARY: Skip gift animation - go directly to portal
-    // The gift page logic is preserved but bypassed for now
-    navigate("/");
+    // Navigate to gift/learning path animation
+    navigate("/presente");
   };
 
   if (authLoading || adminLoading || checkingActivation) {

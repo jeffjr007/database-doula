@@ -446,9 +446,7 @@ const CVPage = () => {
                   }}
                 />
                 
-                {/* TEMPORARY: Stage 2 Completion Section is hidden in temporary mode
-                    To re-enable, uncomment the block below and remove this comment:
-                    
+                {/* Stage 2 completion section */}
                 <AnimatePresence>
                   {showCompletionSection && !isLoadingStageData && (
                     <motion.div
@@ -523,7 +521,6 @@ const CVPage = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                */}
               </motion.div>
             )}
             {viewState === "form" && cvType === "personalized" && (<motion.div key="personalized-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}><Button variant="ghost" size="sm" onClick={handleBackToSelector} className="gap-2 -ml-2 mb-4 md:block hidden"><ArrowLeft className="w-4 h-4" />Voltar</Button><CVForm onGenerate={handleGeneratePersonalized} isLoading={isLoading} /></motion.div>)}

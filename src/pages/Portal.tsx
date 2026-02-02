@@ -410,16 +410,14 @@ const Portal = () => {
   };
 
   const isStageBlocked = (stageNumber: number) => {
-    // TEMPORARY: Block all stages except 2 for non-admin users
     // Admins and dev users have full access
     if (effectiveIsAdmin || effectiveIsDev) {
-      // Admin/Dev: Stage 2 is ALWAYS unlocked
-      if (stageNumber === 2) {
-        return false;
-      }
-      // Original logic for admin/dev for other stages
+      // Original logic for admin/dev
       if (stageNumber === 1) {
         return linkedinDiagnostic?.status !== "published";
+      }
+      if (stageNumber === 2) {
+        return false; // Always unlocked for admin/dev
       }
       if (stageNumber === 3) {
         return !stage2Completed;
@@ -430,14 +428,35 @@ const Portal = () => {
       return false;
     }
 
-    // TEMPORARY: For regular users, block stages 1, 3, 4, 5, 6, 7
-    if ([1, 3, 4, 5, 6, 7].includes(stageNumber)) {
-      return true;
+    // Regular users - original blocking logic
+    // Stage 1: Blocked until LinkedIn diagnostic is published
+    if (stageNumber === 1) {
+      return linkedinDiagnostic?.status !== "published";
     }
-
-    // TEMPORARY: Stage 2 is ALWAYS unlocked for regular users in temporary mode
+    
+    // Stage 2: Blocked until stage2_unlocked flag is set
     if (stageNumber === 2) {
-      return false; // Always unlocked
+      return !stage2Unlocked;
+    }
+    
+    // Stage 3: Blocked until stage 2 is completed
+    if (stageNumber === 3) {
+      return !stage2Completed;
+    }
+    
+    // Stage 4: Blocked until stage 3 funnel is published
+    if (stageNumber === 4) {
+      return opportunityFunnel?.status !== "published";
+    }
+    
+    // Stage 5: Blocked until user has interview history
+    if (stageNumber === 5) {
+      return savedInterviews.length === 0;
+    }
+    
+    // Stages 6 and 7: Blocked by default for regular users
+    if ([6, 7].includes(stageNumber)) {
+      return true;
     }
 
     return false;
