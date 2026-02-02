@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText, MapPin, Calendar, Linkedin } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText, MapPin, Calendar, Linkedin, Flag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoAD from "@/assets/logo-ad.png";
 
@@ -22,6 +22,7 @@ const Auth = () => {
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [nacionalidade, setNacionalidade] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ const Auth = () => {
   const goNextStep = () => setStep(2);
   const goBackStep = () => setStep(1);
 
-  const isStep1Valid = fullName.trim() && phone.trim() && age.trim() && location.trim();
+  const isStep1Valid = fullName.trim() && phone.trim() && age.trim() && location.trim() && nacionalidade.trim();
   const passwordRequirements = useMemo(
     () => ({
       minLength: password.length >= 8,
@@ -97,6 +98,7 @@ const Auth = () => {
               age,
               location,
               linkedin_url: linkedinUrl,
+              nacionalidade,
               email_notifications: emailNotifications,
             },
           },
@@ -187,6 +189,16 @@ const Auth = () => {
                     placeholder="LinkedIn (opcional)"
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
+                  />
+                </div>
+
+                <div className="relative">
+                  <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    className="pl-10"
+                    placeholder="Nacionalidade"
+                    value={nacionalidade}
+                    onChange={(e) => setNacionalidade(e.target.value)}
                   />
                 </div>
                 <Button type="button" disabled={!isStep1Valid} onClick={goNextStep} className="w-full">
