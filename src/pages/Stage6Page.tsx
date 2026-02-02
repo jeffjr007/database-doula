@@ -1,35 +1,23 @@
 import { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
-import { useDev } from "@/hooks/useDev";
 import { GupyGuide } from "@/components/GupyGuide";
 import { Loader2 } from "lucide-react";
 
 const Stage6Page = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
-  const { isDev, loading: devLoading } = useDev();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Wait for all loading states
-    if (authLoading || adminLoading || devLoading) return;
+    if (authLoading) return;
 
     if (!user) {
       navigate('/auth');
       return;
     }
+  }, [user, authLoading, navigate]);
 
-    // TEMPORARY: Block stage 6 for non-admin/dev users
-    if (!isAdmin && !isDev) {
-      navigate('/');
-      return;
-    }
-  }, [user, authLoading, adminLoading, devLoading, isAdmin, isDev, navigate]);
-
-  // Show loading while checking permissions
-  if (authLoading || adminLoading || devLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -37,8 +25,7 @@ const Stage6Page = () => {
     );
   }
 
-  // Don't render if user will be redirected
-  if (!user || (!isAdmin && !isDev)) {
+  if (!user) {
     return null;
   }
 
