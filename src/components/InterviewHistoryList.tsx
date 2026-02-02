@@ -7,9 +7,16 @@ import {
   Clock, 
   Trash2, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   History,
   Loader2
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +51,7 @@ export const InterviewHistoryList = ({ onLoadInterview }: InterviewHistoryListPr
   const [interviews, setInterviews] = useState<InterviewHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -115,92 +123,103 @@ export const InterviewHistoryList = ({ onLoadInterview }: InterviewHistoryListPr
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <History className="w-4 h-4" />
-        <span className="text-sm font-medium">Histórico de Entrevistas</span>
-        <Badge variant="secondary" className="text-xs">
-          {interviews.length}
-        </Badge>
-      </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-3">
+      <CollapsibleTrigger asChild>
+        <button className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border/50 hover:bg-secondary/50 transition-colors">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <History className="w-4 h-4" />
+            <span className="text-sm font-medium">Histórico de Entrevistas</span>
+            <Badge variant="secondary" className="text-xs">
+              {interviews.length}
+            </Badge>
+          </div>
+          {isOpen ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </button>
+      </CollapsibleTrigger>
 
-      <div className="grid gap-3">
-        <AnimatePresence mode="popLayout">
-          {interviews.map((interview, index) => (
-            <motion.div
-              key={interview.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
-            >
-              <Card className="p-4 hover:border-primary/50 transition-colors group">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium text-sm truncate">{interview.name}</h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>
-                          {format(new Date(interview.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
-                        </span>
+      <CollapsibleContent className="space-y-2">
+        <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-1">
+          <AnimatePresence mode="popLayout">
+            {interviews.map((interview, index) => (
+              <motion.div
+                key={interview.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, delay: index * 0.03 }}
+              >
+                <Card className="p-3 hover:border-primary/50 transition-colors group">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-xs truncate">{interview.name}</h3>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            {format(new Date(interview.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        >
-                          {deletingId === interview.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir entrevista?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Isso irá remover permanentemente "{interview.name}" do seu histórico.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(interview.id)}
-                            className="bg-destructive hover:bg-destructive/90"
+                    <div className="flex items-center gap-1">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            {deletingId === interview.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir entrevista?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Isso irá remover permanentemente "{interview.name}" do seu histórico.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(interview.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLoadInterview(interview)}
-                      className="gap-1 group-hover:border-primary group-hover:text-primary"
-                    >
-                      Revisar
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleLoadInterview(interview)}
+                        className="gap-1 text-xs h-7 px-2 group-hover:border-primary group-hover:text-primary"
+                      >
+                        Revisar
+                        <ChevronRight className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };

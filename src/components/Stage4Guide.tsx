@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   ArrowRight,
@@ -1015,7 +1016,41 @@ Exemplo:
       </div>
 
       {/* Progress Steps */}
-      <div className="px-4 py-6 border-b border-border overflow-x-auto">
+      {/* Mobile: Compact current step badge */}
+      <div className="md:hidden px-4 py-3 border-b border-border">
+        <div className="flex items-center justify-center gap-3">
+          {(() => {
+            const currentStepData = STEPS.find(s => s.id === currentStep);
+            const Icon = currentStepData?.icon;
+            return Icon && (
+              <>
+                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="text-center">
+                  <Badge variant="outline" className="mb-1">
+                    Passo {currentStep} de {STEPS.length}
+                  </Badge>
+                  <p className="text-sm font-medium">{currentStepData?.title}</p>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+        
+        {/* Progress bar */}
+        <div className="mt-3 h-1 bg-muted rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-primary rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+      </div>
+
+      {/* Desktop: Full step indicator */}
+      <div className="hidden md:block px-4 py-6 border-b border-border overflow-x-auto">
         <div className="flex items-center justify-center gap-2 min-w-max">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
