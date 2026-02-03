@@ -31,19 +31,15 @@ export async function validateAuth(req: Request): Promise<AuthResult> {
     },
   });
 
-  // Use getClaims() instead of getUser() for better reliability
-  const token = authHeader.replace("Bearer ", "");
-  const { data, error } = await supabase.auth.getClaims(token);
+  // Use getUser() to validate the JWT token
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !data?.claims) {
+  if (error || !user) {
     console.error("Auth validation failed:", error);
     return { user: null, error: "Sessão inválida ou expirada" };
   }
 
-  const userId = data.claims.sub as string;
-  const email = data.claims.email as string | undefined;
-
-  return { user: { id: userId, email }, error: null };
+  return { user: { id: user.id, email: user.email }, error: null };
 }
 
 /**
