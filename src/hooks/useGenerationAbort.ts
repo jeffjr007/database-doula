@@ -1,25 +1,27 @@
 import { useRef, useEffect, useCallback } from "react";
-import { toast } from "sonner";
 
 /**
- * Hook to manage AI generation requests with automatic cancellation on unmount
- * Shows a warning toast if generation is cancelled due to navigation
+ * Hook to manage AI generation requests with safe state updates.
+ * 
+ * IMPORTANT: Generation continues on the server even if the component unmounts
+ * or the tab is in background. This hook only manages client-side state updates.
+ * 
+ * The isMounted check prevents React warnings about setting state on unmounted
+ * components, but does NOT cancel server-side generation.
  */
 export function useGenerationAbort() {
   const isMountedRef = useRef(true);
   const isGeneratingRef = useRef(false);
 
-  // Track mounted state and show warning on unmount if generating
+  // Track mounted state (no warning on unmount - generation continues server-side)
   useEffect(() => {
     isMountedRef.current = true;
     
     return () => {
       isMountedRef.current = false;
-      if (isGeneratingRef.current) {
-        toast.warning("Geração cancelada", {
-          description: "Você saiu da página durante a geração. O processo foi interrompido.",
-        });
-      }
+      // Note: Server-side generation continues even after unmount
+      // We just can't update state after this point
+      isGeneratingRef.current = false;
     };
   }, []);
 
