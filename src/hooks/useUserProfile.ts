@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useAdmin } from './useAdmin';
 
 export interface UserPersonalData {
   fullName: string;
@@ -21,9 +22,6 @@ interface UseUserProfileReturn {
 
 const CACHE_KEY = 'user_personal_data_cache';
 
-// Admin email that should NOT have auto-fill enabled
-const ADMIN_NO_AUTOFILL_EMAIL = 'adrianoduartefxck@gmail.com';
-
 const defaultData: UserPersonalData = {
   fullName: '',
   age: '',
@@ -36,8 +34,9 @@ const defaultData: UserPersonalData = {
 
 export function useUserProfile(): UseUserProfileReturn {
   const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [personalData, setPersonalData] = useState<UserPersonalData>(() => {
-    // Try to load from cache immediately
+    // Try to load from cache immediately (only for non-admins, but we don't know yet)
     if (typeof window !== 'undefined') {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -59,8 +58,8 @@ export function useUserProfile(): UseUserProfileReturn {
       return;
     }
 
-    // Skip auto-fill for specific admin user
-    if (user?.email === ADMIN_NO_AUTOFILL_EMAIL) {
+    // Skip auto-fill for ALL admin users - they need to fill forms manually for testing
+    if (isAdmin) {
       setPersonalData(defaultData);
       sessionStorage.removeItem(CACHE_KEY);
       setIsLoading(false);
@@ -99,11 +98,13 @@ export function useUserProfile(): UseUserProfileReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, user?.email]);
+  }, [user?.id, user?.email, isAdmin]);
 
   useEffect(() => {
+    // Wait for admin check to complete before fetching profile
+    if (adminLoading) return;
     fetchProfile();
-  }, [fetchProfile]);
+  }, [fetchProfile, adminLoading]);
 
   const updatePersonalData = useCallback(async (data: Partial<UserPersonalData>) => {
     if (!user?.id) return;
@@ -124,15 +125,17 @@ export function useUserProfile(): UseUserProfileReturn {
 
     if (error) throw error;
 
-    // Update local state and cache
+    // Update local state and cache (only for non-admins)
     const newData = { ...personalData, ...data };
     setPersonalData(newData);
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(newData));
-  }, [user?.id, personalData]);
+    if (!isAdmin) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(newData));
+    }
+  }, [user?.id, personalData, isAdmin]);
 
   return {
     personalData,
-    isLoading,
+    isLoading: isLoading || adminLoading,
     updatePersonalData,
     refetch: fetchProfile,
   };
