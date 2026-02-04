@@ -19,7 +19,9 @@ import {
   ChevronDown,
   Target,
   Lightbulb,
-  MessageSquare
+  MessageSquare,
+  Brain,
+  Quote
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,8 +60,9 @@ const STEPS = [
   { id: 5, title: "Sobre Você", icon: MessageSquare, description: "Me fale sobre você" },
   { id: 6, title: "Palavras-Chave", icon: Target, description: "Análise da IA" },
   { id: 7, title: "Roteiro", icon: Sparkles, description: "Roteiros de experiências" },
-  { id: 8, title: "Treinamento", icon: Sparkles, description: "Material de preparação" },
-  { id: 9, title: "Salvar", icon: Check, description: "Salvar preparação" },
+  { id: 8, title: "Perguntas", icon: MessageSquare, description: "Perguntas de fechamento" },
+  { id: 9, title: "Treinamento", icon: Sparkles, description: "Material de preparação" },
+  { id: 10, title: "Salvar", icon: Check, description: "Salvar preparação" },
 ];
 
 const STAGE4_STARTED_KEY = 'stage4_started';
@@ -388,12 +391,13 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 5: return !!data.aboutMeScript;
       case 6: return data.keywords.length > 0;
       case 7: return savedScripts.length > 0;
+      case 8: return true; // Perguntas de fechamento - just view
       default: return true;
     }
   };
 
   // Check if a step has been completed (data saved/validated)
-  // Steps 8 and 9 are only "completed" if the user has actually visited them
+  // Steps 9 and 10 are only "completed" if the user has actually visited them
   const isStepCompleted = (stepId: number): boolean => {
     switch (stepId) {
       case 1: return data.companyName.trim().length > 0;
@@ -403,10 +407,10 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
       case 5: return !!data.aboutMeScript;
       case 6: return data.keywords.length > 0;
       case 7: return savedScripts.length > 0;
-      // Steps 8 and 9: only completed if user has moved PAST them (currentStep > stepId)
-      // or if they were visited AND user is past that point
-      case 8: return currentStep > 8 || (visitedSteps.includes(8) && currentStep >= 9);
-      case 9: return currentStep > 9 || visitedSteps.includes(9);
+      case 8: return currentStep > 8 || visitedSteps.includes(8);
+      // Steps 9 and 10: only completed if user has moved PAST them
+      case 9: return currentStep > 9 || (visitedSteps.includes(9) && currentStep >= 10);
+      case 10: return currentStep > 10 || visitedSteps.includes(10);
       default: return false;
     }
   };
@@ -440,7 +444,7 @@ Liste todas as palavras-chave da vaga para que eu possa criar o meu roteiro de e
   };
 
   const nextStep = async () => {
-    if (currentStep < 9 && canProceed()) {
+    if (currentStep < 10 && canProceed()) {
       hasUserNavigatedRef.current = true;
       await saveProgress(data);
       setCurrentStep(prev => prev + 1);
@@ -848,9 +852,166 @@ Exemplo:
         );
 
       case 8:
+        // Perguntas de Fechamento step
+        const CLOSING_QUESTION_1 = `Gostei dessa conversa, foi bom poder ouvir os desafios da vaga e falar das minhas experiências. Gostei bastante e queria saber a sua opinião, o que você achou dessa conversa?`;
+        const CLOSING_QUESTION_2 = `Baseado no que você estudou do meu currículo e perfil, em tudo que pude compartilhar sobre a minha trajetória, e considerando os desafios da vaga, como você acredita que eu consiga contribuir para ajudar nessa posição?`;
+        
         return (
           <motion.div
             key="step-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-3xl mx-auto space-y-6 md:space-y-8"
+          >
+            {/* Header */}
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 md:w-20 md:h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
+                <Target className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+              </div>
+              <h2 className="font-display text-xl md:text-2xl font-bold">
+                O Fechamento que Impressiona
+              </h2>
+              <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
+                Duas perguntas estratégicas que transformam você de candidato comum em candidato memorável
+              </p>
+            </div>
+
+            {/* Introduction Card */}
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-primary/5 via-transparent to-secondary/20 border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-foreground">Por que isso funciona?</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    A maioria dos candidatos termina a entrevista com um simples "obrigado". 
+                    Você vai sair de forma estratégica, fazendo o recrutador <strong>verbalizar</strong> pontos positivos sobre você.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Question Cards */}
+            <div className="grid gap-4 md:gap-6">
+              {/* Question 1 */}
+              <Card className="overflow-hidden border-0 shadow-lg">
+                <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 p-4 md:p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      1
+                    </div>
+                    <div>
+                      <span className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">
+                        Pergunta Estratégica
+                      </span>
+                      <h3 className="font-semibold text-foreground flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Pedindo Feedback
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <div className="relative bg-background/80 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-border/50">
+                    <Quote className="absolute -top-2 -left-2 w-6 h-6 text-blue-500/30" />
+                    <p className="text-foreground leading-relaxed text-sm md:text-base italic pl-3">
+                      "{CLOSING_QUESTION_1}"
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-4 md:p-5 bg-card border-t border-border/30">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Objetivo dessa pergunta:</span>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Faz o recrutador <strong className="text-foreground">verbalizar</strong> o que ele realmente pensa sobre seu perfil, 
+                        suas habilidades e impressões iniciais. Ao falar em voz alta, ele reforça os pontos positivos na própria mente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Question 2 */}
+              <Card className="overflow-hidden border-0 shadow-lg">
+                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-4 md:p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      2
+                    </div>
+                    <div>
+                      <span className="text-xs md:text-sm text-purple-600 dark:text-purple-400 font-medium uppercase tracking-wide">
+                        Estratégia de PNL
+                      </span>
+                      <h3 className="font-semibold text-foreground flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        Projetando Você como Solução
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <div className="relative bg-background/80 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-border/50">
+                    <Quote className="absolute -top-2 -left-2 w-6 h-6 text-purple-500/30" />
+                    <p className="text-foreground leading-relaxed text-sm md:text-base italic pl-3">
+                      "{CLOSING_QUESTION_2}"
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-4 md:p-5 bg-card border-t border-border/30">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-4 h-4 text-purple-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Técnica de PNL aplicada:</span>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Essa pergunta leva o recrutador a <strong className="text-foreground">identificar seus pontos fortes</strong> e 
+                        <strong className="text-foreground"> projetar você como a solução</strong> para a vaga. 
+                        Fortalece sua imagem como candidato estratégico e memorável.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Tip Card */}
+            <Card className="p-4 md:p-5 bg-secondary/30 border-secondary">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-medium text-primary">Dica importante:</span>
+                  <p className="text-sm text-muted-foreground">
+                    Faça essas perguntas com naturalidade, como se estivesse genuinamente interessado na opinião do recrutador. 
+                    O tom deve ser de curiosidade, não de pressão.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* CTA Button */}
+            <div className="flex justify-center pt-4">
+              <Button onClick={() => setCurrentStep(9)} className="gap-2 px-8">
+                Continuar para o Treinamento
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        );
+
+      case 9:
+        return (
+          <motion.div
+            key="step-9"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -861,23 +1022,23 @@ Exemplo:
               companyName={data.companyName}
               aboutMeScript={data.aboutMeScript || ''}
               experienceScripts={savedScripts}
-              onComplete={() => setCurrentStep(9)}
+              onComplete={() => setCurrentStep(10)}
             />
           </motion.div>
         );
 
-      case 9:
-        // Show intro only on first visit to step 9 in this session
-        const step9IntroKey = 'stage4_step9_intro_seen';
-        const hasSeenStep9Intro = sessionStorage.getItem(step9IntroKey) === 'true';
+      case 10:
+        // Show intro only on first visit to step 10 in this session
+        const step10IntroKey = 'stage4_step10_intro_seen';
+        const hasSeenStep10Intro = sessionStorage.getItem(step10IntroKey) === 'true';
         
-        if (!hasSeenStep9Intro && !visitedSteps.includes(9)) {
+        if (!hasSeenStep10Intro && !visitedSteps.includes(10)) {
           // Mark as seen immediately to avoid re-showing
-          sessionStorage.setItem(step9IntroKey, 'true');
+          sessionStorage.setItem(step10IntroKey, 'true');
           
           return (
             <motion.div
-              key="step-9-intro"
+              key="step-10-intro"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -893,8 +1054,8 @@ Exemplo:
               </div>
               <Button onClick={() => {
                 const visited = [...visitedSteps];
-                if (!visited.includes(9)) {
-                  visited.push(9);
+                if (!visited.includes(10)) {
+                  visited.push(10);
                   setVisitedSteps(visited);
                   sessionStorage.setItem(STAGE4_VISITED_STEPS_KEY, JSON.stringify(visited));
                 }
@@ -908,7 +1069,7 @@ Exemplo:
         
         return (
           <motion.div
-            key="step-9"
+            key="step-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -961,7 +1122,7 @@ Exemplo:
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={() => setCurrentStep(8)}
+                    onClick={() => setCurrentStep(9)}
                     className="w-full text-muted-foreground"
                   >
                     Voltar ao Treinamento
