@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Sparkles, BookOpen, Target, Rocket, ExternalLink, ArrowLeft, GraduationCap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-import logoAD from '@/assets/logo-ad.png';
+import { Logo } from '@/components/Logo';
 import mentorPhoto from '@/assets/mentor-photo.png';
 
 interface Course {
@@ -329,7 +329,7 @@ const GiftPage = () => {
               </>
             )}
           </button>
-          <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
+          <Logo size="sm" />
         </div>
       </header>
 

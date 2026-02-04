@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Download, FileText, Linkedin, Sparkles, ArrowRight, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import logoAd from '@/assets/logo-ad.png';
+import { Logo } from '@/components/Logo';
 import { MentorAvatar } from '@/components/MentorAvatar';
 import { HelpCircle } from 'lucide-react';
 import { StageCompleteButton } from '@/components/StageCompleteButton';

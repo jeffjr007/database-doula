@@ -29,7 +29,7 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-import logoAD from "@/assets/logo-ad.png";
+import { Logo } from '@/components/Logo';
 import mentorPhoto from "@/assets/mentor-photo.png";
 
 import { StageWarningModal } from "@/components/StageWarningModal";
@@ -591,7 +591,7 @@ const Portal = () => {
       >
         {/* Logo */}
         <div className="p-4 flex items-center justify-center border-b border-white/10">
-          <img src={logoAD} alt="AD" className="w-12 h-12 rounded-xl flex-shrink-0" />
+          <Logo size="md" className="rounded-xl" />
         </div>
 
         {/* Navigation Links */}
@@ -691,7 +691,7 @@ const Portal = () => {
           >
               <div className="p-4 flex items-center justify-between border-b border-white/10">
                 <div className="flex items-center gap-3">
-                  <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
+                  <Logo size="sm" className="rounded-xl" />
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="text-white/70 hover:text-white hover:bg-white/10">
                   <X className="w-5 h-5" />
@@ -784,7 +784,7 @@ const Portal = () => {
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
           </Button>
-          <img src={logoAD} alt="AD" className="w-10 h-10 rounded-xl" />
+          <Logo size="sm" className="rounded-xl" />
           {user ? (
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
               <User className="w-5 h-5 text-primary" />

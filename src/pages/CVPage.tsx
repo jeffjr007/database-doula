@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import logoAd from "@/assets/logo-ad.png";
+import { Logo } from "@/components/Logo";
 import { motion, AnimatePresence } from "framer-motion";
 import { HelpCircle } from 'lucide-react';
 
@@ -374,7 +374,7 @@ const CVPage = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <img src={logoAd} alt="AD Logo" className="h-14 w-auto" />
+          <Logo size="md" />
           {/* Buttons always visible for logged users - no data dependency */}
           {user && (
             <>

@@ -11,7 +11,7 @@ import { TicketManager } from '@/components/admin/TicketManager';
 import { StageProgressTracker } from '@/components/admin/StageProgressTracker';
 import { ArrowLeft, Users, Ticket, Shield, MessageSquare, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import logoAd from '@/assets/logo-ad.png';
+import { Logo } from '@/components/Logo';
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -44,7 +44,7 @@ const Admin = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}><ArrowLeft className="w-5 h-5" /></Button>
-            <img src={logoAd} alt="Logo" className="h-10" />
+            <Logo size="sm" />
             <div className="flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /><span className="font-display font-semibold text-foreground">Painel Admin</span></div>
           </div>
         </div>

@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Shield, Bell, Palette, HelpCircle, LogOut, ChevronRight, Save, Loader2, Mail, Phone, Lock, Trash2, ExternalLink, Moon, Globe, FileText, MessageSquare, MapPin, Calendar, Linkedin } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import logoAD from "@/assets/logo-ad.png";
+import { Logo } from "@/components/Logo";
 import LogoutModal from "@/components/LogoutModal";
 type SettingsSection = "profile" | "security" | "notifications" | "appearance" | "support";
 const SettingsPage = () => {
@@ -590,7 +590,7 @@ const SettingsPage = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <img src={logoAD} alt="AD" className="w-8 h-8 rounded-lg" />
+              <Logo size="sm" />
               <h1 className="font-display font-bold text-lg">Configurações</h1>
             </div>
           </div>

@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, ArrowRight, Check, Phone, Bell, FileText, MapPin, Calendar, Linkedin, Flag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logoAD from "@/assets/logo-ad.png";
+import { Logo } from "@/components/Logo";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -125,7 +125,7 @@ const Auth = () => {
       <div className="w-full max-w-md relative z-10">
         {/* logo */}
         <div className="flex justify-center mb-8">
-          <img src={logoAD} className="w-16 h-16 rounded-2xl" />
+          <Logo size="lg" />
         </div>
 
         {/* step indicator */}

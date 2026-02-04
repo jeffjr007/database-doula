@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import logoAd from '@/assets/logo-ad.png';
+import { Logo } from '@/components/Logo';
 
 interface Ticket {
   id: string;
@@ -141,7 +141,7 @@ const SupportPage = () => {
               </div>
             </div>
           </div>
-          <img src={logoAd} alt="Logo" className="h-8" />
+          <Logo size="sm" />
         </div>
       </header>
 

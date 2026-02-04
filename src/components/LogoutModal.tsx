@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown } from "lucide-react";
-import logoAD from "@/assets/logo-ad.png";
+import { Logo } from "./Logo";
 
 interface LogoutModalProps {
   open: boolean;
@@ -73,11 +73,7 @@ const LogoutModal = ({ open, onComplete }: LogoutModalProps) => {
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
                 <div className="absolute inset-0 w-20 h-20 mx-auto bg-primary/30 rounded-2xl blur-xl" />
-                <img 
-                  src={logoAD} 
-                  alt="AD" 
-                  className="relative w-20 h-20 mx-auto rounded-2xl shadow-2xl"
-                />
+                <Logo size="lg" className="relative mx-auto shadow-2xl" />
               </motion.div>
 
               {/* Greeting text */}

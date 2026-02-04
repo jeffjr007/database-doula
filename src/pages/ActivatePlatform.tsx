@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { LogOut, KeyRound, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import logoAd from "@/assets/logo-ad.png";
+import { Logo } from "@/components/Logo";
 import WelcomeMentorModal from "@/components/WelcomeMentorModal";
 
 const ActivatePlatform = () => {
@@ -171,7 +171,7 @@ const ActivatePlatform = () => {
         transition={{ duration: 0.5 }}
         className="flex items-center justify-between py-4 px-4 md:px-6"
       >
-        <img src={logoAd} alt="AD Logo" className="h-14 w-auto" />
+        <Logo size="md" />
 
         <Button
           variant="ghost"
