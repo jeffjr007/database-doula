@@ -36,9 +36,9 @@ const LogoutModal = ({ open, onComplete }: LogoutModalProps) => {
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop with blur */}
+          {/* Backdrop - no blur on mobile for performance */}
           <motion.div
-            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] bg-background/95 lg:bg-background/80 lg:backdrop-blur-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

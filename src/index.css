@@ -563,6 +563,129 @@
     @apply animate-pulse;
     @apply bg-secondary/50 rounded-2xl;
   }
+
+  /* GPU-accelerated utility for animated elements */
+  .gpu-accelerated {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
+/* =================================================== */
+/* MOBILE-OPTIMIZED CSS ANIMATIONS (Hardware Accelerated) */
+/* =================================================== */
+
+/* These animations use ONLY transform and opacity for 60fps on mobile */
+
+@keyframes mobileSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+@keyframes mobileSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateZ(0);
+  }
+}
+
+@keyframes mobileSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateZ(0);
+  }
+}
+
+@keyframes mobileFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobileScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
+}
+
+/* Animation classes with fill-mode: forwards */
+.animate-mobile-slide-up {
+  animation: mobileSlideUp 0.2s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-mobile-slide-left {
+  animation: mobileSlideLeft 0.2s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-mobile-slide-right {
+  animation: mobileSlideRight 0.2s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-mobile-fade-in {
+  animation: mobileFadeIn 0.2s ease-out forwards;
+  will-change: opacity;
+}
+
+.animate-mobile-scale-in {
+  animation: mobileScaleIn 0.2s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+/* Step transition utilities for forms (CSS-only) */
+.step-enter {
+  opacity: 0;
+  transform: translateX(16px) translateZ(0);
+}
+
+.step-enter-active {
+  opacity: 1;
+  transform: translateX(0) translateZ(0);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.step-exit {
+  opacity: 1;
+  transform: translateX(0) translateZ(0);
+}
+
+.step-exit-active {
+  opacity: 0;
+  transform: translateX(-16px) translateZ(0);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* Mobile: Remove backdrop-blur which causes jank */
+@media (max-width: 767px) {
+  .mobile-no-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* Shimmer animation for loading states */

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 import { MentorAvatar } from "@/components/MentorAvatar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WelcomeMentorModalProps {
   open: boolean;
@@ -17,7 +17,7 @@ const mentorMessages = [
   "Preparado pra mudar de patamar?",
 ];
 
-// Typing indicator component
+// Typing indicator component - CSS only
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 px-4 py-3">
     <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -26,11 +26,22 @@ const TypingIndicator = () => (
   </div>
 );
 
+// Message bubble - CSS animated
+const MessageBubble = ({ message, delay }: { message: string; delay: number }) => (
+  <div 
+    className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%] animate-mobile-slide-up"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <p className="text-foreground text-sm leading-relaxed">{message}</p>
+  </div>
+);
+
 const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
   const [showButton, setShowButton] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!open) {
@@ -59,7 +70,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
           }
         },
         (index + 1) * 1200,
-      ); // Slightly longer delay for typing effect
+      );
       timers.push(timer);
     });
 
@@ -89,7 +100,7 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
     setIsExiting(true);
     setTimeout(() => {
       onComplete();
-    }, 400);
+    }, 300);
   };
 
   return (
@@ -99,123 +110,62 @@ const WelcomeMentorModal = ({ open, onComplete }: WelcomeMentorModalProps) => {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <AnimatePresence mode="wait">
-          {!isExiting ? (
-            <motion.div
-              key="content"
-              initial={{ opacity: 0, y: 50, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 300 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card border border-border rounded-2xl p-6 shadow-2xl"
-            >
-              {/* Mentor Header */}
-              <div className="flex items-center gap-4 mb-6">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                >
-                  <MentorAvatar size="xl" className="border-primary" />
-                </motion.div>
-                <div>
-                  <motion.h3
-                    className="font-semibold text-foreground text-lg"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    Duarte
-                  </motion.h3>
-                  <motion.p
-                    className="text-sm text-muted-foreground"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    Seu mentor
-                  </motion.p>
-                </div>
-              </div>
+        <div
+          className={`bg-card border border-border rounded-2xl p-6 shadow-2xl transition-all duration-300 ${
+            isExiting ? 'opacity-0 translate-x-[100px]' : 'opacity-100 translate-x-0 animate-mobile-scale-in'
+          }`}
+        >
+          {/* Mentor Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="animate-mobile-scale-in" style={{ animationDelay: '100ms' }}>
+              <MentorAvatar size="xl" className="border-primary" />
+            </div>
+            <div>
+              <h3 
+                className="font-semibold text-foreground text-lg animate-mobile-slide-right"
+                style={{ animationDelay: '150ms' }}
+              >
+                Duarte
+              </h3>
+              <p 
+                className="text-sm text-muted-foreground animate-mobile-slide-right"
+                style={{ animationDelay: '200ms' }}
+              >
+                Seu mentor
+              </p>
+            </div>
+          </div>
 
-              {/* Messages container */}
-              <div className="space-y-3 mb-6">
-                <AnimatePresence>
-                  {mentorMessages.slice(0, visibleMessages).map((message, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]"
-                    >
-                      <p className="text-foreground text-sm leading-relaxed">{message}</p>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+          {/* Messages container */}
+          <div className="space-y-3 mb-6 min-h-[200px]">
+            {mentorMessages.slice(0, visibleMessages).map((message, index) => (
+              <MessageBubble 
+                key={index} 
+                message={message} 
+                delay={0}
+              />
+            ))}
 
-                {/* Typing indicator */}
-                <AnimatePresence>
-                  {isTyping && !showButton && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <TypingIndicator />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            {/* Typing indicator */}
+            {isTyping && !showButton && (
+              <div className="animate-mobile-fade-in">
+                <TypingIndicator />
               </div>
+            )}
+          </div>
 
-              {/* Button */}
-              <AnimatePresence>
-                {showButton && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Button
-                      onClick={handleComplete}
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
-                    >
-                      Começar Jornada
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="exiting"
-              initial={{ opacity: 1, x: 0 }}
-              animate={{ opacity: 0, x: 300 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="bg-card border border-border rounded-2xl p-6 shadow-2xl"
-            >
-              {/* Same content for exit animation */}
-              <div className="flex items-center gap-4 mb-6">
-                <MentorAvatar size="xl" className="border-primary" />
-                <div>
-                  <h3 className="font-semibold text-foreground text-lg">Duarte</h3>
-                  <p className="text-sm text-muted-foreground">Seu mentor</p>
-                </div>
-              </div>
-              <div className="space-y-3 mb-6">
-                {mentorMessages.map((message, index) => (
-                  <div key={index} className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]">
-                    <p className="text-foreground text-sm leading-relaxed">{message}</p>
-                  </div>
-                ))}
-              </div>
-              <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 rounded-xl text-base">
-                Começar Jornada 🎯
+          {/* Button */}
+          {showButton && (
+            <div className="animate-mobile-slide-up">
+              <Button
+                onClick={handleComplete}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl text-base"
+              >
+                Começar Jornada
               </Button>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </DialogContent>
     </Dialog>
   );

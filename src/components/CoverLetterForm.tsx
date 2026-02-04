@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBaseCV } from "@/hooks/useBaseCV";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CoverLetterFormProps {
@@ -287,257 +287,260 @@ export function CoverLetterForm({ onGenerate, isLoading, onBack }: CoverLetterFo
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {/* STEP 1: Dados Pessoais */}
-          {mobileStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
-                <p className="text-sm text-muted-foreground mt-1">Informações básicas para sua carta</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Nome completo *</label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => handleChange("nome", e.target.value)}
-                    placeholder="Seu nome completo"
-                    readOnly={!!personalData.fullName}
-                    className={personalData.fullName ? `${mobileInputClass} opacity-70` : mobileInputClass}
-                  />
+        {/* Step Content - CSS transitions for mobile performance */}
+        <div className="relative">
+          {/* Step 1: Dados Pessoais */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 1 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 -translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 1 && (
+              <div className="space-y-5 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Informações básicas para sua carta</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Idade</label>
+                    <label className="text-sm text-muted-foreground">Nome completo *</label>
                     <input
                       type="text"
-                      value={formData.idade}
-                      onChange={(e) => handleChange("idade", e.target.value)}
-                      placeholder="Ex: 28 anos"
-                      readOnly={!!personalData.age}
-                      className={personalData.age ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                      value={formData.nome}
+                      onChange={(e) => handleChange("nome", e.target.value)}
+                      placeholder="Seu nome completo"
+                      readOnly={!!personalData.fullName}
+                      className={personalData.fullName ? `${mobileInputClass} opacity-70` : mobileInputClass}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Localização</label>
-                  <input
-                    type="text"
-                    value={formData.localizacao}
-                    onChange={(e) => handleChange("localizacao", e.target.value)}
-                    placeholder="Cidade, Estado"
-                    readOnly={!!personalData.location}
-                    className={personalData.location ? `${mobileInputClass} opacity-70` : mobileInputClass}
-                  />
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground">Idade</label>
+                      <input
+                        type="text"
+                        value={formData.idade}
+                        onChange={(e) => handleChange("idade", e.target.value)}
+                        placeholder="Ex: 28 anos"
+                        readOnly={!!personalData.age}
+                        className={personalData.age ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                      />
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Profissão *</label>
-                  <input
-                    type="text"
-                    value={formData.profissao}
-                    onChange={(e) => handleChange("profissao", e.target.value)}
-                    placeholder="Sua área de atuação"
-                    className={mobileInputClass}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Último Cargo</label>
+                    <label className="text-sm text-muted-foreground">Localização</label>
                     <input
                       type="text"
-                      value={formData.ultimoCargo}
-                      onChange={(e) => handleChange("ultimoCargo", e.target.value)}
-                      placeholder="Cargo atual"
+                      value={formData.localizacao}
+                      onChange={(e) => handleChange("localizacao", e.target.value)}
+                      placeholder="Cidade, Estado"
+                      readOnly={!!personalData.location}
+                      className={personalData.location ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Profissão *</label>
+                    <input
+                      type="text"
+                      value={formData.profissao}
+                      onChange={(e) => handleChange("profissao", e.target.value)}
+                      placeholder="Sua área de atuação"
                       className={mobileInputClass}
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground">Último Cargo</label>
+                      <input
+                        type="text"
+                        value={formData.ultimoCargo}
+                        onChange={(e) => handleChange("ultimoCargo", e.target.value)}
+                        placeholder="Cargo atual"
+                        className={mobileInputClass}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground">Cargo de Interesse</label>
+                      <input
+                        type="text"
+                        value={formData.cargosInteresse}
+                        onChange={(e) => handleChange("cargosInteresse", e.target.value)}
+                        placeholder="Cargo desejado"
+                        className={mobileInputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setMobileStep(2);
+                      scrollToTop();
+                    }}
+                    disabled={!isStep1Valid}
+                    className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
+                  >
+                    Continuar
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Step 2: Experiência Profissional */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 2 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 2 && (
+              <div className="space-y-6 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Experiência e Habilidades</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Informações profissionais para sua carta</p>
+                </div>
+
+                {/* Skills */}
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Cargo de Interesse</label>
-                    <input
-                      type="text"
-                      value={formData.cargosInteresse}
-                      onChange={(e) => handleChange("cargosInteresse", e.target.value)}
-                      placeholder="Cargo desejado"
-                      className={mobileInputClass}
+                    <label className="text-sm text-muted-foreground">Soft Skills</label>
+                    <Textarea
+                      value={formData.softSkills}
+                      onChange={(e) => handleChange("softSkills", e.target.value)}
+                      placeholder="Ex: Comunicação, Liderança, Resolução de problemas..."
+                      className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Hard Skills</label>
+                    <Textarea
+                      value={formData.hardSkills}
+                      onChange={(e) => handleChange("hardSkills", e.target.value)}
+                      placeholder="Ex: Excel avançado, SAP, Python, Scrum..."
+                      className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Interesses Profissionais</label>
+                    <Textarea
+                      value={formData.interesses}
+                      onChange={(e) => handleChange("interesses", e.target.value)}
+                      placeholder="Áreas, setores ou tipos de projetos que te interessam..."
+                      className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="pt-6">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setMobileStep(2);
-                    scrollToTop();
-                  }}
-                  disabled={!isStep1Valid}
-                  className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
-                >
-                  Continuar
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
+                {/* CV Upload */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <label className="text-base font-medium text-foreground">Anexar CV ATS *</label>
+                  </div>
 
-          {/* STEP 2: Experiência Profissional */}
-          {mobileStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Experiência e Habilidades</h2>
-                <p className="text-sm text-muted-foreground mt-1">Informações profissionais para sua carta</p>
-              </div>
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
 
-              {/* Skills */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Soft Skills</label>
-                  <Textarea
-                    value={formData.softSkills}
-                    onChange={(e) => handleChange("softSkills", e.target.value)}
-                    placeholder="Ex: Comunicação, Liderança, Resolução de problemas..."
-                    className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Hard Skills</label>
-                  <Textarea
-                    value={formData.hardSkills}
-                    onChange={(e) => handleChange("hardSkills", e.target.value)}
-                    placeholder="Ex: Excel avançado, SAP, Python, Scrum..."
-                    className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Interesses Profissionais</label>
-                  <Textarea
-                    value={formData.interesses}
-                    onChange={(e) => handleChange("interesses", e.target.value)}
-                    placeholder="Áreas, setores ou tipos de projetos que te interessam..."
-                    className="min-h-[80px] bg-muted/20 border-transparent rounded-xl text-base"
-                  />
-                </div>
-              </div>
-
-              {/* CV Upload */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" />
-                  <label className="text-base font-medium text-foreground">Anexar CV ATS *</label>
-                </div>
-
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
-
-                {!formData.cvAnalysis && !extractingCV ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`
-                      relative cursor-pointer rounded-xl border-2 border-dashed p-6 text-center
-                      transition-all duration-200 ease-out
-                      ${
-                        isDragging
-                          ? "border-primary bg-primary/5"
-                          : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
-                      }
-                    `}
-                  >
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="p-3 rounded-full bg-muted">
-                        <Upload className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                      <div className="text-center space-y-1">
-                        <p className="text-sm font-medium">Toque para selecionar</p>
-                        <p className="text-xs text-muted-foreground">PDF • Máximo 5MB</p>
+                  {!formData.cvAnalysis && !extractingCV ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`
+                        relative cursor-pointer rounded-xl border-2 border-dashed p-6 text-center
+                        transition-all duration-200 ease-out
+                        ${
+                          isDragging
+                            ? "border-primary bg-primary/5"
+                            : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
+                        }
+                      `}
+                    >
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <div className="p-3 rounded-full bg-muted">
+                          <Upload className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-sm font-medium">Toque para selecionar</p>
+                          <p className="text-xs text-muted-foreground">PDF • Máximo 5MB</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : extractingCV ? (
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                    <span className="text-sm text-primary font-medium">Extraindo dados do CV...</span>
-                  </div>
-                ) : usingStoredCV ? (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 cursor-pointer hover:bg-primary/15 transition-colors"
-                  >
-                    <Database className="w-5 h-5 text-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">{uploadedFileName}</p>
-                      <p className="text-xs text-primary">CV salvo carregado automaticamente</p>
+                  ) : extractingCV ? (
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      <span className="text-sm text-primary font-medium">Extraindo dados do CV...</span>
                     </div>
-                    <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 cursor-pointer hover:bg-green-500/15 transition-colors"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">{uploadedFileName}</p>
-                      <p className="text-xs text-muted-foreground">CV extraído com sucesso</p>
+                  ) : usingStoredCV ? (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 cursor-pointer hover:bg-primary/15 transition-colors"
+                    >
+                      <Database className="w-5 h-5 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{uploadedFileName}</p>
+                        <p className="text-xs text-primary">CV salvo carregado automaticamente</p>
+                      </div>
+                      <RefreshCw className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-2 pb-6">
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  variant="glow"
-                  className="w-full h-14 rounded-2xl text-base font-medium"
-                  disabled={!isFormValid || isLoading || extractingCV}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Gerando com IA...
-                    </>
                   ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Gerar Cartas com IA
-                    </>
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 cursor-pointer hover:bg-green-500/15 transition-colors"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{uploadedFileName}</p>
+                        <p className="text-xs text-muted-foreground">CV extraído com sucesso</p>
+                      </div>
+                      <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   )}
-                </Button>
-                {!isFormValid && (
-                  <p className="text-xs text-muted-foreground text-center mt-3">
-                    Preencha Nome, Profissão e anexe seu CV
-                  </p>
-                )}
+                </div>
+
+                <div className="pt-2 pb-6">
+                  <Button
+                    type="button"
+                    onClick={handleSubmit}
+                    variant="glow"
+                    className="w-full h-14 rounded-2xl text-base font-medium"
+                    disabled={!isFormValid || isLoading || extractingCV}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Gerando com IA...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar Cartas com IA
+                      </>
+                    )}
+                  </Button>
+                  {!isFormValid && (
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      Preencha Nome, Profissão e anexe seu CV
+                    </p>
+                  )}
+                </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

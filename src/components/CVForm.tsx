@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBaseCV } from "@/hooks/useBaseCV";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface CVFormData {
@@ -266,224 +266,228 @@ export function CVForm({ onGenerate, isLoading }: CVFormProps) {
           </div>
         </div>
 
-        {/* Step Content - Open layout without container */}
-        <AnimatePresence mode="wait">
-          {mobileStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
-                <p className="text-sm text-muted-foreground mt-1">Informações básicas do seu currículo</p>
+        {/* Step Content - CSS transitions for mobile performance */}
+        <div className="relative">
+          {/* Step 1: Dados Pessoais */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 1 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 -translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 1 && (
+              <div className="space-y-5 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Informações básicas do seu currículo</p>
+                </div>
+
+                {/* All fields full width, stacked - matches ATS CV */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Nome completo</label>
+                    <input
+                      type="text"
+                      value={formData.nome}
+                      onChange={(e) => handleChange("nome", e.target.value)}
+                      placeholder="Seu nome completo"
+                      readOnly={!!personalData.fullName}
+                      className={personalData.fullName ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Telefone</label>
+                    <input
+                      type="text"
+                      value={formData.telefone}
+                      onChange={(e) => handleChange("telefone", e.target.value)}
+                      placeholder="(11) 99999-9999"
+                      readOnly={!!personalData.phone}
+                      className={personalData.phone ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">E-mail</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      placeholder="seu@email.com"
+                      readOnly={!!personalData.email}
+                      className={personalData.email ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">LinkedIn</label>
+                    <input
+                      type="text"
+                      value={formData.linkedin}
+                      onChange={(e) => handleChange("linkedin", e.target.value)}
+                      placeholder="linkedin.com/in/seuperfil"
+                      readOnly={!!personalData.linkedinUrl}
+                      className={personalData.linkedinUrl ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Títulos do LinkedIn (separados por |)</label>
+                    <input
+                      type="text"
+                      value={formData.cargos}
+                      onChange={(e) => handleChange("cargos", e.target.value)}
+                      placeholder="Gerente | Especialista | Coordenador"
+                      className={mobileInputClass}
+                    />
+                    <p className="text-xs text-muted-foreground/70">Copie os títulos exibidos abaixo do seu nome no LinkedIn</p>
+                  </div>
+                </div>
+
+                {/* Next button */}
+                <div className="pt-6">
+                  <Button
+                    type="button"
+                    onClick={() => { setMobileStep(2); scrollToTop(); }}
+                    className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
+                  >
+                    Continuar
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
+            )}
+          </div>
 
-              {/* All fields full width, stacked - matches ATS CV */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Nome completo</label>
+          {/* Step 2: Currículo e Vaga */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 2 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 2 && (
+              <div className="space-y-6 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Currículo e Vaga</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Anexe seu CV e a descrição da vaga</p>
+                </div>
+
+                {/* PDF Upload */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <label className="text-base font-medium text-foreground">Currículo em PDF</label>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
+                    <p className="text-xs text-primary font-medium">
+                      📎 Anexe o <strong>Currículo ATS</strong> que você criou anteriormente
+                    </p>
+                  </div>
+
                   <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => handleChange("nome", e.target.value)}
-                    placeholder="Seu nome completo"
-                    readOnly={!!personalData.fullName}
-                    className={personalData.fullName ? `${mobileInputClass} opacity-70` : mobileInputClass}
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Telefone</label>
-                  <input
-                    type="text"
-                    value={formData.telefone}
-                    onChange={(e) => handleChange("telefone", e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    readOnly={!!personalData.phone}
-                    className={personalData.phone ? `${mobileInputClass} opacity-70` : mobileInputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">E-mail</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="seu@email.com"
-                    readOnly={!!personalData.email}
-                    className={personalData.email ? `${mobileInputClass} opacity-70` : mobileInputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">LinkedIn</label>
-                  <input
-                    type="text"
-                    value={formData.linkedin}
-                    onChange={(e) => handleChange("linkedin", e.target.value)}
-                    placeholder="linkedin.com/in/seuperfil"
-                    readOnly={!!personalData.linkedinUrl}
-                    className={personalData.linkedinUrl ? `${mobileInputClass} opacity-70` : mobileInputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Títulos do LinkedIn (separados por |)</label>
-                  <input
-                    type="text"
-                    value={formData.cargos}
-                    onChange={(e) => handleChange("cargos", e.target.value)}
-                    placeholder="Gerente | Especialista | Coordenador"
-                    className={mobileInputClass}
-                  />
-                  <p className="text-xs text-muted-foreground/70">Copie os títulos exibidos abaixo do seu nome no LinkedIn</p>
-                </div>
-              </div>
-
-              {/* Next button */}
-              <div className="pt-6">
-                <Button
-                  type="button"
-                  onClick={() => { setMobileStep(2); scrollToTop(); }}
-                  className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
-                >
-                  Continuar
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {mobileStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Currículo e Vaga</h2>
-                <p className="text-sm text-muted-foreground mt-1">Anexe seu CV e a descrição da vaga</p>
-              </div>
-
-              {/* PDF Upload */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" />
-                  <label className="text-base font-medium text-foreground">Currículo em PDF</label>
-                </div>
-
-                <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
-                  <p className="text-xs text-primary font-medium">
-                    📎 Anexe o <strong>Currículo ATS</strong> que você criou anteriormente
-                  </p>
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-
-                <div
-                  onClick={() => {
-                    if (isExtracting) return;
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                    fileInputRef.current?.click();
-                  }}
-                  className={`
-                    relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer
-                    transition-all duration-300
-                    ${isExtracting ? "border-primary/50 bg-primary/5" : extractionDone ? "border-green-500/50 bg-green-500/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}
-                  `}
-                >
-                  {isExtracting ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                      <p className="text-sm font-medium">Analisando currículo...</p>
-                    </div>
-                  ) : extractionDone ? (
-                    <div className="flex flex-col items-center gap-3">
-                      {usingStoredCV ? (
-                        <>
-                          <Database className="w-8 h-8 text-primary" />
-                          <p className="text-sm font-medium">{storedFilename}</p>
-                          <p className="text-xs text-primary">CV salvo carregado</p>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-8 h-8 text-green-500" />
-                          <p className="text-sm font-medium">{pdfFile?.name || storedFilename}</p>
-                        </>
-                      )}
-                      <p className="text-xs text-muted-foreground">Clique para trocar</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Upload className="w-6 h-6 text-primary" />
+                  <div
+                    onClick={() => {
+                      if (isExtracting) return;
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                      fileInputRef.current?.click();
+                    }}
+                    className={`
+                      relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer
+                      transition-all duration-300
+                      ${isExtracting ? "border-primary/50 bg-primary/5" : extractionDone ? "border-green-500/50 bg-green-500/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}
+                    `}
+                  >
+                    {isExtracting ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        <p className="text-sm font-medium">Analisando currículo...</p>
                       </div>
-                      <p className="text-sm font-medium">Toque para fazer upload</p>
-                      <p className="text-xs text-muted-foreground">PDF até 10MB</p>
-                    </div>
+                    ) : extractionDone ? (
+                      <div className="flex flex-col items-center gap-3">
+                        {usingStoredCV ? (
+                          <>
+                            <Database className="w-8 h-8 text-primary" />
+                            <p className="text-sm font-medium">{storedFilename}</p>
+                            <p className="text-xs text-primary">CV salvo carregado</p>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-8 h-8 text-green-500" />
+                            <p className="text-sm font-medium">{pdfFile?.name || storedFilename}</p>
+                          </>
+                        )}
+                        <p className="text-xs text-muted-foreground">Clique para trocar</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">Toque para fazer upload</p>
+                        <p className="text-xs text-muted-foreground">PDF até 10MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Job Description */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Target className="w-4 h-4 text-primary" />
+                    Vaga Alvo
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Cole a descrição completa da vaga
+                  </p>
+                  <Textarea
+                    value={formData.jobDescription}
+                    onChange={(e) => handleChange("jobDescription", e.target.value)}
+                    placeholder="Título da Vaga&#10;&#10;Responsabilidades:&#10;• Desenvolver e implementar...&#10;&#10;Requisitos:&#10;• Experiência em..."
+                    className="min-h-[200px] bg-muted/20 border-transparent rounded-xl text-base"
+                  />
+                </div>
+
+                <div className="pt-2 pb-6">
+                  <Button
+                    type="submit"
+                    variant="glow"
+                    className="w-full h-14 rounded-2xl text-base font-medium"
+                    disabled={!isValid || isLoading || isExtracting}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Gerando com IA...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar Currículo com IA
+                      </>
+                    )}
+                  </Button>
+                  {!isValid && (
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      {!extractionDone ? "Faça upload do seu currículo em PDF" : "Preencha a vaga alvo (mínimo 50 caracteres)"}
+                    </p>
                   )}
                 </div>
               </div>
-
-              {/* Job Description */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Target className="w-4 h-4 text-primary" />
-                  Vaga Alvo
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Cole a descrição completa da vaga
-                </p>
-                <Textarea
-                  value={formData.jobDescription}
-                  onChange={(e) => handleChange("jobDescription", e.target.value)}
-                  placeholder="Título da Vaga&#10;&#10;Responsabilidades:&#10;• Desenvolver e implementar...&#10;&#10;Requisitos:&#10;• Experiência em..."
-                  className="min-h-[200px] bg-muted/20 border-transparent rounded-xl text-base"
-                />
-              </div>
-
-              <div className="pt-2 pb-6">
-                <Button
-                  type="submit"
-                  variant="glow"
-                  className="w-full h-14 rounded-2xl text-base font-medium"
-                  disabled={!isValid || isLoading || isExtracting}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Gerando com IA...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Gerar Currículo com IA
-                    </>
-                  )}
-                </Button>
-                {!isValid && (
-                  <p className="text-xs text-muted-foreground text-center mt-3">
-                    {!extractionDone ? "Faça upload do seu currículo em PDF" : "Preencha a vaga alvo (mínimo 50 caracteres)"}
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
+        </div>
       </form>
     );
   }

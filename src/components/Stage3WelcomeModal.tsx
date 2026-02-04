@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Target, Clock, ArrowRight } from 'lucide-react';
 import { MentorAvatar } from '@/components/MentorAvatar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Stage3WelcomeModalProps {
   open: boolean;
@@ -30,7 +30,7 @@ const welcomeMessages = [
   }
 ];
 
-// Typing indicator component
+// Typing indicator component - CSS-only animation
 const TypingIndicator = () => (
   <div className="flex items-center gap-1.5 px-4 py-3">
     <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -38,6 +38,51 @@ const TypingIndicator = () => (
     <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
   </div>
 );
+
+// Message bubble component - CSS-only animation for mobile
+const MessageBubble = ({ 
+  message, 
+  isHighlighted, 
+  delay,
+  isMobile 
+}: { 
+  message: string; 
+  isHighlighted: boolean; 
+  delay: number;
+  isMobile: boolean;
+}) => {
+  const baseClass = `p-4 rounded-xl ${
+    isHighlighted 
+      ? 'bg-gradient-to-r from-accent/20 to-primary/10 border border-accent/30' 
+      : 'bg-secondary/40 border border-border/30'
+  }`;
+
+  // Mobile: Use CSS animations for 60fps
+  if (isMobile) {
+    return (
+      <div 
+        className={`${baseClass} animate-mobile-slide-up`}
+        style={{ animationDelay: `${delay}ms` }}
+      >
+        <p className={`${isHighlighted ? 'font-semibold text-accent' : 'text-foreground/90'}`}>
+          {message}
+        </p>
+      </div>
+    );
+  }
+
+  // Desktop: Simple CSS transition (no framer-motion needed for this simple case)
+  return (
+    <div 
+      className={`${baseClass} animate-mobile-fade-in`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <p className={`${isHighlighted ? 'font-semibold text-accent' : 'text-foreground/90'}`}>
+        {message}
+      </p>
+    </div>
+  );
+};
 
 export const Stage3WelcomeModal = ({ 
   open, 
@@ -48,6 +93,7 @@ export const Stage3WelcomeModal = ({
   const [visibleMessages, setVisibleMessages] = useState(0);
   const [showAction, setShowAction] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!open) {
@@ -112,90 +158,66 @@ export const Stage3WelcomeModal = ({
 
         {/* Messages container */}
         <div className="p-6 pb-2 space-y-3">
-          <AnimatePresence>
-            {welcomeMessages.slice(0, visibleMessages).map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`p-4 rounded-xl ${
-                  msg.id === 2 
-                    ? 'bg-gradient-to-r from-accent/20 to-primary/10 border border-accent/30' 
-                    : 'bg-secondary/40 border border-border/30'
-                }`}
-              >
-                <p className={`${msg.id === 2 ? 'font-semibold text-accent' : 'text-foreground/90'}`}>
-                  {msg.text}
-                </p>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {welcomeMessages.slice(0, visibleMessages).map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg.text}
+              isHighlighted={msg.id === 2}
+              delay={0}
+              isMobile={isMobile}
+            />
+          ))}
 
-          {/* Typing indicator */}
-          <AnimatePresence>
-            {isTyping && !showAction && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <TypingIndicator />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Typing indicator - CSS animation */}
+          {isTyping && !showAction && (
+            <div className="animate-mobile-fade-in">
+              <TypingIndicator />
+            </div>
+          )}
         </div>
 
-        {/* Action section */}
-        <AnimatePresence>
-          {showAction && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="p-6 pt-2 space-y-4"
+        {/* Action section - CSS animation */}
+        {showAction && (
+          <div className="p-6 pt-2 space-y-4 animate-mobile-slide-up">
+            {!hasFunnel && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground mb-1">
+                      Funil em preparação ⏳
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Disponível em até 48h.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {hasFunnel && (
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Seu Funil está pronto! 🚀
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button
+              onClick={handleContinue}
+              className="w-full gap-2"
             >
-              {!hasFunnel && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground mb-1">
-                        Funil em preparação ⏳
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Disponível em até 48h.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {hasFunnel && (
-                <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground">
-                        Seu Funil está pronto! 🚀
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <Button
-                onClick={handleContinue}
-                className="w-full gap-2"
-              >
-                <Target className="w-4 h-4" />
-                {hasFunnel ? 'Ver meu Funil' : 'Entendi, vou aguardar'}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Target className="w-4 h-4" />
+              {hasFunnel ? 'Ver meu Funil' : 'Entendi, vou aguardar'}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

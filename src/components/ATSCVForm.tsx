@@ -21,7 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ATSCVData, IdiomaItem } from "@/types/ats-cv";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -116,23 +116,17 @@ function CollapsibleSection({
           }`} />
         </button>
       </CollapsibleTrigger>
-      <AnimatePresence>
-        {isOpen && (
-          <CollapsibleContent forceMount>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="overflow-hidden"
-            >
-              <div className="pt-2 pb-1 pl-10 space-y-3">
-                {children}
-              </div>
-            </motion.div>
-          </CollapsibleContent>
-        )}
-      </AnimatePresence>
+      <CollapsibleContent>
+        <div 
+          className={`overflow-hidden transition-all duration-200 ease-out ${
+            isOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div className="pt-2 pb-1 pl-10 space-y-3">
+            {children}
+          </div>
+        </div>
+      </CollapsibleContent>
     </Collapsible>
   );
 }
@@ -318,242 +312,244 @@ export function ATSCVForm({ onGenerate, onBack }: ATSCVFormProps) {
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {/* STEP 1: Dados Pessoais */}
-          {mobileStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
-                <p className="text-sm text-muted-foreground mt-1">Informações básicas do seu currículo</p>
-              </div>
-
-              {/* All fields full width, stacked */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Nome completo</label>
-                  <Input
-                    value={formData.nome}
-                    onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
-                    placeholder="SEU NOME COMPLETO"
-                    readOnly={!!personalData.fullName}
-                    className={personalData.fullName ? `${inputClass} opacity-70` : inputClass}
-                  />
+        <div className="relative">
+          {/* Step 1: Dados Pessoais */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 1 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 -translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 1 && (
+              <div className="space-y-5 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Informações básicas do seu currículo</p>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">E-mail</label>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="seu@email.com"
-                    readOnly={!!personalData.email}
-                    className={personalData.email ? `${inputClass} opacity-70` : inputClass}
-                  />
+                {/* All fields full width, stacked */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Nome completo</label>
+                    <Input
+                      value={formData.nome}
+                      onChange={(e) => handleChange("nome", e.target.value.toUpperCase())}
+                      placeholder="SEU NOME COMPLETO"
+                      readOnly={!!personalData.fullName}
+                      className={personalData.fullName ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">E-mail</label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      placeholder="seu@email.com"
+                      readOnly={!!personalData.email}
+                      className={personalData.email ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Telefone</label>
+                    <Input
+                      value={formData.telefone}
+                      onChange={(e) => handleChange("telefone", e.target.value)}
+                      placeholder="(11) 99999-9999"
+                      readOnly={!!personalData.phone}
+                      className={personalData.phone ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Cidade</label>
+                    <Input
+                      value={formData.localizacao}
+                      onChange={(e) => handleChange("localizacao", e.target.value)}
+                      placeholder="São Paulo, SP"
+                      readOnly={!!personalData.location}
+                      className={personalData.location ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">LinkedIn</label>
+                    <Input
+                      value={formData.linkedin}
+                      onChange={(e) => handleChange("linkedin", e.target.value)}
+                      placeholder="linkedin.com/in/seuperfil"
+                      readOnly={!!personalData.linkedinUrl}
+                      className={personalData.linkedinUrl ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Nacionalidade</label>
+                    <Input
+                      value={formData.nacionalidade}
+                      onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
+                      placeholder="BRASILEIRO"
+                      readOnly={!!personalData.nacionalidade}
+                      className={personalData.nacionalidade ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Idade</label>
+                    <Input
+                      value={formData.idade}
+                      onChange={(e) => handleChange("idade", e.target.value)}
+                      placeholder="30 ANOS"
+                      readOnly={!!personalData.age}
+                      className={personalData.age ? `${inputClass} opacity-70` : inputClass}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Telefone</label>
-                  <Input
-                    value={formData.telefone}
-                    onChange={(e) => handleChange("telefone", e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    readOnly={!!personalData.phone}
-                    className={personalData.phone ? `${inputClass} opacity-70` : inputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Cidade</label>
-                  <Input
-                    value={formData.localizacao}
-                    onChange={(e) => handleChange("localizacao", e.target.value)}
-                    placeholder="São Paulo, SP"
-                    readOnly={!!personalData.location}
-                    className={personalData.location ? `${inputClass} opacity-70` : inputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">LinkedIn</label>
-                  <Input
-                    value={formData.linkedin}
-                    onChange={(e) => handleChange("linkedin", e.target.value)}
-                    placeholder="linkedin.com/in/seuperfil"
-                    readOnly={!!personalData.linkedinUrl}
-                    className={personalData.linkedinUrl ? `${inputClass} opacity-70` : inputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Nacionalidade</label>
-                  <Input
-                    value={formData.nacionalidade}
-                    onChange={(e) => handleChange("nacionalidade", e.target.value.toUpperCase())}
-                    placeholder="BRASILEIRO"
-                    readOnly={!!personalData.nacionalidade}
-                    className={personalData.nacionalidade ? `${inputClass} opacity-70` : inputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">Idade</label>
-                  <Input
-                    value={formData.idade}
-                    onChange={(e) => handleChange("idade", e.target.value)}
-                    placeholder="30 ANOS"
-                    readOnly={!!personalData.age}
-                    className={personalData.age ? `${inputClass} opacity-70` : inputClass}
-                  />
-                </div>
-              </div>
-
-              {/* Next button */}
-              <div className="pt-6">
-                <Button
-                  type="button"
-                  onClick={() => { setMobileStep(2); scrollToTop(); }}
-                  disabled={!isStep1Valid}
-                  className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
-                >
-                  Continuar
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 2: Seu LinkedIn */}
-          {mobileStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Seu LinkedIn</h2>
-                <p className="text-sm text-muted-foreground mt-1">Cole suas informações do LinkedIn</p>
-              </div>
-
-              {/* Experiências - sempre visível */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-primary" />
-                  <label className="text-base font-medium text-foreground">Experiências Profissionais</label>
-                </div>
-                <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-muted/20">
-                  <Linkedin className="w-4 h-4 text-[#0A66C2] mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">
-                    Copie do LinkedIn e cole aqui
-                  </p>
-                </div>
-                <Textarea
-                  value={formData.experiencias}
-                  onChange={(e) => handleChange("experiencias", e.target.value)}
-                  placeholder="Cole aqui suas experiências profissionais..."
-                  className={`min-h-[160px] p-4 ${textareaClass}`}
-                />
-              </div>
-
-              {/* Formação - sempre visível */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-primary" />
-                  <label className="text-base font-medium text-foreground">Formação Acadêmica</label>
-                </div>
-                <Textarea
-                  value={formData.educacao}
-                  onChange={(e) => handleChange("educacao", e.target.value)}
-                  placeholder="Cole aqui sua formação e certificados..."
-                  className={`min-h-[120px] p-4 ${textareaClass}`}
-                />
-              </div>
-
-              {/* Idiomas - sempre visível */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Languages className="w-4 h-4 text-primary" />
-                  <label className="text-base font-medium text-foreground">Idiomas</label>
-                </div>
-                <div className="space-y-3">
-                  {formData.idiomas.map((idioma, index) => (
-                    <div key={index} className="flex gap-2 items-center">
-                      <Input
-                        value={idioma.idioma}
-                        onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
-                        placeholder="Inglês"
-                        className={`flex-1 ${inputClass}`}
-                      />
-                      <Input
-                        value={idioma.nivel}
-                        onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
-                        placeholder="FLUENTE"
-                        className={`flex-1 ${inputClass}`}
-                      />
-                      {formData.idiomas.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeIdioma(index)}
-                          className="shrink-0 w-11 h-11 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                {/* Next button */}
+                <div className="pt-6">
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={addIdioma}
-                    className="gap-2 text-sm h-11 text-muted-foreground hover:text-foreground w-full justify-center"
+                    onClick={() => { setMobileStep(2); scrollToTop(); }}
+                    disabled={!isStep1Valid}
+                    className="w-full gap-2 h-14 text-base font-medium rounded-2xl"
                   >
-                    <Plus className="w-4 h-4" />
-                    Adicionar idioma
+                    Continuar
+                    <ChevronRight className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Submit Button */}
-              <div className="pt-6 pb-4">
-                <Button
-                  type="submit"
-                  disabled={!isValid || isLoading}
-                  className="w-full gap-2.5 h-14 text-base font-medium rounded-2xl shadow-lg shadow-primary/25 disabled:shadow-none transition-all"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Gerar Currículo ATS
-                    </>
+          {/* Step 2: Seu LinkedIn */}
+          <div 
+            className={`transition-all duration-200 ease-out ${
+              mobileStep === 2 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-4 absolute inset-0 pointer-events-none'
+            }`}
+          >
+            {mobileStep === 2 && (
+              <div className="space-y-6 animate-mobile-fade-in">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">Seu LinkedIn</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Cole suas informações do LinkedIn</p>
+                </div>
+
+                {/* Experiências - sempre visível */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                    <label className="text-base font-medium text-foreground">Experiências Profissionais</label>
+                  </div>
+                  <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-muted/20">
+                    <Linkedin className="w-4 h-4 text-[#0A66C2] mt-0.5 shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      Copie do LinkedIn e cole aqui
+                    </p>
+                  </div>
+                  <Textarea
+                    value={formData.experiencias}
+                    onChange={(e) => handleChange("experiencias", e.target.value)}
+                    placeholder="Cole aqui suas experiências profissionais..."
+                    className={`min-h-[160px] p-4 ${textareaClass}`}
+                  />
+                </div>
+
+                {/* Formação - sempre visível */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-primary" />
+                    <label className="text-base font-medium text-foreground">Formação Acadêmica</label>
+                  </div>
+                  <Textarea
+                    value={formData.educacao}
+                    onChange={(e) => handleChange("educacao", e.target.value)}
+                    placeholder="Cole aqui sua formação e certificados..."
+                    className={`min-h-[120px] p-4 ${textareaClass}`}
+                  />
+                </div>
+
+                {/* Idiomas - sempre visível */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Languages className="w-4 h-4 text-primary" />
+                    <label className="text-base font-medium text-foreground">Idiomas</label>
+                  </div>
+                  <div className="space-y-3">
+                    {formData.idiomas.map((idioma, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Input
+                          value={idioma.idioma}
+                          onChange={(e) => handleIdiomaChange(index, "idioma", e.target.value)}
+                          placeholder="Inglês"
+                          className={`flex-1 ${inputClass}`}
+                        />
+                        <Input
+                          value={idioma.nivel}
+                          onChange={(e) => handleIdiomaChange(index, "nivel", e.target.value.toUpperCase())}
+                          placeholder="FLUENTE"
+                          className={`flex-1 ${inputClass}`}
+                        />
+                        {formData.idiomas.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeIdioma(index)}
+                            className="shrink-0 w-11 h-11 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={addIdioma}
+                      className="gap-2 text-sm h-11 text-muted-foreground hover:text-foreground w-full justify-center"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Adicionar idioma
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-6 pb-4">
+                  <Button
+                    type="submit"
+                    disabled={!isValid || isLoading}
+                    className="w-full gap-2.5 h-14 text-base font-medium rounded-2xl shadow-lg shadow-primary/25 disabled:shadow-none transition-all"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Gerar Currículo ATS
+                      </>
+                    )}
+                  </Button>
+                  {!isValid && (
+                    <p className="text-sm text-muted-foreground/60 text-center mt-3">
+                      Preencha experiências e formação para continuar
+                    </p>
                   )}
-                </Button>
-                {!isValid && (
-                  <p className="text-sm text-muted-foreground/60 text-center mt-3">
-                    Preencha experiências e formação para continuar
-                  </p>
-                )}
+                </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
+        </div>
       </form>
     );
   }
