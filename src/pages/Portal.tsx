@@ -679,15 +679,15 @@ const Portal = () => {
         )}
       </aside>
 
-      {/* Mobile Sidebar Overlay - CSS transitions for performance */}
+      {/* Mobile Sidebar Overlay - CSS animations for performance */}
       {sidebarOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 bg-black/80 z-40 animate-fade-in"
+            className="lg:hidden fixed inset-0 bg-black/80 z-40 animate-mobile-fade-in"
             onClick={() => setSidebarOpen(false)}
           />
           <aside
-            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-black z-50 flex flex-col transition-transform duration-300 ease-out translate-x-0"
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-black z-50 flex flex-col animate-sidebar-slide-in"
           >
               <div className="p-4 flex items-center justify-between border-b border-white/10">
                 <div className="flex items-center gap-3">

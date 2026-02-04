@@ -631,6 +631,25 @@
   }
 }
 
+/* Sidebar slide from left - full panel animation */
+@keyframes sidebarSlideIn {
+  from {
+    transform: translateX(-100%) translateZ(0);
+  }
+  to {
+    transform: translateX(0) translateZ(0);
+  }
+}
+
+@keyframes sidebarSlideOut {
+  from {
+    transform: translateX(0) translateZ(0);
+  }
+  to {
+    transform: translateX(-100%) translateZ(0);
+  }
+}
+
 /* Animation classes with fill-mode: forwards */
 .animate-mobile-slide-up {
   animation: mobileSlideUp 0.2s ease-out forwards;
@@ -655,6 +674,16 @@
 .animate-mobile-scale-in {
   animation: mobileScaleIn 0.2s ease-out forwards;
   will-change: transform, opacity;
+}
+
+.animate-sidebar-slide-in {
+  animation: sidebarSlideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  will-change: transform;
+}
+
+.animate-sidebar-slide-out {
+  animation: sidebarSlideOut 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  will-change: transform;
 }
 
 /* Step transition utilities for forms (CSS-only) */
